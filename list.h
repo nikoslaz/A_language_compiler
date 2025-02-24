@@ -19,7 +19,7 @@ typedef struct alpha_token_t {
 
 
 
-
+/*TO DO: na allaksoun ta unsigned int category se CAT category*/
 alpha_token_t* createTokenNode(unsigned int line, unsigned int num_token, char* zoumi, unsigned int category);
 void insertToken(alpha_token_t** root, unsigned int line, unsigned int num_token, char* zoumi, unsigned int category);
 void deleteToken(alpha_token_t** root, unsigned int num_token);

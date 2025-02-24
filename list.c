@@ -1,6 +1,7 @@
 #include "list.h"
 
 alpha_token_t* createTokenNode(unsigned int line, unsigned int num_token, char* zoumi, unsigned int category){
+    /*TO DO: na allaksei to unsigned int se CAT (to enum pou ftiaksame)*/
     alpha_token_t* neoToken = (alpha_token_t*)malloc(sizeof(alpha_token_t));
     if (!neoToken) {
         printf("memory alloc problem!\n");
@@ -17,6 +18,7 @@ alpha_token_t* createTokenNode(unsigned int line, unsigned int num_token, char* 
 }
 
 void insertToken(alpha_token_t** root, unsigned int line, unsigned int num_token, char* zoumi, unsigned int category){
+    /*TO DO: na allaksei to unsigned int se CAT (to enum pou ftiaksame)*/
     alpha_token_t* neoToken = createTokenNode(line, num_token, zoumi, category);
     if (!neoToken) return;
 
@@ -71,7 +73,7 @@ alpha_token_t* searchToken(alpha_token_t* root, unsigned int num_token){
 }
 
 void printTokens(alpha_token_t* root){
-    //AUTH EDW H SUNARTHSH PREPEI NA EXEI TO FORMA TOU FAQ!! SOS
+    //TO DO: to format na einai opws sto FAQ!
     while (root != NULL) {
         printf("Token #%u: %s (Category: %d, Line: %u)\n", root->num_token, root->zoumi, root->category, root->line);
         root = root->next;

@@ -41,7 +41,7 @@ comment2      "#".*
 <COMMENT>"*"[^*/]*  
 <COMMENT>"*"+"/"   BEGIN(INITIAL); 
 
-{integer}   { fprintf(stderr, "Recognized integer with value: %s\n", yytext); insertToken(&root, yylineno, tokenCounter++, yytext, 1); }
+{integer}   { /*TO DO: allakste ta 1,2,3.. kai valte to enum CAT!*/fprintf(stderr, "Recognized integer with value: %s\n", yytext); insertToken(&root, yylineno, tokenCounter++, yytext, 1); }
 {id}        { fprintf(stderr, "Recognized id with value: %s\n", yytext); insertToken(&root, yylineno, tokenCounter++, yytext, 2);}
 {real}      { fprintf(stderr, "Recognized real with value: %s\n", yytext); insertToken(&root, yylineno, tokenCounter++, yytext, 3);} 
 {string}    { fprintf(stderr, "Recognized string with value: %s\n", yytext); insertToken(&root, yylineno, tokenCounter++, yytext, 4);}
