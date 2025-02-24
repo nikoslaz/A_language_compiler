@@ -10,20 +10,13 @@
     #include <stdio.h>
     #include <stdlib.h>
     #include <string.h>
+    #include "list.h"
 
     enum CAT {ID, STRING, COMMENT, CONST_INT, OPERATOR, KEYWORD, PUNCTUATION};
 
-    typedef struct alpha_token_t {
-        unsigned int line;
-        unsigned int num_token;
+    alpha_token_t* root = NULL;
 
-        char* zoumi;
-        unsigned int category;
-        
-        struct alpha_token_t* next; 
-    }alpha_token_t;
-
-    alpha_token_t* root;
+    int tokenCounter = 0; //gia na exoume global to num_token
 
     #define YY_DECL int alpha_yylex (void* yylval)
 %}
@@ -48,10 +41,12 @@ comment2      "#".*
 <COMMENT>"*"[^*/]*  
 <COMMENT>"*"+"/"   BEGIN(INITIAL); 
 
-{id}        { fprintf(stderr, "Recognized id with value: %s\n", yytext); }
-{string}    { fprintf(stderr, "Recognized string with value: %s\n", yytext); }
-{comment1}  { fprintf(stderr, "Recognized comment with value: %s\n", yytext); }
-{comment2}  { fprintf(stderr, "Recognized comment with value: %s\n", yytext); }
+{integer}   { fprintf(stderr, "Recognized integer with value: %s\n", yytext); insertToken(&root, yylineno, tokenCounter++, yytext, 1); }
+{id}        { fprintf(stderr, "Recognized id with value: %s\n", yytext); insertToken(&root, yylineno, tokenCounter++, yytext, 2);}
+{real}      { fprintf(stderr, "Recognized real with value: %s\n", yytext); insertToken(&root, yylineno, tokenCounter++, yytext, 3);} 
+{string}    { fprintf(stderr, "Recognized string with value: %s\n", yytext); insertToken(&root, yylineno, tokenCounter++, yytext, 4);}
+{comment1}  { fprintf(stderr, "Recognized comment with value: %s\n", yytext); insertToken(&root, yylineno, tokenCounter++, yytext, 5);}
+{comment2}  { fprintf(stderr, "Recognized comment with value: %s\n", yytext); insertToken(&root, yylineno, tokenCounter++, yytext, 5);}
 %%
 
 int main (int argc, char** argv) {
@@ -69,5 +64,8 @@ int main (int argc, char** argv) {
     }
 
     alpha_yylex(NULL);
+    printf("\nFinal Token List:\n");
+    printTokens(root);
+    freeTokenList(&root);
     return 0;
 }

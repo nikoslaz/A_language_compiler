@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+//enum CAT {ID, STRING, COMMENT, CONST_INT, OPERATOR, KEYWORD, PUNCTUATION};
+
 typedef struct alpha_token_t {
     unsigned int line;
     unsigned int num_token;
@@ -14,6 +16,8 @@ typedef struct alpha_token_t {
     
     struct alpha_token_t* next; 
 }alpha_token_t;
+
+
 
 
 alpha_token_t* createTokenNode(unsigned int line, unsigned int num_token, char* zoumi, unsigned int category);

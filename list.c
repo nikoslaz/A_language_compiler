@@ -72,6 +72,10 @@ alpha_token_t* searchToken(alpha_token_t* root, unsigned int num_token){
 
 void printTokens(alpha_token_t* root){
     //AUTH EDW H SUNARTHSH PREPEI NA EXEI TO FORMA TOU FAQ!! SOS
+    while (root != NULL) {
+        printf("Token #%u: %s (Category: %d, Line: %u)\n", root->num_token, root->zoumi, root->category, root->line);
+        root = root->next;
+    }
 }
 
 void freeTokenList(alpha_token_t** root){
