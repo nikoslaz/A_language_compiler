@@ -3,21 +3,21 @@
 # 0=============0
 TARGET = scanner
 CC = gcc
-# Compile all
+#compile all
 all: $(TARGET)
-# Clean the directory
+#clean the directory
 clean:
 	rm -f *.o $(TARGET) $(TARGET).c
-# Generate Executable
+#executable
 $(TARGET): scanner.o  list.o
 	$(CC) $^ -o $@
-# Generate .o files
+#.o files
 %.o: %.c list.h
 	$(CC) -c $< -o $@
-# Flex Scanner
+#Flex Scanner
 $(TARGET).c: scanner.l list.h
 	flex scanner.l
-# Run Test
+#run test
 run:
 	scanner test.txt
-# end of Makefile
+#end of Makefile
