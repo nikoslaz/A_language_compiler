@@ -7,16 +7,7 @@
     static int isatty (void *i) { return 0; }
     #endif
 
-    #include <stdio.h>
-    #include <stdlib.h>
-    #include <string.h>
     #include "list.h"
-
-    enum CAT {ID, STRING, COMMENT, CONST_INT, OPERATOR, KEYWORD, PUNCTUATION};
-
-    alpha_token_t* root = NULL;
-
-    int tokenCounter = 0; //gia na exoume global to num_token
 
     #define YY_DECL int alpha_yylex (void* yylval)
 %}
@@ -32,6 +23,9 @@ space         [\r\n\t\v]
 string        "\"[^\n\"]*\""
 comment1      "//".*
 comment2      "#".*
+if            "if"
+else          "else"
+newline       "\n"
 
 %x COMMENT INCLUDE
 
@@ -41,30 +35,26 @@ comment2      "#".*
 <COMMENT>"*"[^*/]*  
 <COMMENT>"*"+"/"   BEGIN(INITIAL); 
 
-{integer}   { /*TO DO: allakste ta 1,2,3.. kai valte to enum CAT!*/fprintf(stderr, "Recognized integer with value: %s\n", yytext); insertToken(&root, yylineno, tokenCounter++, yytext, 1); }
-{id}        { fprintf(stderr, "Recognized id with value: %s\n", yytext); insertToken(&root, yylineno, tokenCounter++, yytext, 2);}
-{real}      { fprintf(stderr, "Recognized real with value: %s\n", yytext); insertToken(&root, yylineno, tokenCounter++, yytext, 3);} 
-{string}    { fprintf(stderr, "Recognized string with value: %s\n", yytext); insertToken(&root, yylineno, tokenCounter++, yytext, 4);}
-{comment1}  { fprintf(stderr, "Recognized comment with value: %s\n", yytext); insertToken(&root, yylineno, tokenCounter++, yytext, 5);}
-{comment2}  { fprintf(stderr, "Recognized comment with value: %s\n", yytext); insertToken(&root, yylineno, tokenCounter++, yytext, 5);}
+{newline}   { }
+{if}        { insertToken(&root, yylineno, tokenCounter++, yytext, 1, CAT[4], 7); }
+{else}      { insertToken(&root, yylineno, tokenCounter++, yytext, 1, CAT[5], 7); }
+{integer}   { insertToken(&root, yylineno, tokenCounter++, yytext, 2, yytext, 9); }
+{id}        { insertToken(&root, yylineno, tokenCounter++, yytext, 10, yytext, 8);}
+{real}      { /*insertToken(&root, yylineno, tokenCounter++, yytext, 3);*/} 
+{string}    { /*insertToken(&root, yylineno, tokenCounter++, yytext, 4);*/}
+{comment1}  { /*insertToken(&root, yylineno, tokenCounter++, yytext, 5);*/}
+{comment2}  { /*insertToken(&root, yylineno, tokenCounter++, yytext, 5);*/}
+
 %%
 
 int main (int argc, char** argv) {
-    if (argc > 1)
-    {
-        if (!(yyin = fopen(argv[1], "r")))
-        {
+    if (argc > 1) {
+        if (!(yyin = fopen(argv[1], "r"))) {
             fprintf(stderr, "Cannot read file: %s\n", argv[1]);
             return 1;
         }
-    }
-    else
-    {
-        yyin = stdin;
-    }
-
+    } else { yyin = stdin; }
     alpha_yylex(NULL);
-    printf("\nFinal Token List:\n");
     printTokens(root);
     freeTokenList(&root);
     return 0;

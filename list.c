@@ -1,7 +1,23 @@
 #include "list.h"
 
-alpha_token_t* createTokenNode(unsigned int line, unsigned int num_token, char* zoumi, unsigned int category){
-    /*TO DO: na allaksei to unsigned int se CAT (to enum pou ftiaksame)*/
+alpha_token_t* root = NULL;
+int tokenCounter = 1;
+
+char* CAT[] = {
+    "todo",
+    "KEYWORD",
+    "CONST_INT",
+    "STRING",
+    "IF",
+    "ELSE",
+    "WHILE",
+    "enumerated",
+    "char*",
+    "INTEGER",
+    "ID"
+};
+
+alpha_token_t* createTokenNode (unsigned int line, unsigned int num_token, char* zoumi, unsigned int category, char* subcategory, unsigned int superclass){
     alpha_token_t* neoToken = (alpha_token_t*)malloc(sizeof(alpha_token_t));
     if (!neoToken) {
         printf("memory alloc problem!\n");
@@ -10,16 +26,18 @@ alpha_token_t* createTokenNode(unsigned int line, unsigned int num_token, char* 
 
     neoToken->line = line;
     neoToken->num_token = num_token;
-    neoToken->category = category;
     neoToken->zoumi = strdup(zoumi);
+    neoToken->category = category;
+    neoToken->subcategory = strdup(subcategory);
+    neoToken->superclass = superclass;
     neoToken->next = NULL;
-    
+
     return neoToken;
 }
 
-void insertToken(alpha_token_t** root, unsigned int line, unsigned int num_token, char* zoumi, unsigned int category){
+void insertToken(alpha_token_t** root, unsigned int line, unsigned int num_token, char* zoumi, unsigned int category, char* subcategory, unsigned int superclass){
     /*TO DO: na allaksei to unsigned int se CAT (to enum pou ftiaksame)*/
-    alpha_token_t* neoToken = createTokenNode(line, num_token, zoumi, category);
+    alpha_token_t* neoToken = createTokenNode(line, num_token, zoumi, category, subcategory, superclass);
     if (!neoToken) return;
 
     if (*root == NULL) {
@@ -44,6 +62,7 @@ void deleteToken(alpha_token_t** root, unsigned int num_token){
     if (temp && temp->num_token == num_token) {
         *root = temp->next;
         free(temp->zoumi); 
+        free(temp->subcategory);
         free(temp);
         return;
     }
@@ -75,7 +94,7 @@ alpha_token_t* searchToken(alpha_token_t* root, unsigned int num_token){
 void printTokens(alpha_token_t* root){
     //TO DO: to format na einai opws sto FAQ!
     while (root != NULL) {
-        printf("Token #%u: %s (Category: %d, Line: %u)\n", root->num_token, root->zoumi, root->category, root->line);
+        printf("%u:  #%u  \"%s\"  %s  %s  <-%s\n", root->line, root->num_token, root->zoumi, CAT[root->category], root->subcategory, CAT[root->superclass]);
         root = root->next;
     }
 }

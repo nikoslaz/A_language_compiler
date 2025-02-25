@@ -5,23 +5,24 @@
 #include <stdlib.h>
 #include <string.h>
 
-//enum CAT {ID, STRING, COMMENT, CONST_INT, OPERATOR, KEYWORD, PUNCTUATION};
-
 typedef struct alpha_token_t {
     unsigned int line;
     unsigned int num_token;
-
+    
     char* zoumi;
     unsigned int category;
+    char* subcategory;
+    unsigned int superclass;
     
     struct alpha_token_t* next; 
-}alpha_token_t;
+} alpha_token_t;
 
+extern char* CAT[];
+extern int tokenCounter;
+extern alpha_token_t* root;
 
-
-/*TO DO: na allaksoun ta unsigned int category se CAT category*/
-alpha_token_t* createTokenNode(unsigned int line, unsigned int num_token, char* zoumi, unsigned int category);
-void insertToken(alpha_token_t** root, unsigned int line, unsigned int num_token, char* zoumi, unsigned int category);
+alpha_token_t* createTokenNode(unsigned int line, unsigned int num_token, char* zoumi, unsigned int category, char* subcategory, unsigned int superclass);
+void insertToken(alpha_token_t** root, unsigned int line, unsigned int num_token, char* zoumi, unsigned int category, char* subcategory, unsigned int superclass);
 void deleteToken(alpha_token_t** root, unsigned int num_token);
 alpha_token_t* searchToken(alpha_token_t* root, unsigned int num_token);
 void printTokens(alpha_token_t* root);
