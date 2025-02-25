@@ -1,3 +1,10 @@
-myvariable
+2356347
+// do NOT show this 
+# BLOCK MY ASS
+/* MULTILINEE
+wqer
+sdf
+sdfas */
+"i am string"
 if else
-12
+
