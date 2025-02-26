@@ -931,7 +931,7 @@ YY_RULE_SETUP
 case 12:
 /* rule 12 can match eol */
 YY_RULE_SETUP
-#line 94 "scanner.l"
+#line 93 "scanner.l"
 { 
     char tempyytext[100];
     strncpy(tempyytext, yytext + 1, yyleng - 2);  
@@ -942,222 +942,222 @@ YY_RULE_SETUP
 case 13:
 /* rule 13 can match eol */
 YY_RULE_SETUP
-#line 101 "scanner.l"
+#line 100 "scanner.l"
 { }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 102 "scanner.l"
+#line 101 "scanner.l"
 { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_IF, S_ENUMERATED); }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 103 "scanner.l"
+#line 102 "scanner.l"
 { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_ELSE, S_ENUMERATED); }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 104 "scanner.l"
+#line 103 "scanner.l"
 { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_WHILE, S_ENUMERATED); }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 105 "scanner.l"
+#line 104 "scanner.l"
 { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_FOR, S_ENUMERATED); }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 106 "scanner.l"
+#line 105 "scanner.l"
 { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_FUNCTION, S_ENUMERATED); }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 107 "scanner.l"
+#line 106 "scanner.l"
 { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_RETURN, S_ENUMERATED); }    
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 108 "scanner.l"
+#line 107 "scanner.l"
 { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_BREAK, S_ENUMERATED); }  
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 109 "scanner.l"
+#line 108 "scanner.l"
 { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_CONTINUE, S_ENUMERATED); }    
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 110 "scanner.l"
+#line 109 "scanner.l"
 { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_AND, S_ENUMERATED); }  
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 111 "scanner.l"
+#line 110 "scanner.l"
 { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_OR, S_ENUMERATED); }  
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 112 "scanner.l"
+#line 111 "scanner.l"
 { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_NOT, S_ENUMERATED); }   
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 113 "scanner.l"
+#line 112 "scanner.l"
 { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_LOCAL, S_ENUMERATED); }    
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 114 "scanner.l"
+#line 113 "scanner.l"
 { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_TRUE, S_ENUMERATED); }    
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 115 "scanner.l"
+#line 114 "scanner.l"
 { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_FALSE, S_ENUMERATED); }    
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 116 "scanner.l"
-{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_NIL, S_ENUMERATED); }    
+#line 115 "scanner.l"
+{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_NIL, S_ENUMERATED); }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
 #line 117 "scanner.l"
-{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_EQUALS, S_ENUMERATED); }    
+{ insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_EQUALS, S_ENUMERATED); }    
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
 #line 118 "scanner.l"
-{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_PLUS, S_ENUMERATED); }    
+{ insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_PLUS, S_ENUMERATED); }    
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
 #line 119 "scanner.l"
-{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_MINUS, S_ENUMERATED); }    
+{ insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_MINUS, S_ENUMERATED); }    
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
 #line 120 "scanner.l"
-{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_MULT, S_ENUMERATED); }    
+{ insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_MULT, S_ENUMERATED); }    
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
 #line 121 "scanner.l"
-{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_DIV, S_ENUMERATED); }    
+{ insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_DIV, S_ENUMERATED); }    
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
 #line 122 "scanner.l"
-{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_MOD, S_ENUMERATED); }    
+{ insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_MOD, S_ENUMERATED); }    
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
 #line 123 "scanner.l"
-{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_EQUALS_EQUALS, S_ENUMERATED); }    
+{ insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_EQUALS_EQUALS, S_ENUMERATED); }    
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
 #line 124 "scanner.l"
-{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_NOT_EQUALS, S_ENUMERATED); }    
+{ insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_NOT_EQUALS, S_ENUMERATED); }    
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
 #line 125 "scanner.l"
-{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_PLUS_PLUS, S_ENUMERATED); }    
+{ insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_PLUS_PLUS, S_ENUMERATED); }    
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
 #line 126 "scanner.l"
-{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_MINUS_MINUS, S_ENUMERATED); }    
+{ insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_MINUS_MINUS, S_ENUMERATED); }    
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
 #line 127 "scanner.l"
-{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_GREATER, S_ENUMERATED); }    
+{ insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_GREATER, S_ENUMERATED); }    
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
 #line 128 "scanner.l"
-{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_LESS, S_ENUMERATED); }    
+{ insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_LESS, S_ENUMERATED); }    
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
 #line 129 "scanner.l"
-{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_GREATER_EQUAL, S_ENUMERATED); }    
+{ insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_GREATER_EQUAL, S_ENUMERATED); }    
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
 #line 130 "scanner.l"
-{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_LESS_EQUAL, S_ENUMERATED); }    
+{ insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_LESS_EQUAL, S_ENUMERATED); }    
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 131 "scanner.l"
-{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_LEFT_BRACE, S_ENUMERATED); }    
+#line 132 "scanner.l"
+{ insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_LEFT_BRACE, S_ENUMERATED); }    
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 132 "scanner.l"
-{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_RIGHT_BRACE, S_ENUMERATED); }    
+#line 133 "scanner.l"
+{ insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_RIGHT_BRACE, S_ENUMERATED); }    
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 133 "scanner.l"
-{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_LEFT_BRACKET, S_ENUMERATED); }    
+#line 134 "scanner.l"
+{ insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_LEFT_BRACKET, S_ENUMERATED); }    
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 134 "scanner.l"
-{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_RIGHT_BRACKET, S_ENUMERATED); }    
+#line 135 "scanner.l"
+{ insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_RIGHT_BRACKET, S_ENUMERATED); }    
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 135 "scanner.l"
-{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_LEFT_PARENTHESIS, S_ENUMERATED); } 
+#line 136 "scanner.l"
+{ insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_LEFT_PARENTHESIS, S_ENUMERATED); } 
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 136 "scanner.l"
-{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_RIGHT_PARENTHESIS, S_ENUMERATED); } 
+#line 137 "scanner.l"
+{ insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_RIGHT_PARENTHESIS, S_ENUMERATED); } 
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 137 "scanner.l"
-{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_SEMICOLON, S_ENUMERATED); }    
+#line 138 "scanner.l"
+{ insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_SEMICOLON, S_ENUMERATED); }    
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 138 "scanner.l"
-{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_COMMA, S_ENUMERATED); }    
+#line 139 "scanner.l"
+{ insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_COMMA, S_ENUMERATED); }    
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 139 "scanner.l"
-{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_COLON, S_ENUMERATED); }    
+#line 140 "scanner.l"
+{ insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_COLON, S_ENUMERATED); }    
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 140 "scanner.l"
-{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_COLON_COLON, S_ENUMERATED); }    
+#line 141 "scanner.l"
+{ insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_COLON_COLON, S_ENUMERATED); }    
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 141 "scanner.l"
-{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_PERIOD, S_ENUMERATED); }    
+#line 142 "scanner.l"
+{ insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_PERIOD, S_ENUMERATED); }    
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 142 "scanner.l"
-{ insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_PERIOD_PERIOD, S_ENUMERATED); }    
+#line 143 "scanner.l"
+{ insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_PERIOD_PERIOD, S_ENUMERATED); }    
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 144 "scanner.l"
+#line 145 "scanner.l"
 { insertToken(&root, yylineno, tokenCounter++, yytext, C_ID, N_ERR, S_CHARSTAR); }
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 146 "scanner.l"
+#line 147 "scanner.l"
 ECHO;
 	YY_BREAK
 #line 1164 "scanner.c"
@@ -2178,7 +2178,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 146 "scanner.l"
+#line 147 "scanner.l"
 
 
 int main (int argc, char** argv) {

@@ -9,10 +9,15 @@ sdfas */
 "i am string"
 if else
 myid
-/* Outer comment starts
-   // Line comment
-   #  Python comments
-*/
-+
-=
-==
+//kati edw/*kati allo
+
+pame katwme enter */
+x = 10 + 5 / mod 6 15 ; : , 
+y =[1,2,3,4]
+
+int main () {
+
+    return 0;
+}
+
+function
