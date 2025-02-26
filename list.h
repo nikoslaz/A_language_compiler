@@ -68,7 +68,8 @@ typedef enum ALPHA_NAME {
     /* Comments */
     N_LINE_COMMENT      = 42,
     N_PYTHON_COMMENT    = 43,
-    N_MULTILINE_COMMENT = 44
+    N_MULTILINE_COMMENT = 44,
+    N_NESTED_COMMENT = 45
 } ALPHA_NAME;
 
 typedef enum ALPHA_SUPERCLASS {
@@ -93,6 +94,8 @@ typedef struct alpha_token_t {
 
 extern int tokenCounter;
 extern alpha_token_t* root;
+extern int comment_startline;
+extern int comment_depth;
 
 alpha_token_t* createTokenNode(unsigned int line, unsigned int num_token, char* zoumi, ALPHA_CATEGORY category, ALPHA_NAME name, ALPHA_SUPERCLASS superclass);
 alpha_token_t* searchToken(alpha_token_t* root, unsigned int num_token);

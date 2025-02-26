@@ -4,6 +4,8 @@
 
 alpha_token_t* root = NULL;
 int tokenCounter = 1;
+int comment_startline = 0;
+int comment_depth = 0;
 
 char* cat_str[] = {
     "ERR",         /* 0 */
@@ -66,7 +68,8 @@ char* nam_str[] = {
     /* Comments */
     "LINE_COMMENT",     /* 42 */
     "PYTHON_COMMENT",   /* 43 */
-    "MULTILINE_COMMENT" /* 44 */
+    "MULTILINE_COMMENT",/* 44 */
+    "NESTED_COMMENT"    /* 45 */
 };
 
 char* sup_str[] = {

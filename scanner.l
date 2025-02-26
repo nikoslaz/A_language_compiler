@@ -69,20 +69,30 @@ python_comment    "#".*
 %x COMMENT
 %%
 "/*" {
-    insertToken(&root, yylineno, tokenCounter++, "", C_COMMENT, N_MULTILINE_COMMENT, S_ENUMERATED);
+    if(comment_depth == 0){
+        comment_startline = yylineno;
+    }
+    comment_depth++;
     BEGIN(COMMENT);
 }
 <COMMENT>\n { }
 <COMMENT>[^*]*;
 <COMMENT>"*"[^*/]*;
-<COMMENT>"//" {
-    insertToken(&root, yylineno, tokenCounter++, "", C_COMMENT, N_LINE_COMMENT, S_ENUMERATED);
-} 
-<COMMENT>"#" {
-    insertToken(&root, yylineno, tokenCounter++, "", C_COMMENT, N_PYTHON_COMMENT, S_ENUMERATED);
+<COMMENT>"/*" {
+    comment_depth++;
 }
 <COMMENT>"*/" {
-    BEGIN(INITIAL);
+    comment_depth--;
+    if (comment_depth > 0 ){
+        insertToken(&root, comment_startline, tokenCounter++, "", C_COMMENT, N_NESTED_COMMENT, S_ENUMERATED);
+    }
+    if(comment_depth == 0){
+        char range[20]; 
+        sprintf(range, "%d - %d", comment_startline, yylineno);
+        insertToken(&root, comment_startline, tokenCounter++, range, C_COMMENT, N_MULTILINE_COMMENT, S_ENUMERATED);
+        BEGIN(INITIAL);
+    }
+
 }
 
 {line_comment}     { insertToken(&root, yylineno, tokenCounter++, "", C_COMMENT, N_LINE_COMMENT, S_ENUMERATED); }
@@ -143,6 +153,7 @@ python_comment    "#".*
 {period_period}     { insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_PERIOD_PERIOD, S_ENUMERATED); }    
 
 {id}                { insertToken(&root, yylineno, tokenCounter++, yytext, C_ID, N_ERR, S_CHARSTAR); }
+
 
 %% 
 

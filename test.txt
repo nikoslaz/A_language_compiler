@@ -4,6 +4,7 @@
 # BLOCK MY ASS
 /* MULTILINEE
 wqer
+//comment
 sdf
 sdfas */
 "i am string"
@@ -21,3 +22,7 @@ int main () {
 }
 
 function
+
+/*
+/*NESTED*/
+*/
