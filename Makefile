@@ -14,7 +14,7 @@ $(TARGET): scanner.o  list.o
 #.o files
 %.o: %.c list.h
 	$(CC) -c $< -o $@
-#Flex Scanner
+#scanner.c
 $(TARGET).c: scanner.l list.h
 	flex scanner.l
 #run test

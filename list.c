@@ -5,7 +5,7 @@
 alpha_token_t* root = NULL;
 int tokenCounter = 1;
 
-char* CAT[] = {
+char* cat_str[] = {
     "ERR",         /* 0 */
     "KEYWORD",     /* 1 */
     "OPERATOR",    /* 2 */
@@ -14,10 +14,11 @@ char* CAT[] = {
     "STRING",      /* 5 */
     "PUNCTUATION", /* 6 */
     "ID",          /* 7 */
-    "COMMENT",     /* 8 */
+    "COMMENT"      /* 8 */
 };
 
-char* NAM[] = {
+char* nam_str[] = {
+    /* Keywords */
     "ERR",      /* 0 */
     "IF",       /* 1 */
     "ELSE",     /* 2 */
@@ -34,7 +35,7 @@ char* NAM[] = {
     "TRUE",     /* 13 */
     "FALSE",    /* 14 */
     "NIL",      /* 15 */
-
+    /* Operators */
     "EQUALS",        /* 16 */
     "PLUS",          /* 17 */
     "MINUS",         /* 18 */
@@ -49,7 +50,7 @@ char* NAM[] = {
     "LESS",          /* 27 */
     "GREATER_EQUAL", /* 28 */
     "LESS_EQUAL",    /* 29 */
-
+    /* Punctuation */
     "LEFT_BRACE",        /* 30 */
     "RIGHT_BRACE",       /* 31 */
     "LEFT_BRACKET",      /* 32 */
@@ -62,19 +63,13 @@ char* NAM[] = {
     "COLON_COLON",       /* 39 */
     "PERIOD",            /* 40 */
     "PERIOD_PERIOD",     /* 41 */
-
-    "LINE_COMMENT",      /* 42 */
-    "PYTHON_COMMENT",    /* 43 */
-    "MULTILINE_COMMENT", /* 44 */
-
-    /* To print zoumi */
-    "INTEGER", /* 45 */
-    "REAL",    /* 46 */
-    "STRING"   /* 47 */
-    "ID",      /* 48 */
+    /* Comments */
+    "LINE_COMMENT",     /* 42 */
+    "PYTHON_COMMENT",   /* 43 */
+    "MULTILINE_COMMENT" /* 44 */
 };
 
-char* SUP[] = {
+char* sup_str[] = {
     "ERR",        /* 0 */
     "char*",      /* 1 */
     "enumerated", /* 2 */
@@ -82,13 +77,12 @@ char* SUP[] = {
     "real"        /* 4 */
 };
 
-alpha_token_t* createTokenNode(unsigned int line, unsigned int num_token, char* zoumi, unsigned int category, unsigned int name, unsigned int superclass) {
+alpha_token_t* createTokenNode(unsigned int line, unsigned int num_token, char* zoumi, ALPHA_CATEGORY category, ALPHA_NAME name, ALPHA_SUPERCLASS superclass) {
     alpha_token_t* neoToken = (alpha_token_t*)malloc(sizeof(alpha_token_t));
     if(!neoToken) {
         printf("memory alloc problem!\n");
         return NULL;
     }
-
     neoToken->line = line;
     neoToken->num_token = num_token;
     neoToken->zoumi = strdup(zoumi);
@@ -96,7 +90,6 @@ alpha_token_t* createTokenNode(unsigned int line, unsigned int num_token, char* 
     neoToken->name = name;
     neoToken->superclass = superclass;
     neoToken->next = NULL;
-
     return neoToken;
 }
 
@@ -105,7 +98,7 @@ void destroyToken(alpha_token_t* temp) {
     free(temp);
 }
 
-void insertToken(alpha_token_t** root, unsigned int line, unsigned int num_token, char* zoumi, unsigned int category, unsigned int name, unsigned int superclass) {
+void insertToken(alpha_token_t** root, unsigned int line, unsigned int num_token, char* zoumi, ALPHA_CATEGORY category, ALPHA_NAME name, ALPHA_SUPERCLASS superclass) {
     alpha_token_t* neoToken = createTokenNode(line, num_token, zoumi, category, name, superclass);
     if(!neoToken) return;
     if(*root == NULL) {
@@ -123,18 +116,18 @@ void deleteToken(alpha_token_t** root, unsigned int num_token){
     if (*root == NULL) return;
     alpha_token_t* temp = *root;
     alpha_token_t* prev = NULL;
-    //if the node is the head of the list
+    // if the node is the head of the list
     if(temp && temp->num_token == num_token) {
         *root = temp->next;
         destroyToken(temp);
         return;
     }
-    //search for the token
+    // search for the token
     while(temp && temp->num_token != num_token) {
         prev = temp;
         temp = temp->next;
     }
-    //not found
+    // not found
     if(!temp) { return; }
     // remove from list
     prev->next = temp->next;
@@ -154,23 +147,21 @@ alpha_token_t* searchToken(alpha_token_t* root, unsigned int num_token){
 
 void printTokens(alpha_token_t* root){
     while(root != NULL) {
-        printf("%u:  #%u  \"%s\"  %s  ", root->line, root->num_token, root->zoumi, CAT[root->category]);
-        switch(root->name) {
-            /* INTEGER - REAL */
-            case 45:
-            case 46:
+        printf("%u:  #%u  \"%s\"  %s  ", root->line, root->num_token, root->zoumi, cat_str[root->category]);
+        switch(root->category) {
+            case C_CONST_INT:
+            case C_CONST_REAL:
                 printf("%s", root->zoumi);
                 break;
-            /* STRING - ID */
-            case 47:
-            case 48:
+            case C_STRING:
+            case C_ID:
                 printf("\"%s\"", root->zoumi);
                 break;
             default:
-                printf("%s", NAM[root->name]);
+                printf("%s", nam_str[root->name]);
                 break;
         }
-        printf("  <-%s\n", SUP[root->superclass]);
+        printf("  <-%s\n", sup_str[root->superclass]);
         root = root->next;
     }
 }

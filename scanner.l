@@ -30,7 +30,7 @@ comment2      "#".*
 %%
 
 "/*" {
-    insertToken(&root, yylineno, tokenCounter++, "", 8, 44, 2);
+    insertToken(&root, yylineno, tokenCounter++, "", C_COMMENT, N_MULTILINE_COMMENT, S_ENUMERATED);
     BEGIN(COMMENT);
 }
 <COMMENT>\n { }
@@ -39,27 +39,24 @@ comment2      "#".*
 <COMMENT>"*/" {
     BEGIN(INITIAL);
 }
-{comment1} { insertToken(&root, yylineno, tokenCounter++, "", 8, 42, 2); }
-{comment2} { insertToken(&root, yylineno, tokenCounter++, "", 8, 43, 2); }
-
+{comment1} { insertToken(&root, yylineno, tokenCounter++, "", C_COMMENT, N_LINE_COMMENT, S_ENUMERATED); }
+{comment2} { insertToken(&root, yylineno, tokenCounter++, "", C_COMMENT, N_PYTHON_COMMENT, S_ENUMERATED); }
 
 {string} { 
     char tempyytext[100];
     strncpy(tempyytext, yytext + 1, yyleng - 2);  
     tempyytext[yyleng - 2] = '\0';  
-    insertToken(&root, yylineno, tokenCounter++, tempyytext, 5, 47, 1);
+    insertToken(&root, yylineno, tokenCounter++, tempyytext, C_STRING, N_ERR, S_CHARSTAR);
 }
 
 {newline}   { }
-{if}        { insertToken(&root, yylineno, tokenCounter++, yytext, 1, 1, 2); }
-{else}      { insertToken(&root, yylineno, tokenCounter++, yytext, 1, 2, 2); }
-{integer}   { insertToken(&root, yylineno, tokenCounter++, yytext, 3, 45, 3); }
-{real}      { insertToken(&root, yylineno, tokenCounter++, yytext, 4, 46, 4); } 
-{id}        { insertToken(&root, yylineno, tokenCounter++, yytext, 7, 48, 1); }
+{if}        { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_IF, S_ENUMERATED); }
+{else}      { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_ELSE, S_ENUMERATED); }
+{integer}   { insertToken(&root, yylineno, tokenCounter++, yytext, C_CONST_INT, N_ERR, S_INTEGER); }
+{real}      { insertToken(&root, yylineno, tokenCounter++, yytext, C_CONST_REAL, N_ERR, S_REAL); } 
+{id}        { insertToken(&root, yylineno, tokenCounter++, yytext, C_ID, N_ERR, S_CHARSTAR); }
 
-
-
-%%
+%% 
 
 int main (int argc, char** argv) {
     if(argc > 1) {
