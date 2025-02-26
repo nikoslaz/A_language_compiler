@@ -176,3 +176,10 @@ void freeTokenList(alpha_token_t** root){
 }
 
 /* end of list.c */
+
+
+// Nested comments example:
+/*  
+    //
+    # 
+*/

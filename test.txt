@@ -9,3 +9,10 @@ sdfas */
 "i am string"
 if else
 myid
+/* Outer comment starts
+   // Line comment
+   #  Python comments
+*/
++
+=
+==
