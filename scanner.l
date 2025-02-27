@@ -69,9 +69,8 @@ python_comment    "#".*
 %x COMMENT
 %%
 "/*" {
-    if(comment_depth == 0){
-        comment_startline = yylineno;
-    }
+    comment_top++;
+    comment_startlines[comment_top] = yylineno; //to store the start lines for nested comments also
     comment_depth++;
     BEGIN(COMMENT);
 }
@@ -79,17 +78,23 @@ python_comment    "#".*
 <COMMENT>[^*]*;
 <COMMENT>"*"[^*/]*;
 <COMMENT>"/*" {
+    comment_top++;
+    comment_startlines[comment_top] = yylineno;
     comment_depth++;
 }
 <COMMENT>"*/" {
     comment_depth--;
     if (comment_depth > 0 ){
-        insertToken(&root, comment_startline, tokenCounter++, "", C_COMMENT, N_NESTED_COMMENT, S_ENUMERATED);
+        char range[20]; 
+        sprintf(range, "%d - %d", comment_startlines[comment_top], yylineno);
+        insertToken(&root, comment_startlines[comment_top], tokenCounter++, range, C_COMMENT, N_NESTED_COMMENT, S_ENUMERATED);
+        comment_top--;
     }
     if(comment_depth == 0){
         char range[20]; 
-        sprintf(range, "%d - %d", comment_startline, yylineno);
-        insertToken(&root, comment_startline, tokenCounter++, range, C_COMMENT, N_MULTILINE_COMMENT, S_ENUMERATED);
+        sprintf(range, "%d - %d", comment_startlines[comment_top], yylineno);
+        insertToken(&root, comment_startlines[comment_top], tokenCounter++, range, C_COMMENT, N_MULTILINE_COMMENT, S_ENUMERATED);
+        comment_top--;
         BEGIN(INITIAL);
     }
 
@@ -164,7 +169,17 @@ int main (int argc, char** argv) {
             return 1;
         }
     } else { yyin = stdin; }
+    
+    /*redirect output of lex*/
+    yyout = fopen("/dev/null", "w");  
     alpha_yylex(NULL);
+    fclose(yyout);
+
+    if(comment_depth > 0){
+        printf("Error! The multiline comments are not closed properly. Try again :)\n");
+        exit(1);
+    }
+
     /* DO NOT TOUCH THIS PRINTF */
     printf("   ======= Lexical Analysis =======\n\n");
     printTokens(root);

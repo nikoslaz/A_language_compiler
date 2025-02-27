@@ -94,8 +94,10 @@ typedef struct alpha_token_t {
 
 extern int tokenCounter;
 extern alpha_token_t* root;
-extern int comment_startline;
+
 extern int comment_depth;
+extern int comment_startlines[100];  
+extern int comment_top;   
 
 alpha_token_t* createTokenNode(unsigned int line, unsigned int num_token, char* zoumi, ALPHA_CATEGORY category, ALPHA_NAME name, ALPHA_SUPERCLASS superclass);
 alpha_token_t* searchToken(alpha_token_t* root, unsigned int num_token);

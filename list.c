@@ -4,8 +4,9 @@
 
 alpha_token_t* root = NULL;
 int tokenCounter = 1;
-int comment_startline = 0;
 int comment_depth = 0;
+int comment_top = -1; 
+int comment_startlines[100];
 
 char* cat_str[] = {
     "ERR",         /* 0 */
@@ -179,10 +180,3 @@ void freeTokenList(alpha_token_t** root){
 }
 
 /* end of list.c */
-
-
-// Nested comments example:
-/*  
-    //
-    # 
-*/
