@@ -1,4 +1,7 @@
 %{
+    /**
+     * @authors nikos , nikoletta , mihalis
+     */
     #if defined(WIN32)
     #define YY_NO_UNISTD_H
     static int isatty (int i) { return 0; }
@@ -19,7 +22,6 @@ integer           (0[xX][0-9A-Fa-f]+)|([0-9]+)
 real              [0-9]*\.[0-9](e|E)?[0-9]*
 space             [\r\n\t\v]
 string            \"[^\"]*\"
-
 newline           "\n"
 if                "if"
 else              "else"
@@ -62,15 +64,17 @@ colon             ":"
 colon_colon       "::"
 period            "."
 period_period     ".."
-
 line_comment      "//".*
 python_comment    "#".*
 
 %x COMMENT
+
 %%
+
 "/*" {
+    assert(comment_top==-1 && comment_depth==0);
     comment_top++;
-    comment_startlines[comment_top] = yylineno; //to store the start lines for nested comments also
+    comment_startlines[comment_top] = yylineno;
     comment_depth++;
     BEGIN(COMMENT);
 }
@@ -79,25 +83,34 @@ python_comment    "#".*
 <COMMENT>"*"[^*/]*;
 <COMMENT>"/*" {
     comment_top++;
+    if(comment_top>=MAX_NESTED_COMMENTS) {
+        printf("Error. Maximum number of Nested Comments reached. Sorry :(\n");
+        exit(1);
+    }
     comment_startlines[comment_top] = yylineno;
     comment_depth++;
 }
 <COMMENT>"*/" {
     comment_depth--;
-    if (comment_depth > 0 ){
-        char range[20]; 
+    assert(comment_depth >= 0);
+    if(comment_depth > 0) {
+        char range[24];
+        if(comment_startlines[comment_top] > MAX_FILE_LINES) {
+            printf("Error. Maximum number of Lines reached. Sorry :(\n");
+            exit(1);
+        }
         sprintf(range, "%d - %d", comment_startlines[comment_top], yylineno);
         insertToken(&root, comment_startlines[comment_top], tokenCounter++, range, C_COMMENT, N_NESTED_COMMENT, S_ENUMERATED);
         comment_top--;
     }
-    if(comment_depth == 0){
+    if(comment_depth == 0) {
         char range[20]; 
         sprintf(range, "%d - %d", comment_startlines[comment_top], yylineno);
         insertToken(&root, comment_startlines[comment_top], tokenCounter++, range, C_COMMENT, N_MULTILINE_COMMENT, S_ENUMERATED);
         comment_top--;
+        assert(comment_top==-1);
         BEGIN(INITIAL);
     }
-
 }
 
 {line_comment}     { insertToken(&root, yylineno, tokenCounter++, "", C_COMMENT, N_LINE_COMMENT, S_ENUMERATED); }
@@ -105,6 +118,7 @@ python_comment    "#".*
 
 {integer}          { insertToken(&root, yylineno, tokenCounter++, yytext, C_CONST_INT, N_ERR, S_INTEGER); }
 {real}             { insertToken(&root, yylineno, tokenCounter++, yytext, C_CONST_REAL, N_ERR, S_REAL); } 
+
 {string} { 
     char tempyytext[100];
     strncpy(tempyytext, yytext + 1, yyleng - 2);  
@@ -159,7 +173,6 @@ python_comment    "#".*
 
 {id}                { insertToken(&root, yylineno, tokenCounter++, yytext, C_ID, N_ERR, S_CHARSTAR); }
 
-
 %% 
 
 int main (int argc, char** argv) {
@@ -170,19 +183,22 @@ int main (int argc, char** argv) {
         }
     } else { yyin = stdin; }
     
-    /*redirect output of lex*/
+    /* redirect output of lex */
     yyout = fopen("/dev/null", "w");  
     alpha_yylex(NULL);
     fclose(yyout);
 
+    /* Comments not closed */
     if(comment_depth > 0){
         printf("Error! The multiline comments are not closed properly. Try again :)\n");
         exit(1);
     }
 
-    /* DO NOT TOUCH THIS PRINTF */
+    /* Print Output */
     printf("   ======= Lexical Analysis =======\n\n");
     printTokens(root);
+    
+    /* Return Normally */
     freeTokenList(&root);
     return 0;
 }

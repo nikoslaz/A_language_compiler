@@ -17,7 +17,4 @@ $(TARGET): scanner.o  list.o
 #scanner.c
 $(TARGET).c: scanner.l list.h
 	flex scanner.l
-#run test
-run:
-	scanner test.txt
 #end of Makefile

@@ -1,12 +1,14 @@
 /* list.c */
-
+/**
+ * @authors nikos , nikoletta , mihalis
+ */
 #include "list.h"
 
 alpha_token_t* root = NULL;
 int tokenCounter = 1;
 int comment_depth = 0;
 int comment_top = -1; 
-int comment_startlines[100];
+int comment_startlines[MAX_NESTED_COMMENTS];
 
 char* cat_str[] = {
     "ERR",         /* 0 */
@@ -67,10 +69,10 @@ char* nam_str[] = {
     "PERIOD",            /* 40 */
     "PERIOD_PERIOD",     /* 41 */
     /* Comments */
-    "LINE_COMMENT",     /* 42 */
-    "PYTHON_COMMENT",   /* 43 */
-    "MULTILINE_COMMENT",/* 44 */
-    "NESTED_COMMENT"    /* 45 */
+    "LINE_COMMENT",      /* 42 */
+    "PYTHON_COMMENT",    /* 43 */
+    "MULTILINE_COMMENT", /* 44 */
+    "NESTED_COMMENT"     /* 45 */
 };
 
 char* sup_str[] = {
@@ -84,22 +86,21 @@ char* sup_str[] = {
 alpha_token_t* createTokenNode(unsigned int line, unsigned int num_token, char* zoumi, ALPHA_CATEGORY category, ALPHA_NAME name, ALPHA_SUPERCLASS superclass) {
     alpha_token_t* neoToken = (alpha_token_t*)malloc(sizeof(alpha_token_t));
     if(!neoToken) {
-        printf("memory alloc problem!\n");
-        return NULL;
+        printf("Fatal Error. Memory Allocation failed. Terminating...\n");
+        exit(1);
     }
     neoToken->line = line;
     neoToken->num_token = num_token;
     neoToken->zoumi = strdup(zoumi);
+    if(!zoumi) {
+        printf("Fatal Error. Memory Allocation failed. Terminating...\n");
+        exit(1);
+    }
     neoToken->category = category;
     neoToken->name = name;
     neoToken->superclass = superclass;
     neoToken->next = NULL;
     return neoToken;
-}
-
-void destroyToken(alpha_token_t* temp) {
-    free(temp->zoumi);
-    free(temp);
 }
 
 void insertToken(alpha_token_t** root, unsigned int line, unsigned int num_token, char* zoumi, ALPHA_CATEGORY category, ALPHA_NAME name, ALPHA_SUPERCLASS superclass) {
@@ -114,39 +115,6 @@ void insertToken(alpha_token_t** root, unsigned int line, unsigned int num_token
         temp = temp->next;
     }
     temp->next = neoToken;
-}
-
-void deleteToken(alpha_token_t** root, unsigned int num_token){
-    if (*root == NULL) return;
-    alpha_token_t* temp = *root;
-    alpha_token_t* prev = NULL;
-    // if the node is the head of the list
-    if(temp && temp->num_token == num_token) {
-        *root = temp->next;
-        destroyToken(temp);
-        return;
-    }
-    // search for the token
-    while(temp && temp->num_token != num_token) {
-        prev = temp;
-        temp = temp->next;
-    }
-    // not found
-    if(!temp) { return; }
-    // remove from list
-    prev->next = temp->next;
-    destroyToken(temp);
-}
-
-alpha_token_t* searchToken(alpha_token_t* root, unsigned int num_token){
-    alpha_token_t* temp = root;
-    while(temp) {
-        if(temp->num_token == num_token) {
-            return temp;
-        }
-        temp = temp->next;
-    }
-    return NULL;
 }
 
 void printTokens(alpha_token_t* root){
@@ -170,12 +138,52 @@ void printTokens(alpha_token_t* root){
     }
 }
 
+alpha_token_t* searchToken(alpha_token_t* root, unsigned int num_token){
+    alpha_token_t* temp = root;
+    while(temp) {
+        if(temp->num_token == num_token) {
+            return temp;
+        }
+        temp = temp->next;
+    }
+    return NULL;
+}
+
+void destroyToken(alpha_token_t** temp) {
+    free((*temp)->zoumi);
+    (*temp)->zoumi=NULL;
+    free(*temp);
+    temp=NULL;
+}
+
+void deleteToken(alpha_token_t** root, unsigned int num_token){
+    if (*root == NULL) return;
+    alpha_token_t* temp = *root;
+    alpha_token_t* prev = NULL;
+    /* If node is head */
+    if(temp && temp->num_token == num_token) {
+        *root = temp->next;
+        destroyToken(&temp);
+        return;
+    }
+    /* Search from token */
+    while(temp && temp->num_token != num_token) {
+        prev = temp;
+        temp = temp->next;
+    }
+    /* Not found */
+    if(!temp) { return; }
+    /* Remove from list */
+    prev->next = temp->next;
+    destroyToken(&temp);
+}
+
 void freeTokenList(alpha_token_t** root){
     alpha_token_t* temp;
     while(*root) {
         temp = *root;
         *root = (*root)->next;
-        destroyToken(temp);
+        destroyToken(&temp);
     }
 }
 

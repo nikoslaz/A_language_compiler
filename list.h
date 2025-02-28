@@ -1,11 +1,17 @@
 /* list.h */
-
+/**
+ * @authors nikos , nikoletta , mihalis
+ */
 #ifndef LIST_H
 #define LIST_H
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
+
+#define MAX_FILE_LINES 999999999
+#define MAX_NESTED_COMMENTS 100
 
 typedef enum ALPHA_CATEGORY {
     C_ERR         = 0,
@@ -69,7 +75,7 @@ typedef enum ALPHA_NAME {
     N_LINE_COMMENT      = 42,
     N_PYTHON_COMMENT    = 43,
     N_MULTILINE_COMMENT = 44,
-    N_NESTED_COMMENT = 45
+    N_NESTED_COMMENT    = 45
 } ALPHA_NAME;
 
 typedef enum ALPHA_SUPERCLASS {
@@ -80,6 +86,7 @@ typedef enum ALPHA_SUPERCLASS {
     S_REAL       =4
 } ALPHA_SUPERCLASS;
 
+/* AlphaToken Struct */
 typedef struct alpha_token_t {
     unsigned int line;
     unsigned int num_token;
@@ -92,19 +99,20 @@ typedef struct alpha_token_t {
     struct alpha_token_t* next; 
 } alpha_token_t;
 
-extern int tokenCounter;
+/* Global Variables */
 extern alpha_token_t* root;
-
+extern int tokenCounter;
 extern int comment_depth;
-extern int comment_startlines[100];  
 extern int comment_top;   
+extern int comment_startlines[MAX_NESTED_COMMENTS];  
 
+/* Implement List */
 alpha_token_t* createTokenNode(unsigned int line, unsigned int num_token, char* zoumi, ALPHA_CATEGORY category, ALPHA_NAME name, ALPHA_SUPERCLASS superclass);
-alpha_token_t* searchToken(alpha_token_t* root, unsigned int num_token);
-
 void insertToken(alpha_token_t** root, unsigned int line, unsigned int num_token, char* zoumi, ALPHA_CATEGORY category, ALPHA_NAME name, ALPHA_SUPERCLASS superclass);
-void deleteToken(alpha_token_t** root, unsigned int num_token);
 void printTokens(alpha_token_t* root);
+alpha_token_t* searchToken(alpha_token_t* root, unsigned int num_token);
+void destroyToken(alpha_token_t** temp);
+void deleteToken(alpha_token_t** root, unsigned int num_token);
 void freeTokenList(alpha_token_t** root);
 
 #endif
