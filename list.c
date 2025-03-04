@@ -107,7 +107,6 @@ void trim_escape(char** destination, char* source) {
     }
     tmp[--index]='\0';
     if(*(--source)!='\"') {
-        printf("Last known char: %c\n", *source);
         printf("Error! String is not closed properly. Try again :)\n");
         exit(1);
     }
@@ -122,10 +121,8 @@ alpha_token_t* createTokenNode(unsigned int line, unsigned int num_token, char* 
     }
     neoToken->line = line;
     neoToken->num_token = num_token;
-    
     if(category==C_STRING) { trim_escape(&neoToken->zoumi, zoumi); }
     else { neoToken->zoumi = strdup(zoumi); }
-    
     if(!zoumi) {
         printf("Fatal Error. Memory Allocation failed. Terminating...\n");
         exit(1);

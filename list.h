@@ -90,12 +90,10 @@ typedef enum ALPHA_SUPERCLASS {
 typedef struct alpha_token_t {
     unsigned int line;
     unsigned int num_token;
-    
     char* zoumi;
     ALPHA_CATEGORY category;
     ALPHA_NAME name;
     ALPHA_SUPERCLASS superclass;
-    
     struct alpha_token_t* next; 
 } alpha_token_t;
 
