@@ -74,9 +74,8 @@ typedef enum ALPHA_NAME {
     N_PERIOD_PERIOD     = 41,
     /* Comments */
     N_LINE_COMMENT      = 42,
-    N_PYTHON_COMMENT    = 43,
-    N_MULTILINE_COMMENT = 44,
-    N_NESTED_COMMENT    = 45
+    N_MULTILINE_COMMENT = 43,
+    N_NESTED_COMMENT    = 44
 } ALPHA_NAME;
 
 typedef enum ALPHA_SUPERCLASS {

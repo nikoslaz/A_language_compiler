@@ -65,7 +65,7 @@ colon_colon       "::"
 period            "."
 period_period     ".."
 line_comment      "//".*
-python_comment    "#".*
+illegal           [$~?#&|!_]
 
 %x COMMENT
 
@@ -114,7 +114,6 @@ python_comment    "#".*
 }
 
 {line_comment}     { insertToken(&root, yylineno, tokenCounter++, "", C_COMMENT, N_LINE_COMMENT, S_ENUMERATED); }
-{python_comment}   { insertToken(&root, yylineno, tokenCounter++, "", C_COMMENT, N_PYTHON_COMMENT, S_ENUMERATED); }
 
 {integer}          { insertToken(&root, yylineno, tokenCounter++, yytext, C_CONST_INT, N_ERR, S_INTEGER); }
 {real}             { insertToken(&root, yylineno, tokenCounter++, yytext, C_CONST_REAL, N_ERR, S_REAL); } 
@@ -169,6 +168,8 @@ python_comment    "#".*
 {period_period}     { insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_PERIOD_PERIOD, S_ENUMERATED); }    
 
 {id}                { insertToken(&root, yylineno, tokenCounter++, yytext, C_ID, N_ERR, S_CHARSTAR); }
+
+{illegal}           { printf("Error. Illegal Character. Sorry :(\n"); exit(1); }
 
 %% 
 
