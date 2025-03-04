@@ -13,7 +13,7 @@
     #define YY_DECL int alpha_yylex (void* yylval)
 %}
 
-%option outfile = "scanner.c"
+%option outfile = "al.c"
 %option noyywrap
 %option yylineno
 
