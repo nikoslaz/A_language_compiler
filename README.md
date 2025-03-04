@@ -13,7 +13,7 @@ Components: list.h, list.c, scanner.l
 
 Usage: After compiling using the supplied Makefile, run the following command:
 
-./scanner input_file
+./al input_file
 
 Where input_file is the path to the source code file. If no file is provided,
 the lexer will read from standard input.
