@@ -21,7 +21,7 @@ id                [a-zA-Z][a-zA-Z_0-9]*
 integer           (0[xX][0-9A-Fa-f]+)|([0-9]+)
 real              [0-9]*\.[0-9](e|E)?[0-9]*
 space             [\r\n\t\v]
-string            \"[^\"]*\"
+string            \"([^\"\\]|\\.)*\"?
 newline           "\n"
 if                "if"
 else              "else"
@@ -94,7 +94,7 @@ python_comment    "#".*
     comment_depth--;
     assert(comment_depth >= 0);
     if(comment_depth > 0) {
-        char range[24];
+        char range[MAX_COMMENT_RANGE];
         if(comment_startlines[comment_top] > MAX_FILE_LINES) {
             printf("Error. Maximum number of Lines reached. Sorry :(\n");
             exit(1);
@@ -119,11 +119,8 @@ python_comment    "#".*
 {integer}          { insertToken(&root, yylineno, tokenCounter++, yytext, C_CONST_INT, N_ERR, S_INTEGER); }
 {real}             { insertToken(&root, yylineno, tokenCounter++, yytext, C_CONST_REAL, N_ERR, S_REAL); } 
 
-{string} { 
-    char tempyytext[100];
-    strncpy(tempyytext, yytext + 1, yyleng - 2);  
-    tempyytext[yyleng - 2] = '\0';  
-    insertToken(&root, yylineno, tokenCounter++, tempyytext, C_STRING, N_ERR, S_CHARSTAR);
+{string} {   
+    insertToken(&root, yylineno, tokenCounter++, yytext, C_STRING, N_ERR, S_CHARSTAR);
 }
 
 {newline}           { }

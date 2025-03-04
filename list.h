@@ -12,6 +12,7 @@
 
 #define MAX_FILE_LINES 999999999
 #define MAX_NESTED_COMMENTS 100
+#define MAX_COMMENT_RANGE 24
 
 typedef enum ALPHA_CATEGORY {
     C_ERR         = 0,
@@ -107,6 +108,7 @@ extern int comment_top;
 extern int comment_startlines[MAX_NESTED_COMMENTS];  
 
 /* Implement List */
+void trim_escape(char** destination, char* source);
 alpha_token_t* createTokenNode(unsigned int line, unsigned int num_token, char* zoumi, ALPHA_CATEGORY category, ALPHA_NAME name, ALPHA_SUPERCLASS superclass);
 void insertToken(alpha_token_t** root, unsigned int line, unsigned int num_token, char* zoumi, ALPHA_CATEGORY category, ALPHA_NAME name, ALPHA_SUPERCLASS superclass);
 void printTokens(alpha_token_t* root);

@@ -83,6 +83,38 @@ char* sup_str[] = {
     "real"        /* 4 */
 };
 
+void trim_escape(char** destination, char* source) {
+    unsigned int len = strlen(source);
+    int index=0;
+    char* tmp = (char*)malloc(len*sizeof(char));
+    for(++source; (*source)!='\0'; source++) {
+        if(*source=='\\') {
+            source++;
+            switch(*source) {
+                case 'n': tmp[index++]='\n';
+                    break;
+                case '\\': tmp[index++]='\\';
+                    break;
+                case 't': tmp[index++]='\t';
+                    break;
+                case '\"': tmp[index++]='\"';
+                    break;
+                default: printf("Error! Illegal Escaped character. Try again :)\n");
+                    exit(1);
+            }
+        } else {
+            tmp[index++]=*source;
+        }
+    }
+    tmp[--index]='\0';
+    if(*(--source)!='\"') {
+        printf("Last known char: %c\n", *source);
+        printf("Error! String is not closed properly. Try again :)\n");
+        exit(1);
+    }
+    *destination=tmp;
+}
+
 alpha_token_t* createTokenNode(unsigned int line, unsigned int num_token, char* zoumi, ALPHA_CATEGORY category, ALPHA_NAME name, ALPHA_SUPERCLASS superclass) {
     alpha_token_t* neoToken = (alpha_token_t*)malloc(sizeof(alpha_token_t));
     if(!neoToken) {
@@ -91,7 +123,10 @@ alpha_token_t* createTokenNode(unsigned int line, unsigned int num_token, char* 
     }
     neoToken->line = line;
     neoToken->num_token = num_token;
-    neoToken->zoumi = strdup(zoumi);
+    
+    if(category==C_STRING) { trim_escape(&neoToken->zoumi, zoumi); }
+    else { neoToken->zoumi = strdup(zoumi); }
+    
     if(!zoumi) {
         printf("Fatal Error. Memory Allocation failed. Terminating...\n");
         exit(1);
