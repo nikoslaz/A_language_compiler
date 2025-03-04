@@ -1,3 +1,0 @@
-Niko eis wraios
-"i am \" stringos"
-zx=121321
