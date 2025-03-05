@@ -18,6 +18,8 @@ Usage: After compiling using the supplied Makefile, run the following command:
 Where input_file is the path to the source code file. If no file is provided,
 the lexer will read from standard input.
 
+NOTE: This program was run and tested inside Debian PC "Kasos" 
+
 Authors:
 csd4844 - Nikoletta Arvaniti
 csd4922 - Nikolaos Lazaridis
