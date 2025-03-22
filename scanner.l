@@ -11,6 +11,8 @@
     #endif
     #include "list.h"
     #define YY_DECL int alpha_yylex (void* yylval)
+
+    #include "parser.h"
 %}
 
 %option outfile = "al.c"
