@@ -17,12 +17,9 @@ $(TARGET): $(SCANNER).o $(PARSER).o $(LIST).o
 # Source Codes
 $(PARSER).c $(PARSER).h: $(PARSER).y
 	bison --yacc -d -v -o $(PARSER).c $^
-	touch $(PARSER).c
 $(SCANNER).c: $(SCANNER).l $(LIST).h $(PARSER).h
 	flex $(SCANNER).l
-	touch $(SCANNER).c
 # Clean the Directory
 clean:
 	rm -f *.o $(TARGET) $(SCANNER).c $(PARSER).c $(PARSER).h $(PARSER).output
-	clear
 # End of Makefile
