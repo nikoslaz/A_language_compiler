@@ -1,15 +1,28 @@
-all: parser
-
-parser: scanner.c parser.c list.c
-	@gcc $^ -o $@
-	@echo "syntax analyzer ready :D"
-
-parser.c parser.h: parser.y
-	@bison -d -v -o parser.c $^
-
-scanner.c: scanner.l
-	@flex $^
-
+# 0=============0
+# |   Makefile  |
+# 0=============0
+TARGET = calc
+LIST = list
+PARSER = parser
+SCANNER = scanner
+CC = gcc
+# Compile all
+all: $(TARGET)
+# Executable
+$(TARGET): $(SCANNER).o $(PARSER).o $(LIST).o
+	$(CC) -o $@ $^
+# Object Files
+%.o: %.c
+	$(CC) -c -o $@ $^
+# Source Codes
+$(PARSER).c $(PARSER).h: $(PARSER).y
+	bison --yacc -d -v -o $(PARSER).c $^
+	touch $(PARSER).c
+$(SCANNER).c: $(SCANNER).l $(LIST).h $(PARSER).h
+	flex $(SCANNER).l
+	touch $(SCANNER).c
+# Clean the Directory
 clean:
-	@rm -f parser scanner.c parser.c parser.h parser.output
-
+	rm -f *.o $(TARGET) $(SCANNER).c $(PARSER).c $(PARSER).h $(PARSER).output
+	clear
+# End of Makefile

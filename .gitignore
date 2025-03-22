@@ -1,8 +1,8 @@
-*.o
-al.c
-al
 .vscode
+*.o
 *.txt
+scanner.c
 parser.c
 parser.h
-parser
+parser.output
+calc

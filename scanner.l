@@ -10,7 +10,6 @@
     static int isatty (void *i) { return 0; }
     #endif
     #include "list.h"
-
     #include "parser.h"
 %}
 
