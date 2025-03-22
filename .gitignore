@@ -2,3 +2,7 @@
 al.c
 al
 .vscode
+*.txt
+parser.c
+parser.h
+parser
