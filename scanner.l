@@ -11,6 +11,12 @@
     #endif
     #include "list.h"
     #include "parser.h"
+
+    // #define RUN_LEX
+
+    #ifdef RUN_LEX
+    #define YY_DECL int alpha_yylex (void* yylval)
+    #endif
 %}
 
 %option outfile = "scanner.c"
@@ -20,7 +26,6 @@
 id                [a-zA-Z][a-zA-Z_0-9]*
 integer           (0[xX][0-9A-Fa-f]+)|([0-9]+)
 real              [0-9]*\.[0-9](e|E)?[0-9]*
-space             [\r\n\t\v]
 string            \"([^\"\\]|\\.)*\"?
 newline           "\n"
 if                "if"
@@ -65,7 +70,9 @@ colon_colon       "::"
 period            "."
 period_period     ".."
 line_comment      "//".*
-illegal           [$~?#&|!_]
+
+space             [\r\t\v]
+illegal           .
 
 %x COMMENT
 
@@ -113,60 +120,100 @@ illegal           [$~?#&|!_]
     }
 }
 
-{line_comment}     { insertToken(&root, yylineno, tokenCounter++, "", C_COMMENT, N_LINE_COMMENT, S_ENUMERATED); }
+{line_comment}      { insertToken(&root, yylineno, tokenCounter++, "", C_COMMENT, N_LINE_COMMENT, S_ENUMERATED); }
 
-{integer}          { insertToken(&root, yylineno, tokenCounter++, yytext, C_CONST_INT, N_ERR, S_INTEGER); }
-{real}             { insertToken(&root, yylineno, tokenCounter++, yytext, C_CONST_REAL, N_ERR, S_REAL); } 
+{integer}           { insertToken(&root, yylineno, tokenCounter++, yytext, C_CONST_INT, N_ERR, S_INTEGER);
+                    yylval.intZoumi = atoi(yytext);
+                    return INT; }
+{real}              { insertToken(&root, yylineno, tokenCounter++, yytext, C_CONST_REAL, N_ERR, S_REAL);
+                    yylval.realZoumi = atof(yytext);
+                    return REAL; } 
 
-{string}           { insertToken(&root, yylineno, tokenCounter++, yytext, C_STRING, N_ERR, S_CHARSTAR); }
+{string}            { insertToken(&root, yylineno, tokenCounter++, yytext, C_STRING, N_ERR, S_CHARSTAR);
+                    yylval.stringZoumi = strdup(yytext);
+                    return STRING; }
 
 {newline}           { }
-{if}                { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_IF, S_ENUMERATED); }
-{else}              { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_ELSE, S_ENUMERATED); }
-{while}             { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_WHILE, S_ENUMERATED); }
-{for}               { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_FOR, S_ENUMERATED); }
-{function}          { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_FUNCTION, S_ENUMERATED); }
-{return}            { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_RETURN, S_ENUMERATED); }    
-{break}             { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_BREAK, S_ENUMERATED); }  
-{continue}          { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_CONTINUE, S_ENUMERATED); }    
-{and}               { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_AND, S_ENUMERATED); }  
-{or}                { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_OR, S_ENUMERATED); }  
-{not}               { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_NOT, S_ENUMERATED); }   
-{local}             { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_LOCAL, S_ENUMERATED); }    
-{true}              { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_TRUE, S_ENUMERATED); }    
-{false}             { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_FALSE, S_ENUMERATED); }    
-{nil}               { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_NIL, S_ENUMERATED); }
+{if}                { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_IF, S_ENUMERATED); return IF; }
+{else}              { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_ELSE, S_ENUMERATED); return ELSE;}
+{while}             { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_WHILE, S_ENUMERATED); return WHILE; }
+{for}               { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_FOR, S_ENUMERATED); return FOR; }
+{function}          { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_FUNCTION, S_ENUMERATED); return FUNCTION; }
+{return}            { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_RETURN, S_ENUMERATED); return RETURN; }    
+{break}             { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_BREAK, S_ENUMERATED); return BREAK; }  
+{continue}          { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_CONTINUE, S_ENUMERATED); return CONTINUE; }    
+{and}               { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_AND, S_ENUMERATED); return AND; }  
+{or}                { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_OR, S_ENUMERATED); return OR; }  
+{not}               { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_NOT, S_ENUMERATED); return NOT; }   
+{local}             { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_LOCAL, S_ENUMERATED); return LOCAL; }    
+{true}              { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_TRUE, S_ENUMERATED); return TRUE; }    
+{false}             { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_FALSE, S_ENUMERATED); return FALSE; }    
+{nil}               { insertToken(&root, yylineno, tokenCounter++, yytext, C_KEYWORD, N_NIL, S_ENUMERATED); return NIL; }
 
-{equals}            { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_EQUALS, S_ENUMERATED); }    
-{plus}              { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_PLUS, S_ENUMERATED); }    
-{minus}             { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_MINUS, S_ENUMERATED); }    
-{mult}              { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_MULT, S_ENUMERATED); }    
-{div}               { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_DIV, S_ENUMERATED); }    
-{mod}               { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_MOD, S_ENUMERATED); }    
-{equals_equals}     { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_EQUALS_EQUALS, S_ENUMERATED); }    
-{not_equals}        { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_NOT_EQUALS, S_ENUMERATED); }    
-{plus_plus}         { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_PLUS_PLUS, S_ENUMERATED); }    
-{minus_minus}       { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_MINUS_MINUS, S_ENUMERATED); }    
-{greater}           { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_GREATER, S_ENUMERATED); }    
-{less}              { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_LESS, S_ENUMERATED); }    
-{greater_equals}    { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_GREATER_EQUAL, S_ENUMERATED); }    
-{less_equal}        { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_LESS_EQUAL, S_ENUMERATED); }    
+{equals}            { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_EQUALS, S_ENUMERATED); return EQUALS; }    
+{plus}              { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_PLUS, S_ENUMERATED); return PLUS; }    
+{minus}             { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_MINUS, S_ENUMERATED); return MINUS; }    
+{mult}              { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_MULT, S_ENUMERATED); return MULT; }    
+{div}               { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_DIV, S_ENUMERATED); return DIV; }    
+{mod}               { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_MOD, S_ENUMERATED); return MOD; }    
+{equals_equals}     { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_EQUALS_EQUALS, S_ENUMERATED); return EQUALS_EQUALS; }    
+{not_equals}        { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_NOT_EQUALS, S_ENUMERATED); return NOT_EQUALS; }    
+{plus_plus}         { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_PLUS_PLUS, S_ENUMERATED); return PLUS_PLUS; }    
+{minus_minus}       { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_MINUS_MINUS, S_ENUMERATED); return MINUS_MINUS; }    
+{greater}           { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_GREATER, S_ENUMERATED); return GREATER; }    
+{less}              { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_LESS, S_ENUMERATED); return LESS; }    
+{greater_equals}    { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_GREATER_EQUAL, S_ENUMERATED); return GREATER_EQUAL; }    
+{less_equal}        { insertToken(&root, yylineno, tokenCounter++, yytext, C_OPERATOR, N_LESS_EQUAL, S_ENUMERATED); return LESS_EQUAL; }    
 
-{left_brace}        { insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_LEFT_BRACE, S_ENUMERATED); }    
-{right_brace}       { insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_RIGHT_BRACE, S_ENUMERATED); }    
-{left_bracket}      { insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_LEFT_BRACKET, S_ENUMERATED); }    
-{right_bracket}     { insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_RIGHT_BRACKET, S_ENUMERATED); }    
-{left_parenthesis}  { insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_LEFT_PARENTHESIS, S_ENUMERATED); } 
-{right_parenthesis} { insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_RIGHT_PARENTHESIS, S_ENUMERATED); } 
-{semicolon}         { insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_SEMICOLON, S_ENUMERATED); }    
-{comma}             { insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_COMMA, S_ENUMERATED); }    
-{colon}             { insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_COLON, S_ENUMERATED); }    
-{colon_colon}       { insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_COLON_COLON, S_ENUMERATED); }    
-{period}            { insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_PERIOD, S_ENUMERATED); }    
-{period_period}     { insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_PERIOD_PERIOD, S_ENUMERATED); }    
+{left_brace}        { insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_LEFT_BRACE, S_ENUMERATED); return LEFT_BRACE; }    
+{right_brace}       { insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_RIGHT_BRACE, S_ENUMERATED); return RIGHT_BRACE; }    
+{left_bracket}      { insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_LEFT_BRACKET, S_ENUMERATED); return LEFT_BRACKET; }    
+{right_bracket}     { insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_RIGHT_BRACKET, S_ENUMERATED); return RIGHT_BRACKET; }    
+{left_parenthesis}  { insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_LEFT_PARENTHESIS, S_ENUMERATED); return LEFT_PARENTHESIS; } 
+{right_parenthesis} { insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_RIGHT_PARENTHESIS, S_ENUMERATED); return RIGHT_PARENTHESIS;} 
+{semicolon}         { insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_SEMICOLON, S_ENUMERATED); return SEMICOLON; }    
+{comma}             { insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_COMMA, S_ENUMERATED); return COMMA; }    
+{colon}             { insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_COLON, S_ENUMERATED); return COLON; }    
+{colon_colon}       { insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_COLON_COLON, S_ENUMERATED); return COLON_COLON; }    
+{period}            { insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_PERIOD, S_ENUMERATED); return PERIOD; }    
+{period_period}     { insertToken(&root, yylineno, tokenCounter++, yytext, C_PUNCTUATION, N_PERIOD_PERIOD, S_ENUMERATED); return PERIOD_PERIOD; }    
 
-{id}                { insertToken(&root, yylineno, tokenCounter++, yytext, C_ID, N_ERR, S_CHARSTAR); }
+{id}                { insertToken(&root, yylineno, tokenCounter++, yytext, C_ID, N_ERR, S_CHARSTAR);
+                    yylval.stringZoumi = strdup(yytext);
+                    return ID; }
 
-{illegal}           { printf("Error. Illegal Character. Sorry :(\n"); exit(1); }
+{space}             { }
+" "                 { }
+{illegal}           { printf("Error. Illegal Character %s in line %d.\n", yytext, yylineno); exit(1); }
 
 %% 
+
+#ifdef RUN_LEX
+int main (int argc, char** argv) {
+    if(argc > 1) {
+        if(!(yyin = fopen(argv[1], "r"))) {
+            fprintf(stderr, "Cannot read file: %s\n", argv[1]);
+            return 1;
+        }
+    } else { yyin = stdin; }
+    
+    /* redirect output of lex */
+    yyout = fopen("/dev/null", "w");  
+    alpha_yylex(NULL);
+    fclose(yyout);
+
+    /* Comments not closed */
+    if(comment_depth > 0){
+        printf("Error! The comment in line %d is not closed properly.\n", comment_startlines[comment_top]);
+        exit(1);
+    }
+
+    /* Print Output */
+    printf("   ======= Lexical Analysis =======\n\n");
+    printTokens(root);
+    
+    /* Return Normally */
+    freeTokenList(&root);
+    return 0;
+}
+#endif

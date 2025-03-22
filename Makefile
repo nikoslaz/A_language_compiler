@@ -11,15 +11,17 @@ all: $(TARGET)
 # Executable
 $(TARGET): $(SCANNER).o $(PARSER).o $(LIST).o
 	$(CC) -o $@ $^
+lex: $(SCANNER).o $(LIST).o
+	$(CC) -o $@ $^
 # Object Files
 %.o: %.c
 	$(CC) -c -o $@ $^
 # Source Codes
-$(PARSER).c $(PARSER).h: $(PARSER).y
+$(PARSER).c $(PARSER).h: $(PARSER).y 
 	bison --yacc -d -v -o $(PARSER).c $^
 $(SCANNER).c: $(SCANNER).l $(LIST).h $(PARSER).h
 	flex $(SCANNER).l
 # Clean the Directory
 clean:
-	rm -f *.o $(TARGET) $(SCANNER).c $(PARSER).c $(PARSER).h $(PARSER).output
+	rm -f *.o $(TARGET) $(SCANNER).c $(PARSER).c $(PARSER).h $(PARSER).output lex
 # End of Makefile

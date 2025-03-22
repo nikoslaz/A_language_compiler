@@ -98,7 +98,7 @@ void trim_escape(char** destination, char* source) {
                     break;
                 case '\"': tmp[index++]='\"';
                     break;
-                default: printf("Error! Illegal Escaped character. Try again :)\n");
+                default: printf("Error! Illegal Escaped character \\%c in line %d.\n", *source, yylineno);
                     exit(1);
             }
         } else {
@@ -107,7 +107,7 @@ void trim_escape(char** destination, char* source) {
     }
     tmp[--index]='\0';
     if(*(--source)!='\"') {
-        printf("Error! String is not closed properly. Try again :)\n");
+        printf("Error! String in line %d is not closed properly.\n", yylineno);
         exit(1);
     }
     *destination=tmp;

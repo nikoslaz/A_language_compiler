@@ -10,7 +10,7 @@
 #include <string.h>
 #include <assert.h>
 
-#define MAX_FILE_LINES 999999999
+#define MAX_FILE_LINES 9999999999
 #define MAX_NESTED_COMMENTS 100
 #define MAX_COMMENT_RANGE 24
 
@@ -102,7 +102,11 @@ extern alpha_token_t* root;
 extern int tokenCounter;
 extern int comment_depth;
 extern int comment_top;   
-extern int comment_startlines[MAX_NESTED_COMMENTS];  
+extern int comment_startlines[MAX_NESTED_COMMENTS];
+extern int yylineno;
+extern char* yytext;
+extern FILE* yyin;
+extern FILE * yyout;
 
 /* Implement List */
 void trim_escape(char** destination, char* source);
