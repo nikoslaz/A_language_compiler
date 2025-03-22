@@ -1,21 +1,14 @@
-# 0=============0
-# |   Makefile  |
-# 0=============0
-TARGET = al
-SOURCE = scanner
-CC = gcc
-#compile all
-all: $(TARGET)
-#clean the directory
+all: parser
+
+parser: scanner.c parser.c list.c
+	@gcc $^ -o $@
+	@echo "Syntax analyzer is ready to syntactically analyze :D"
+
+parser.c: parser.y
+	@bison -d -v $^
+
+scanner.c: scanner.l
+	@flex $^
+
 clean:
-	rm -f *.o $(TARGET) $(TARGET).c
-#executable
-$(TARGET): al.o  list.o
-	$(CC) $^ -o $@
-#.o files
-%.o: %.c list.h
-	$(CC) -c $< -o $@
-#al.c
-$(TARGET).c: $(SOURCE).l list.h
-	flex $(SOURCE).l
-#end of Makefile
+	@rm -f al parser scanner.c parser.c parser.h

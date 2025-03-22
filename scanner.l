@@ -10,12 +10,11 @@
     static int isatty (void *i) { return 0; }
     #endif
     #include "list.h"
-    #define YY_DECL int alpha_yylex (void* yylval)
 
     #include "parser.h"
 %}
 
-%option outfile = "al.c"
+%option outfile = "scanner.c"
 %option noyywrap
 %option yylineno
 
@@ -172,31 +171,3 @@ illegal           [$~?#&|!_]
 {illegal}           { printf("Error. Illegal Character. Sorry :(\n"); exit(1); }
 
 %% 
-
-int main (int argc, char** argv) {
-    if(argc > 1) {
-        if(!(yyin = fopen(argv[1], "r"))) {
-            fprintf(stderr, "Cannot read file: %s\n", argv[1]);
-            return 1;
-        }
-    } else { yyin = stdin; }
-    
-    /* redirect output of lex */
-    yyout = fopen("/dev/null", "w");  
-    alpha_yylex(NULL);
-    fclose(yyout);
-
-    /* Comments not closed */
-    if(comment_depth > 0){
-        printf("Error! The multiline comments are not closed properly. Try again :)\n");
-        exit(1);
-    }
-
-    /* Print Output */
-    printf("   ======= Lexical Analysis =======\n\n");
-    printTokens(root);
-    
-    /* Return Normally */
-    freeTokenList(&root);
-    return 0;
-}

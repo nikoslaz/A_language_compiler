@@ -2,13 +2,14 @@
     #include <stdio.h>
     #include "list.h"
     #define YY_DECL int alpha_yylex (void* yylval)
-    
+
     int yyerror (char* yaccProvidedMessage);
     int yylex (void);
 
     extern int yylineno;
     extern char* yytext;
     extern FILE* yyin;
+    extern FILE * yyout;
 %}
 
 %start program
@@ -83,7 +84,7 @@ int main(int argc, char** argv)
     }
     else
         yyin = stdin;
-
+    
     yyparse();
 
     return 0;
