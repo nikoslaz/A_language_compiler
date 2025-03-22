@@ -11,5 +11,5 @@ scanner.c: scanner.l
 	@flex $^
 
 clean:
-	@rm -f parser scanner.c parser.c parser.h
+	@rm -f parser scanner.c parser.c parser.h parser.output
 
