@@ -1,6 +1,7 @@
 %{
     #include <stdio.h>
     #include "list.h"
+    #include "table.h"
     #define YY_DECL int alpha_yylex (void* yylval)
 
     int yyerror(char* yaccProvidedMessage);
@@ -269,6 +270,7 @@ int yyerror(char* yaccProvidedMessage) {
 int main(int argc, char** argv) {
 
     /*EDW ARXIKOPOIOUME TO HASHTABLE KAI VAZOUME MESA TA LIB FUNCTIONS*/
+    
     if(argc > 1) {
         if(!(yyin = fopen(argv[1], "r"))) {
             fprintf(stderr, "Cannot read file: %s\n", argv[1]);
