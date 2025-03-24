@@ -88,11 +88,100 @@
 
 %%
 
+/*DEFINE GRAMMAR RULES  */
 program:
-    assignments expressions 
-    | /* empty */
+    stmt_list
     ;
 
+stmt_list:
+    stmt
+    | stmt_list stmt
+    ;
+
+stmt:
+    expr SEMICOLON
+    | ifstmt
+    | whilestmt
+    | forstmt
+    | returnstmt
+    | funcdef
+    | block
+    | BREAK SEMICOLON
+    | CONTINUE SEMICOLON
+    | SEMICOLON
+    ;
+
+expr:
+    assignexpr
+    | expr op expr
+    | term
+    ;
+
+assignexpr:
+    ID ASSIGN expr
+    ;
+
+op:
+    PLUS | MINUS | MULT | DIV | MOD
+    | GREATER | LESS | GREATER_EQUAL | LESS_EQUAL
+    | EQUAL | NOT_EQUAL
+    | AND | OR
+    ;
+
+term:
+    LEFT_PARENTHESIS expr RIGHT_PARENTHESIS
+    | '-' expr %prec UMINUS
+    | '!' expr %prec NOT
+    | primary
+    ;
+
+
+primary:
+    ID
+    | NUMBER
+    | STRING
+    | TRUE
+    | FALSE
+    | NIL
+    ;
+
+ifstmt:
+    IF '(' expr ')' stmt
+    | IF '(' expr ')' stmt ELSE stmt
+    ;
+
+whilestmt:
+    WHILE '(' expr ')' stmt
+    ;
+
+forstmt:
+    FOR '(' elist ';' expr ';' elist ')' stmt
+    ;
+
+returnstmt:
+    RETURN [ expr ] ';'
+    ;
+
+block:
+    '{' stmt_list '}'
+    ;
+
+funcdef:
+    FUNCTION ID '(' idlist ')' block
+    ;
+
+idlist:
+    /* empty */
+    | ID
+    | ID ',' idlist
+    ;
+
+elist:
+    /* empty */
+    | expr
+    | expr ',' elist
+    ;
+ /*mexri edw einai auta pou mas exei dwsei o savvidhs, apo dw kai pera einai tou frontisthriou*/
 expression:
     INT
     | ID
