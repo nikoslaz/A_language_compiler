@@ -118,13 +118,13 @@ expr:
     ;
 
 assignexpr:
-    ID ASSIGN expr
+    ID EQUALS expr
     ;
 
 op:
     PLUS | MINUS | MULT | DIV | MOD
     | GREATER | LESS | GREATER_EQUAL | LESS_EQUAL
-    | EQUAL | NOT_EQUAL
+    | EQUALS | NOT_EQUALS
     | AND | OR
     ;
 
@@ -138,7 +138,8 @@ term:
 
 primary:
     ID
-    | NUMBER
+    | INT
+    | REAL
     | STRING
     | TRUE
     | FALSE
