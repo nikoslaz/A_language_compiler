@@ -276,7 +276,10 @@ int main(int argc, char** argv) {
         }
     } else { yyin = stdin; }
  
+    /* redirect output of bison */
+    yyout = fopen("/dev/null", "w");  
     yyparse();
+    fclose(yyout);
 
     /* Comments not closed */
     if(comment_depth > 0){
@@ -288,6 +291,7 @@ int main(int argc, char** argv) {
     printf("\n   ======= Syntax Analysis =======\n\n");
     /*EDW PREPEI NA UPARXEI MIA PRINT()*/
     
+    /* Return Normally */
     // void free_HashTable(HashTable* ht);
     freeTokenList(&root);
 
