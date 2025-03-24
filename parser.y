@@ -5,6 +5,7 @@
 
     int yyerror(char* yaccProvidedMessage);
     int yylex(void);
+    /*GLOBAL VARIABLES ARE INSIDE THE LIST.H*/
 %}
 
 %start program
@@ -87,8 +88,8 @@
 %left RIGHT_BRACE LEFT_BRACE
 
 %%
-
 /* DEFINED GRAMMAR RULES  */
+
 program:
     stmt_list
     ;
@@ -266,6 +267,8 @@ int yyerror(char* yaccProvidedMessage) {
 /******************************/
 
 int main(int argc, char** argv) {
+
+    /*EDW ARXIKOPOIOUME TO HASHTABLE KAI VAZOUME MESA TA LIB FUNCTIONS*/
     if(argc > 1) {
         if(!(yyin = fopen(argv[1], "r"))) {
             fprintf(stderr, "Cannot read file: %s\n", argv[1]);
@@ -273,10 +276,14 @@ int main(int argc, char** argv) {
         }
     } else { yyin = stdin; }
     yyparse();
+
     /* Comments not closed */
     if(comment_depth > 0){
         printf("Error! The comment in line %d is not closed properly.\n", comment_startlines[comment_top]);
         exit(1);
     }
+
+    /*EDW PREPEI NA UPARXEI MIA PRINT()*/
+
     return 0;
 }
