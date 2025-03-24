@@ -62,7 +62,7 @@
 %token PERIOD
 %token PERIOD_PERIOD
 
-/* Ορισμός προτεραιοτήτων και προσεταιριστικότητας APO KATW PROS TA PANW!! */
+/* PROTERAIOTHTES KAI PROSETAIRISTIKOTHTA */
 
 %right EQUALS
 %left OR
@@ -88,14 +88,9 @@
 
 %%
 
-/*DEFINE GRAMMAR RULES  */
+/* DEFINED GRAMMAR RULES  */
 program:
     stmt_list
-    ;
-
-stmt_list:
-    stmt
-    | stmt_list stmt
     ;
 
 stmt:
@@ -111,6 +106,11 @@ stmt:
     | SEMICOLON
     ;
 
+stmt_list:
+    stmt stmt_list
+    |
+    ;
+
 expr:
     assignexpr
     | expr op expr
@@ -118,7 +118,7 @@ expr:
     ;
 
 assignexpr:
-    ID EQUALS expr
+    lvalue EQUALS expr
     ;
 
 op:
@@ -130,87 +130,131 @@ op:
 
 term:
     LEFT_PARENTHESIS expr RIGHT_PARENTHESIS
-    | '-' expr %prec UMINUS
-    | '!' expr %prec NOT
+    | MINUS expr %prec UMINUS
+    | NOT expr %prec NOT
+    | PLUS_PLUS lvalue
+    | lvalue PLUS_PLUS
+    | MINUS_MINUS lvalue
+    | lvalue MINUS_MINUS
     | primary
     ;
 
 
 primary:
+    lvalue
+    | call
+    | objectdef
+    | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS
+    | const 
+    ;
+
+lvalue:
     ID
-    | INT
-    | REAL
-    | STRING
-    | TRUE
-    | FALSE
-    | NIL
+    | LOCAL ID
+    | COLON_COLON ID
+    | member
     ;
 
-ifstmt:
-    IF '(' expr ')' stmt
-    | IF '(' expr ')' stmt ELSE stmt
+member:
+    lvalue PERIOD ID
+    | lvalue LEFT_BRACKET expr RIGHT_BRACKET
+    | call PERIOD ID
+    | call LEFT_BRACKET expr RIGHT_BRACKET
     ;
 
-whilestmt:
-    WHILE '(' expr ')' stmt
+call:
+    call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS
+    | lvalue callsuffix
+    |LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS LEFT_PARENTHESIS elist RIGHT_PARENTHESIS
     ;
 
-forstmt:
-    FOR '(' elist ';' expr ';' elist ')' stmt
+callsuffix:
+    normcall
+    | methodcall
     ;
 
-returnstmt:
-    RETURN [ expr ] ';'
+normcall:
+    LEFT_PARENTHESIS elist RIGHT_PARENTHESIS
     ;
 
-block:
-    '{' stmt_list '}'
-    ;
-
-funcdef:
-    FUNCTION ID '(' idlist ')' block
-    ;
-
-idlist:
-    /* empty */
-    | ID
-    | ID ',' idlist
+methodcall:
+    PERIOD_PERIOD ID LEFT_PARENTHESIS elist RIGHT_PARENTHESIS
     ;
 
 elist:
-    /* empty */
-    | expr
-    | expr ',' elist
+    expr elist_expressions
+    |
     ;
-    
- /*mexri edw einai auta pou mas exei dwsei o savvidhs, apo dw kai pera einai tou frontisthriou*/
-// expression:
-//     INT
-//     | ID
-//     | expression '+' expression
-//     | expression '-' expression
-//     | expression '*' expression
-//     | expression '/' expression
-//     | '(' expression ')'
-//     | '-' expression %prec UMINUS
-//     ;
 
-// expr:
-//     expression '\n'
+elist_expressions:
+    COMMA expr elist_expressions
+    |
+    ;
 
-// expressions:
-//     expressions expr
-//     | expr
-//     ;
+objectdef:
+    LEFT_BRACKET elist RIGHT_BRACKET
+    | LEFT_BRACKET indexed RIGHT_BRACKET
+    ;
 
-// assignment:
-//     ID '=' expression '\n'
-//     ;
+indexed:
+    indexedelem indexedelem_list
+    ;
 
-// assignments:
-//     assignments assignment
-//     | /* empty */
-//     ;
+indexedelem_list:
+    COMMA indexedelem indexedelem_list
+    |
+    ;
+
+indexedelem:
+    LEFT_BRACKET expr COLON expr RIGHT_BRACKET
+    ;
+
+block:
+    LEFT_BRACKET stmt_list RIGHT_BRACKET
+    | LEFT_BRACKET RIGHT_BRACKET
+    ;
+
+funcdef:
+    FUNCTION ID
+    | FUNCTION
+    ;
+
+const:
+    INT
+    | REAL
+    | STRING
+    | NIL
+    | TRUE
+    | FALSE
+    ;
+
+idlist:
+    ID idlist_list
+    |
+    ;
+
+idlist_list:
+    COMMA ID idlist_list
+    |
+    ;
+
+ifstmt:
+    IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt
+    | IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt ELSE stmt
+    ;
+
+whilestmt:
+    WHILE LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt
+    ;
+
+forstmt:
+    FOR LEFT_PARENTHESIS elist SEMICOLON expr SEMICOLON elist RIGHT_PARENTHESIS stmt
+    ;
+
+returnstmt:
+    RETURN SEMICOLON
+    | RETURN expr SEMICOLON
+    ;
 
 %%
 
