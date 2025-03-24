@@ -1,6 +1,4 @@
 %{
-    #include <stdio.h>
-    #include "list.h"
     #include "table.h"
     #define YY_DECL int alpha_yylex (void* yylval)
 
@@ -277,6 +275,7 @@ int main(int argc, char** argv) {
             return 1;
         }
     } else { yyin = stdin; }
+ 
     yyparse();
 
     /* Comments not closed */
@@ -285,7 +284,12 @@ int main(int argc, char** argv) {
         exit(1);
     }
 
+    /* Print Output */
+    printf("\n   ======= Syntax Analysis =======\n\n");
     /*EDW PREPEI NA UPARXEI MIA PRINT()*/
+    
+    // void free_HashTable(HashTable* ht);
+    freeTokenList(&root);
 
     return 0;
 }

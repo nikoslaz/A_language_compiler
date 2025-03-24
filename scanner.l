@@ -9,14 +9,9 @@
     #define YY_NO_UNISTD_H
     static int isatty (void *i) { return 0; }
     #endif
+    
     #include "list.h"
     #include "parser.h"
-
-    // #define RUN_LEX
-
-    #ifdef RUN_LEX
-    #define YY_DECL int alpha_yylex (void* yylval)
-    #endif
 %}
 
 %option outfile = "scanner.c"
@@ -187,33 +182,3 @@ illegal           .
 {illegal}           { printf("Error. Illegal Character %s in line %d.\n", yytext, yylineno); exit(1); }
 
 %% 
-
-#ifdef RUN_LEX
-int main (int argc, char** argv) {
-    if(argc > 1) {
-        if(!(yyin = fopen(argv[1], "r"))) {
-            fprintf(stderr, "Cannot read file: %s\n", argv[1]);
-            return 1;
-        }
-    } else { yyin = stdin; }
-    
-    /* redirect output of lex */
-    yyout = fopen("/dev/null", "w");  
-    alpha_yylex(NULL);
-    fclose(yyout);
-
-    /* Comments not closed */
-    if(comment_depth > 0){
-        printf("Error! The comment in line %d is not closed properly.\n", comment_startlines[comment_top]);
-        exit(1);
-    }
-
-    /* Print Output */
-    printf("   ======= Lexical Analysis =======\n\n");
-    printTokens(root);
-    
-    /* Return Normally */
-    freeTokenList(&root);
-    return 0;
-}
-#endif

@@ -3,25 +3,24 @@
 # 0=============0
 TARGET = calc
 LIST = list
+TABLE = table
 PARSER = parser
 SCANNER = scanner
 CC = gcc
 # Compile all
 all: $(TARGET)
 # Executable
-$(TARGET): $(SCANNER).o $(PARSER).o $(LIST).o
-	$(CC) -o $@ $^
-lex: $(SCANNER).o $(LIST).o
+$(TARGET): $(SCANNER).o $(PARSER).o $(LIST).o $(TABLE).o
 	$(CC) -o $@ $^
 # Object Files
 %.o: %.c
 	$(CC) -c -o $@ $^
 # Source Codes
-$(PARSER).c $(PARSER).h: $(PARSER).y 
-	bison --yacc -d -v -o $(PARSER).c $^
+$(PARSER).c $(PARSER).h: $(PARSER).y $(TABLE).h
+	bison --yacc -d -v -o $(PARSER).c $(PARSER).y
 $(SCANNER).c: $(SCANNER).l $(LIST).h $(PARSER).h
 	flex $(SCANNER).l
 # Clean the Directory
 clean:
-	rm -f *.o $(TARGET) $(SCANNER).c $(PARSER).c $(PARSER).h $(PARSER).output lex
+	rm -f *.o $(TARGET) $(SCANNER).c $(PARSER).c $(PARSER).h $(PARSER).output
 # End of Makefile

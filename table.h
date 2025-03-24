@@ -1,4 +1,4 @@
-/* SymbolTable.h */
+/* table.h */
 /**
  * @authors nikos , nikoletta , mihalis
  */
@@ -7,6 +7,23 @@
 
 #define HASH_SIZE 211
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+extern int yylineno;
+extern char* yytext;
+extern FILE* yyin;
+extern FILE* yyout;
+
+#define MAX_NESTED_COMMENTS 100
+extern int comment_startlines[MAX_NESTED_COMMENTS];
+extern int comment_top;   
+extern int comment_depth;
+typedef struct alpha_token_t alpha_token_t;
+extern alpha_token_t* root;
+void freeTokenList(alpha_token_t** root);
+
 /*ti sumvola mporoume na exoume */
 typedef enum SymbolType {
     VAR,
@@ -14,8 +31,7 @@ typedef enum SymbolType {
     LIBFUNC
 } SymbolType;
 
-typedef struct Symbol
-{
+typedef struct Symbol {
     char* name;
     SymbolType type; //var, func, libfunc
     int scope;
@@ -26,14 +42,12 @@ typedef struct Symbol
 } Symbol;
 
 /*LISTA GIA TA SCOPES*/
-typedef struct ScopeList
-{
+typedef struct ScopeList {
     Symbol* head; 
     struct ScopeList* next;
 } ScopeList;
 
-typedef struct HashTable
-{
+typedef struct HashTable {
     Symbol* buckets[HASH_SIZE]; //array of buckets
     ScopeList* scopes; //linked list of scope lists
     int currentScope;
@@ -50,3 +64,4 @@ void print_SymTable(HashTable* ht);
 void free_HashTable(HashTable* ht);
 
 #endif
+/* end of table.h */

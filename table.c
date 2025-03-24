@@ -1,6 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "table.h"
 
 HashTable* create_HashTable(){
@@ -18,7 +15,7 @@ HashTable* create_HashTable(){
     ht->currentScope = 0; //global scope
 
     /*create first scope GLOBAL*/
-    enter_Scope(ht);
+    // enter_Scope(ht);
 
     return ht;
 }
@@ -33,21 +30,23 @@ unsigned int hash(const char* str){
     return hash;
 }
 
-Symbol* insert_Symbol(HashTable* ht, const char* name, SymbolType type, int scope, int line){
-    /*uparxei?*/
+Symbol* insert_Symbol(HashTable* ht, const char* name, SymbolType type, int scope, int line) {
+    
+    /*
     Symbol* exists = lookUp_Symbol(ht, name, scope);
     if(exists){
         printf("Symbol %s already exists in defined scope %d at line %d\n", name, scope, line);
         return NULL;
     }
-    
+    */ 
+
     /*since it does not exist alredy make a new one*/
     Symbol* newSymbol = (Symbol*)malloc(sizeof(Symbol));
     if(!newSymbol){
         printf("memory alloc failed for symbol\n");
         exit(1);
     }
-    newSymbol->name = name;
+    newSymbol->name = strdup(name);
     newSymbol->type = type;
     newSymbol->scope = scope;
     newSymbol->line = line;

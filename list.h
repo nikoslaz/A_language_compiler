@@ -2,8 +2,8 @@
 /**
  * @authors nikos , nikoletta , mihalis
  */
-#ifndef LIST_H
-#define LIST_H
+#ifndef LINKEDLIST_H
+#define LINKEDLIST_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -100,21 +100,15 @@ typedef struct alpha_token_t {
 /* Global Variables */
 extern alpha_token_t* root;
 extern int tokenCounter;
-extern int comment_depth;
-extern int comment_top;   
 extern int comment_startlines[MAX_NESTED_COMMENTS];
+extern int comment_top;   
+extern int comment_depth;
 extern int yylineno;
-extern char* yytext;
-extern FILE* yyin;
-extern FILE * yyout;
 
 /* Implement List */
-void trim_escape(char** destination, char* source);
-alpha_token_t* createTokenNode(unsigned int line, unsigned int num_token, char* zoumi, ALPHA_CATEGORY category, ALPHA_NAME name, ALPHA_SUPERCLASS superclass);
 void insertToken(alpha_token_t** root, unsigned int line, unsigned int num_token, char* zoumi, ALPHA_CATEGORY category, ALPHA_NAME name, ALPHA_SUPERCLASS superclass);
 void printTokens(alpha_token_t* root);
 alpha_token_t* searchToken(alpha_token_t* root, unsigned int num_token);
-void destroyToken(alpha_token_t** temp);
 void deleteToken(alpha_token_t** root, unsigned int num_token);
 void freeTokenList(alpha_token_t** root);
 
