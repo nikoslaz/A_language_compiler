@@ -182,34 +182,35 @@ elist:
     | expr
     | expr ',' elist
     ;
+    
  /*mexri edw einai auta pou mas exei dwsei o savvidhs, apo dw kai pera einai tou frontisthriou*/
-expression:
-    INT
-    | ID
-    | expression '+' expression
-    | expression '-' expression
-    | expression '*' expression
-    | expression '/' expression
-    | '(' expression ')'
-    | '-' expression %prec UMINUS
-    ;
+// expression:
+//     INT
+//     | ID
+//     | expression '+' expression
+//     | expression '-' expression
+//     | expression '*' expression
+//     | expression '/' expression
+//     | '(' expression ')'
+//     | '-' expression %prec UMINUS
+//     ;
 
-expr:
-    expression '\n'
+// expr:
+//     expression '\n'
 
-expressions:
-    expressions expr
-    | expr
-    ;
+// expressions:
+//     expressions expr
+//     | expr
+//     ;
 
-assignment:
-    ID '=' expression '\n'
-    ;
+// assignment:
+//     ID '=' expression '\n'
+//     ;
 
-assignments:
-    assignments assignment
-    | /* empty */
-    ;
+// assignments:
+//     assignments assignment
+//     | /* empty */
+//     ;
 
 %%
 
