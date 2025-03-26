@@ -117,10 +117,6 @@ expr:
     | term
     ;
 
-assignexpr:
-    lvalue EQUALS expr
-    ;
-
 op:
     PLUS | MINUS | MULT | DIV | MOD
     | GREATER | LESS | GREATER_EQUAL | LESS_EQUAL
@@ -139,6 +135,9 @@ term:
     | primary
     ;
 
+assignexpr:
+    lvalue EQUALS expr
+    ;
 
 primary:
     lvalue
@@ -182,22 +181,28 @@ methodcall:
     ;
 
 elist:
-    expr elist_expressions
+    expr elist_list
     |
     ;
 
-elist_expressions:
-    COMMA expr elist_expressions
+elist_list:
+    COMMA expr elist_list
     |
     ;
 
 objectdef:
     LEFT_BRACKET elist RIGHT_BRACKET
     | LEFT_BRACKET indexed RIGHT_BRACKET
+    |
     ;
 
 indexed:
     indexedelem indexedelem_list
+    |
+    ;
+
+indexedelem:
+    LEFT_BRACE expr COLON expr RIGHT_BRACE
     ;
 
 indexedelem_list:
@@ -205,18 +210,14 @@ indexedelem_list:
     |
     ;
 
-indexedelem:
-    LEFT_BRACKET expr COLON expr RIGHT_BRACKET
-    ;
-
 block:
-    LEFT_BRACKET stmt_list RIGHT_BRACKET
-    | LEFT_BRACKET RIGHT_BRACKET
+    LEFT_BRACE stmt_list RIGHT_BRACE
+    | LEFT_BRACE RIGHT_BRACE
     ;
 
 funcdef:
-    FUNCTION ID
-    | FUNCTION
+    FUNCTION ID LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS block
+    | FUNCTION LEFT_PARENTHESIS idlist RIGHT_PARENTHESIS block
     ;
 
 const:
