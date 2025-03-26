@@ -75,7 +75,7 @@ Symbol* insert_Symbol(HashTable* ht, const char* name, SymbolType type, int scop
     return newSymbol;
 }
 
-void enter_scope(HashTable* ht) {
+void enter_Scope(HashTable* ht) {
     ScopeList* new_scope = (ScopeList*)malloc(sizeof(ScopeList));
     if (!new_scope) {
         fprintf(stderr, "Memory allocation failed for scope list\n");
@@ -87,7 +87,7 @@ void enter_scope(HashTable* ht) {
     ht->currentScope++;
 }
 
-Symbol* lookup_symbol(HashTable* ht, const char* name, int scope) {
+Symbol* lookUp_Symbol(HashTable* ht, const char* name, int scope) {
     unsigned int index = hash(name);
     Symbol* current = ht->buckets[index];
 
@@ -108,7 +108,7 @@ Symbol* lookup_symbol(HashTable* ht, const char* name, int scope) {
     return NULL;
 }
 
-void exit_scope(HashTable* ht) {
+void exit_Scope(HashTable* ht) {
     if (!ht->scopes) {
         fprintf(stderr, "No scope to exit\n");
         return;
@@ -118,7 +118,7 @@ void exit_scope(HashTable* ht) {
 }
 
 
-void free_hash_table(HashTable* ht) {
+void free_HashTable(HashTable* ht) {
     /*free all symbols*/
     for (int i = 0; i < HASH_SIZE; i++) {
         Symbol* current = ht->buckets[i];
