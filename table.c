@@ -140,3 +140,48 @@ void free_HashTable(HashTable* ht) {
 
     free(ht);
 }
+
+const char* symbolTypeToString(SymbolType type) {
+    if (type == GLOBAL) {
+        return "global variable";
+    }
+    else if (type == LOCAL > 0) {
+        return "local variable";
+    }
+    else if (type == FORMAL) {
+        return "formal argument"; 
+    }
+    else if (type == USERFUNC) {
+        return "user function";
+    }
+    else if (type == LIBFUNC) {
+        return "library function";
+    }
+    else {
+        return "unknown";
+    }
+}
+
+void print_SymTable(HashTable* ht) {
+    if (!ht) return;
+
+    const ScopeList* scopeNode = ht->scopes;
+    int scopeIndex = 0;
+
+    while (scopeNode) {
+        printf("---------- Scope %d ----------\n", scopeIndex);
+
+        const Symbol* symbol = scopeNode->head;
+        while (symbol) {
+            const char* typeStr = symbolTypeToString(symbol->type);
+
+            printf("\"%s\" [%s] (line %d) (scope %d)\n,", symbol->name, typeStr, symbol->line, symbol->scope);
+
+            symbol = symbol->next_in_scope;
+        }
+
+        scopeNode = scopeNode->next;
+        scopeIndex++;
+    }
+    
+}

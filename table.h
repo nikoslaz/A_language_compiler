@@ -26,14 +26,16 @@ void freeTokenList(alpha_token_t** root);
 
 /*ti sumvola mporoume na exoume */
 typedef enum SymbolType {
-    VAR,
-    FUNC,
+    GLOBAL,
+    LOCAL,
+    FORMAL,
+    USERFUNC,
     LIBFUNC
 } SymbolType;
 
 typedef struct Symbol {
     char* name;
-    SymbolType type; //var, func, libfunc
+    SymbolType type; // GLOBAL LOCAL FORMAL USERFUNC LIBFUNC
     int scope;
     int line;
 
