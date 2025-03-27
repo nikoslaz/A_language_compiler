@@ -15,7 +15,7 @@ HashTable* create_HashTable(){
     ht->currentScope = 0; //global scope
 
     /*create first scope GLOBAL*/
-    // enter_Scope(ht);
+    enter_Scope(ht);
 
     return ht;
 }
@@ -69,8 +69,15 @@ Symbol* insert_Symbol(HashTable* ht, const char* name, SymbolType type, int scop
         free(newSymbol);
         return NULL;
     }
-    newSymbol->next_in_scope = scope_list->head;
-    scope_list->head = newSymbol;
+    if (!scope_list->head) {
+        scope_list->head = newSymbol;
+    } else {
+        Symbol* current = scope_list->head;
+        while (current->next_in_scope) {
+            current = current->next_in_scope;
+        }
+        current->next_in_scope = newSymbol;
+    }
 
     return newSymbol;
 }
@@ -145,7 +152,7 @@ const char* symbolTypeToString(SymbolType type) {
     if (type == GLOBAL) {
         return "global variable";
     }
-    else if (type == LOCAL > 0) {
+    else if (type == LOCAL_T) {
         return "local variable";
     }
     else if (type == FORMAL) {
@@ -175,7 +182,7 @@ void print_SymTable(HashTable* ht) {
         while (symbol) {
             const char* typeStr = symbolTypeToString(symbol->type);
 
-            printf("\"%s\" [%s] (line %d) (scope %d)\n,", symbol->name, typeStr, symbol->line, symbol->scope);
+            printf("\"%s\" [%s] (line %d) (scope %d)\n", symbol->name, typeStr, symbol->line, symbol->scope);
 
             symbol = symbol->next_in_scope;
         }

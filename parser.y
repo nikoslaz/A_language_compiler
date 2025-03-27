@@ -269,7 +269,8 @@ int yyerror(char* yaccProvidedMessage) {
 int main(int argc, char** argv) {
 
     /*EDW ARXIKOPOIOUME TO HASHTABLE KAI VAZOUME MESA TA LIB FUNCTIONS*/
-    
+    HashTable* ht = create_HashTable();
+
     if(argc > 1) {
         if(!(yyin = fopen(argv[1], "r"))) {
             fprintf(stderr, "Cannot read file: %s\n", argv[1]);
@@ -291,9 +292,13 @@ int main(int argc, char** argv) {
     /* Print Output */
     printf("\n   ======= Syntax Analysis =======\n\n");
     /*EDW PREPEI NA UPARXEI MIA PRINT()*/
+    Symbol* test = insert_Symbol(ht, "hello", GLOBAL, 0, 0);
+    Symbol* test1 = insert_Symbol(ht, "hel", LOCAL_T, 0, 1);
+    Symbol* test2 = insert_Symbol(ht, "h", FORMAL, 0, 3);
+    print_SymTable(ht);
     
     /* Return Normally */
-    // void free_HashTable(HashTable* ht);
+    free_HashTable(ht);
     freeTokenList(&root);
 
     return 0;

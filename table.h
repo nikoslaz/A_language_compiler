@@ -27,7 +27,7 @@ void freeTokenList(alpha_token_t** root);
 /*ti sumvola mporoume na exoume */
 typedef enum SymbolType {
     GLOBAL,
-    LOCAL,
+    LOCAL_T,
     FORMAL,
     USERFUNC,
     LIBFUNC
