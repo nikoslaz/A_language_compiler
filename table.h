@@ -38,13 +38,14 @@ typedef struct Symbol {
     SymbolType type; // GLOBAL LOCAL FORMAL USERFUNC LIBFUNC
     int scope;
     int line;
-
+    int isActive;
     struct Symbol* next_in_scope; // for scope list
     struct Symbol* next_in_bucket; // for collision list
 } Symbol;
 
 /*LISTA GIA TA SCOPES*/
 typedef struct ScopeList {
+    int myScope;
     Symbol* head; 
     struct ScopeList* next;
 } ScopeList;

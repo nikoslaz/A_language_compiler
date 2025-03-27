@@ -13,6 +13,7 @@
 	char*	stringZoumi;
 	int		intZoumi;
 	double	realZoumi;
+    Symbol* mySymbol;
 }
 
 %token <stringZoumi> ID
