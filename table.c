@@ -141,17 +141,17 @@ void free_HashTable(HashTable* ht) {
     free(ht);
 }
 
-const char* symbolTypeToString(SymbolType type, int curr_scope) {
-    if (type == VAR && curr_scope == 0) {
+const char* symbolTypeToString(SymbolType type) {
+    if (type == GLOBAL) {
         return "global variable";
     }
-    else if (type == VAR && curr_scope > 0) {
+    else if (type == LOCAL > 0) {
         return "local variable";
     }
-    else if (type == VAR) { //Prepei na valoume kati akoma gia na bgazei to argument
+    else if (type == FORMAL) {
         return "formal argument"; 
     }
-    else if (type == FUNC) {
+    else if (type == USERFUNC) {
         return "user function";
     }
     else if (type == LIBFUNC) {
@@ -173,7 +173,7 @@ void print_SymTable(HashTable* ht) {
 
         const Symbol* symbol = scopeNode->head;
         while (symbol) {
-            const char* typeStr = symbolTypeToString(symbol->type, symbol->scope);
+            const char* typeStr = symbolTypeToString(symbol->type);
 
             printf("\"%s\" [%s] (line %d) (scope %d)\n,", symbol->name, typeStr, symbol->line, symbol->scope);
 
