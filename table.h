@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+//HashTable* ht;  //hashtable should be global right? 
 extern int yylineno;
 extern char* yytext;
 extern FILE* yyin;
@@ -45,14 +46,16 @@ typedef struct Symbol {
 
 /*LISTA GIA TA SCOPES*/
 typedef struct ScopeList {
-    int myScope;
+    int scope;
     Symbol* head; 
     struct ScopeList* next;
+    struct ScopeList* next_full; //next scope in the full scope list (ht->scopeListHead)
 } ScopeList;
 
 typedef struct HashTable {
     Symbol* buckets[HASH_SIZE]; //array of buckets
     ScopeList* scopes; //linked list of scope lists
+    ScopeList* scopeListHead; //head of the full scope list (never modified until free)
     int currentScope;
 } HashTable;
 
@@ -60,7 +63,7 @@ typedef struct HashTable {
 HashTable* create_HashTable();
 unsigned int hash(const char* str);
 Symbol* insert_Symbol(HashTable* ht, const char* name, SymbolType type, int scope, int line);
-Symbol* lookUp_Symbol(HashTable* ht, const char* name, int scope);
+Symbol* lookUp_Symbol(HashTable* ht, const char* name, int scope, int exact_scope);
 void enter_Scope(HashTable* ht);
 void exit_Scope(HashTable* ht);
 void print_SymTable(HashTable* ht);

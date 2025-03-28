@@ -12,10 +12,22 @@ HashTable* create_HashTable(){
     }
 
     ht->scopes = NULL;
+    ht->scopeListHead = NULL;
     ht->currentScope = 0; //global scope
 
-    /*create first scope GLOBAL*/
-    enter_Scope(ht);
+    /*inserting all the library functions*/
+    insert_Symbol(ht, "print", LIBFUNC, 0, 0);
+    insert_Symbol(ht, "input", LIBFUNC, 0, 0);
+    insert_Symbol(ht, "objectmemberkeys", LIBFUNC, 0, 0);
+    insert_Symbol(ht, "objecttotalmembers", LIBFUNC, 0, 0);
+    insert_Symbol(ht, "objectcopy", LIBFUNC, 0, 0);
+    insert_Symbol(ht, "totalarguments", LIBFUNC, 0, 0);
+    insert_Symbol(ht, "argument", LIBFUNC, 0, 0);
+    insert_Symbol(ht, "typeof", LIBFUNC, 0, 0);
+    insert_Symbol(ht, "strtonum", LIBFUNC, 0, 0);
+    insert_Symbol(ht, "sqrt", LIBFUNC, 0, 0);
+    insert_Symbol(ht, "cos", LIBFUNC, 0, 0);
+    insert_Symbol(ht, "sin", LIBFUNC, 0, 0);
 
     return ht;
 }
@@ -30,19 +42,56 @@ unsigned int hash(const char* str){
     return hash;
 }
 
-Symbol* insert_Symbol(HashTable* ht, const char* name, SymbolType type, int scope, int line) {
-    
-    /*
-    Symbol* exists = lookUp_Symbol(ht, name, scope);
-    if(exists){
-        printf("Symbol %s already exists in defined scope %d at line %d\n", name, scope, line);
-        return NULL;
-    }
-    */ 
+/*i think we should do d*/
 
-    /*since it does not exist alredy make a new one*/
+
+Symbol* insert_Symbol(HashTable* ht, const char* name, SymbolType type, int scope, int line) {
+    Symbol* exists = lookUp_Symbol(ht, name, scope, 1);
+    if (exists) {
+        if (exists->type == LIBFUNC && (type == USERFUNC || type == LOCAL_T)) {
+            ScopeList* scope_list = ht->scopeListHead;
+            while (scope_list && scope_list->scope != exists->scope) {
+                scope_list = scope_list->next_full;
+            }
+            if (scope_list) {
+                Symbol* current = scope_list->head;
+                Symbol* prev = NULL;
+                while (current && strcmp(current->name, name) != 0) {
+                    prev = current;
+                    current = current->next_in_scope;
+                }
+                if (current) {
+                    if (prev) {
+                        prev->next_in_scope = current->next_in_scope;
+                    } else {
+                        scope_list->head = current->next_in_scope;
+                    }
+                }
+            }
+            unsigned int index = hash(name);
+            Symbol* bucket_current = ht->buckets[index];
+            Symbol* bucket_prev = NULL;
+            while (bucket_current && strcmp(bucket_current->name, name) != 0) {
+                bucket_prev = bucket_current;
+                bucket_current = bucket_current->next_in_bucket;
+            }
+            if (bucket_current) {
+                if (bucket_prev) {
+                    bucket_prev->next_in_bucket = bucket_current->next_in_bucket;
+                } else {
+                    ht->buckets[index] = bucket_current->next_in_bucket;
+                }
+                free(bucket_current->name);
+                free(bucket_current);
+            }
+        } else {
+            printf("Symbol %s already exists in defined scope %d at line %d\n", name, scope, line);
+            return NULL;
+        }
+    }
+
     Symbol* newSymbol = (Symbol*)malloc(sizeof(Symbol));
-    if(!newSymbol){
+    if (!newSymbol) {
         printf("memory alloc failed for symbol\n");
         exit(1);
     }
@@ -53,21 +102,25 @@ Symbol* insert_Symbol(HashTable* ht, const char* name, SymbolType type, int scop
     newSymbol->next_in_bucket = NULL;
     newSymbol->next_in_scope = NULL;
 
-    /*insert into bucket (collision list)*/
-    unsigned int  index = hash(name);
+    unsigned int index = hash(name);
     newSymbol->next_in_bucket = ht->buckets[index];
     ht->buckets[index] = newSymbol;
 
-    /*insert into scope list*/
-    ScopeList* scope_list = ht->scopes;
-    while (scope_list && scope_list->head && scope_list->head->scope != scope) {
-        scope_list = scope_list->next;
+    ScopeList* scope_list = ht->scopeListHead;
+    while (scope_list && scope_list->scope != scope) {
+        scope_list = scope_list->next_full;
     }
     if (!scope_list) {
-        printf("Scope %d not found\n", scope);
-        free(newSymbol->name);
-        free(newSymbol);
-        return NULL;
+        scope_list = (ScopeList*)malloc(sizeof(ScopeList));
+        if (!scope_list) {
+            fprintf(stderr, "Memory allocation failed for scope list\n");
+            exit(1);
+        }
+        scope_list->head = NULL;
+        scope_list->scope = scope;
+        scope_list->next = NULL;
+        scope_list->next_full = ht->scopeListHead;
+        ht->scopeListHead = scope_list;
     }
     if (!scope_list->head) {
         scope_list->head = newSymbol;
@@ -90,29 +143,53 @@ void enter_Scope(HashTable* ht) {
     }
     new_scope->head = NULL;
     new_scope->next = ht->scopes;
+    new_scope->scope = ht->currentScope;
     ht->scopes = new_scope;
+    new_scope->next_full = ht->scopeListHead; 
+    printf("Entering scope %d\n", ht->currentScope);
     ht->currentScope++;
+    printf("New current scope: %d\n", ht->currentScope);
 }
 
-Symbol* lookUp_Symbol(HashTable* ht, const char* name, int scope) {
-    unsigned int index = hash(name);
-    Symbol* current = ht->buckets[index];
-
-    /*check collision list*/
-    while (current) {
-        if (strcmp(current->name, name) == 0) {
-            //if scope is -1, we don't care about scope (global lookup)
-            if (scope == -1 || current->scope == scope) {
-                return current;
-            }
-            //check if the symbol is in a parent scope (for nested lookups)
-            if (scope >= 0 && current->scope <= scope) {
-                return current;
-            }
+/*I THINK THIS SHOULD BE CHANGED*/
+/*modified based on alpha rules: variables in the current scope should be found first
+if not found search in parent scopes up to scope 0
+for :: only scope 0 should be checked.*/
+Symbol* lookUp_Symbol(HashTable* ht, const char* name, int scope, int exact_scope) {
+    if (exact_scope) {
+        // Find the ScopeList node for the given scope
+        ScopeList* scope_list = ht->scopeListHead;
+        while (scope_list && scope_list->scope != scope) {
+            scope_list = scope_list->next;
         }
-        current = current->next_in_bucket;
+        if (!scope_list) {
+            return NULL;  // Scope not found
+        }
+
+        // Search only the symbols in this scope
+        Symbol* current = scope_list->head;
+        while (current) {
+            if (strcmp(current->name, name) == 0) {
+                return current;
+            }
+            current = current->next_in_scope;
+        }
+        return NULL;
+    } else {
+        // Regular lookup: search all buckets, considering parent scopes
+        unsigned int index = hash(name);
+        Symbol* current = ht->buckets[index];
+
+        while (current) {
+            if (strcmp(current->name, name) == 0) {
+                if (current->scope == scope || (scope >= 0 && current->scope <= scope)) {
+                    return current;
+                }
+            }
+            current = current->next_in_bucket;
+        }
+        return NULL;
     }
-    return NULL;
 }
 
 void exit_Scope(HashTable* ht) {
@@ -122,11 +199,14 @@ void exit_Scope(HashTable* ht) {
     }
     ht->scopes = ht->scopes->next;
     ht->currentScope--;
+    if (ht->currentScope < 0) {
+        fprintf(stderr, "Error: Attempted to exit below global scope\n");
+        ht->currentScope = 0;
+    }
 }
 
 
 void free_HashTable(HashTable* ht) {
-    /*free all symbols*/
     for (int i = 0; i < HASH_SIZE; i++) {
         Symbol* current = ht->buckets[i];
         while (current) {
@@ -135,15 +215,17 @@ void free_HashTable(HashTable* ht) {
             free(temp->name);
             free(temp);
         }
+        ht->buckets[i] = NULL;
     }
 
-    /*free scope lists*/
-    ScopeList* scope = ht->scopes;
+    ScopeList* scope = ht->scopeListHead;
     while (scope) {
         ScopeList* temp = scope;
-        scope = scope->next;
+        scope = scope->next_full;
         free(temp);
     }
+    ht->scopes = NULL;
+    ht->scopeListHead = NULL;
 
     free(ht);
 }
@@ -169,26 +251,74 @@ const char* symbolTypeToString(SymbolType type) {
     }
 }
 
+
 void print_SymTable(HashTable* ht) {
     if (!ht) return;
 
-    const ScopeList* scopeNode = ht->scopes;
-    int scopeIndex = 0;
-
-    while (scopeNode) {
-        printf("---------- Scope %d ----------\n", scopeIndex);
-
-        const Symbol* symbol = scopeNode->head;
-        while (symbol) {
-            const char* typeStr = symbolTypeToString(symbol->type);
-
-            printf("\"%s\" [%s] (line %d) (scope %d)\n", symbol->name, typeStr, symbol->line, symbol->scope);
-
-            symbol = symbol->next_in_scope;
-        }
-
-        scopeNode = scopeNode->next;
-        scopeIndex++;
+    const ScopeList* scopeNode = ht->scopeListHead;
+    if (!scopeNode) {
+        printf("No scopes to print\n");
+        return;
     }
-    
+
+    // Find the maximum scope number
+    int max_scope = -1;
+    const ScopeList* temp = scopeNode;
+    while (temp) {
+        if (temp->scope > max_scope) {
+            max_scope = temp->scope;
+        }
+        temp = temp->next_full;
+    }
+
+    // Print symbols for each scope from 0 to max_scope
+    for (int scope = 0; scope <= max_scope; scope++) {
+        int scope_found = 0;
+        scopeNode = ht->scopeListHead;
+        while (scopeNode) {
+            if (scopeNode->scope == scope) {
+                if (!scope_found) {
+                    printf("Scope #%d\n", scope);
+                    printf("----------\n");
+                    scope_found = 1;
+                }
+
+                const Symbol* symbol = scopeNode->head;
+                while (symbol) {
+                    const char* typeStr = symbolTypeToString(symbol->type);
+                    printf("\"%s\" [%s] (line %d) (scope %d)\n", symbol->name, typeStr, symbol->line, symbol->scope);
+                    symbol = symbol->next_in_scope;
+                }
+            }
+            scopeNode = scopeNode->next_full;
+        }
+        if (scope_found) {
+            printf("\n");  // Add a newline between scopes
+        }
+    }
 }
+
+
+// void print_SymTable(HashTable* ht) {
+//     if (!ht) return;
+
+//     const ScopeList* scopeNode = ht->scopes;
+//     int scopeIndex = 0;
+
+//     while (scopeNode) {
+//         printf("---------- Scope %d ----------\n", scopeIndex);
+
+//         const Symbol* symbol = scopeNode->head;
+//         while (symbol) {
+//             const char* typeStr = symbolTypeToString(symbol->type);
+
+//             printf("\"%s\" [%s] (line %d) (scope %d)\n", symbol->name, typeStr, symbol->line, symbol->scope);
+
+//             symbol = symbol->next_in_scope;
+//         }
+
+//         scopeNode = scopeNode->next;
+//         scopeIndex++;
+//     }
+    
+// }
