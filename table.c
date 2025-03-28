@@ -192,6 +192,76 @@ Symbol* lookUp_Symbol(HashTable* ht, const char* name, int scope, int exact_scop
     }
 }
 
+/*NIKOS*/
+Symbol* lookUp_LocalSymbol(const char* name){
+    //search only current scope if found return it else null also check lib functions!!
+    
+}
+
+Symbol* insert_LocalSymbol(const char* name){
+    //search only current scope if found return it else null
+    //if scope 0 make it global, call insert global symbol, else insert local
+}
+
+Symbol* define_LocalSymbol(const char* name){
+    //calls the lookup uf found return else insert local symbol
+}
+
+
+
+
+/*NIKOLETTA*/
+Symbol* lookUp_GlobalSymbol(const char* name){
+    //search only global scope if found return it else  ERROR
+}
+
+
+Symbol* insert_GlobalSymbol(const char* name){
+    //save as global 
+}
+
+/*DEFINE GLOBAL HERE*/
+
+
+
+/*LET IT BE!!!!*/
+
+Symbol* lookUp_Symbol(const char* name){
+    //VARIABLES:search all the previous scopes including current until you find variable with the same name that can reach current scope without bool isFUnc getting in the way
+    //PIIPAPAAAAA
+    //FUNCTIONS: all the previous scopes
+    //global always visible
+    
+}
+
+Symbol* insert_Symbol(const char* name){
+    //check the scope: if 0 make it global else error
+}
+
+
+
+/*MIXALIS*/
+Symbol* lookUp_FuncSymbol(const char* name){
+    //only current scope and libfunc if found error else call insert
+    
+}
+
+Symbol* insert_FuncSymbol(const char* name){
+    //self explanatory
+}
+
+
+Symbol* lookUp_FormalSymbol(const char* name){
+    //only current scope and libfunc if found error else call insert
+    
+}
+
+Symbol* insert_FormalSymbol(const char* name){
+    //same as local! but as formal arg
+}
+
+
+
 void exit_Scope(HashTable* ht) {
     if (!ht->scopes) {
         fprintf(stderr, "No scope to exit\n");

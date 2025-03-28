@@ -49,7 +49,8 @@ typedef struct ScopeList {
     int scope;
     Symbol* head; 
     struct ScopeList* next;
-    struct ScopeList* next_full; //next scope in the full scope list (ht->scopeListHead)
+    struct ScopeList* next_full; //next scope in the full scope list (ht->scopeListHead) CHECK THIS OUT!!
+    int isFunc; // for scope reasons!!!
 } ScopeList;
 
 typedef struct HashTable {
