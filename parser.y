@@ -1,11 +1,8 @@
 %{
+    /**
+     * @authors nikos , nikoletta , mihalis
+     */
     #include "table.h"
-    #define YY_DECL int alpha_yylex (void* yylval)
-
-    int yyerror(char* yaccProvidedMessage);
-    int yylex(void);
-    /*GLOBAL VARIABLES ARE INSIDE THE LIST.H*/
-    HashTable* ht;
 %}
 
 %start program
@@ -77,7 +74,8 @@
 
 %right NOT MINUS_MINUS PLUS_PLUS
 
-%right UMINUS
+%right UMINUS_CONFLICT
+%nonassoc ELIST_INDEXED_CONFLICT
 
 %left DOT DOUBLE_DOT
 
@@ -86,7 +84,6 @@
 %left LEFT_PARENTHESIS RIGHT_PARENTHESIS
 
 %%
-/* DEFINED GRAMMAR RULES  */
 
 program:
     stmt_list
@@ -125,7 +122,7 @@ op:
 
 term:
     LEFT_PARENTHESIS expr RIGHT_PARENTHESIS
-    | MINUS expr %prec UMINUS
+    | MINUS expr %prec UMINUS_CONFLICT
     | NOT expr %prec NOT
     | PLUS_PLUS lvalue
     | lvalue PLUS_PLUS
@@ -148,41 +145,17 @@ primary:
 
 lvalue:
     ID {
-        /*we should search only on current scope and scope 0!!!!!!! SOSOSOSOSOSO*/
-        // Regular lookup: search from current scope upward to scope 0
-        Symbol* sym = lookUp_Symbol(ht, $1, ht->currentScope, ht->currentScope-1);
-        if (!sym) {
-            // If not found, insert as a new variable
-            if (ht->currentScope == 0) {
-                insert_Symbol(ht, $1, GLOBAL, ht->currentScope, yylineno);
-            } else {
-                insert_Symbol(ht, $1, LOCAL_T, ht->currentScope, yylineno);
-            }
-        }
+        /* TODO */
     }
     | LOCAL ID {
-        // Check for redeclaration in the exact scope
-        //change the lookup take only $1 etc
-        Symbol* sym = lookUp_Symbol(//ht, $2, ht->currentScope, ht->);
-        if (sym) {
-            //return
-        } else {
-            insert_Symbol(ht, $2, LOCAL_T, ht->currentScope, yylineno);
-        }
+        resolve_LocalSymbol($2);
     }
     | COLON_COLON ID {
-        // Global lookup: only search in scope 0
-        Symbol* sym = lookUp_Symbol(ht, $2, 0, 1);
-        if (!sym) {
-            fprintf(stderr, "Error: Global variable %s not found at line %d\n", $2, yylineno);
-        }
+        /* TODO */
     }
     | member
     | call COLON_COLON ID {
-        Symbol* sym = lookUp_Symbol(ht, $3, 0, 1);
-        if (!sym) {
-            fprintf(stderr, "Error: Global variable %s not found at line %d\n", $3, yylineno);
-        }
+        /* TODO */
     }
     ;
 
@@ -224,46 +197,47 @@ elist_list:
 
 objectdef:
     LEFT_BRACKET elist RIGHT_BRACKET
-    | LEFT_BRACKET indexed RIGHT_BRACKET
-    |
-    ;
-
-indexed:
-    indexedelem indexedelem_list
-    |
+    | LEFT_BRACKET indexed RIGHT_BRACKET %prec ELIST_INDEXED_CONFLICT
     ;
 
 indexedelem:
     LEFT_BRACE expr COLON expr RIGHT_BRACE
     ;
 
-indexedelem_list:
-    COMMA indexedelem indexedelem_list
+indexed:
+    indexedelem indexed_list
+    { /* Indexed is only used inside objectdef, and its empty rule is already
+    covered by the elist empty rule, thus we are able to remove it from here,
+    which also removes the warning message Bison generates :D */ }
+    ;
+
+indexed_list:
+    COMMA indexedelem indexed_list
     |
     ;
 
 block:
-    LEFT_BRACE stmt_list RIGHT_BRACE
-    | LEFT_BRACE RIGHT_BRACE
+     LEFT_BRACE {
+        if(!fromFunct) { enter_Next_Scope(0); }
+        fromFunct=0;
+    } stmt_list RIGHT_BRACE {
+        exit_Current_Scope();
+    }
     ;
 
-/*THIS IS NOT CORRECT YET I THINK. THE SCOPE CHANGES WITH ( and the arguments should also be kept.*/
 funcdef:
-    FUNCTION ID LEFT_PARENTHESIS {
-        Symbol* sym = lookUp_Symbol(ht, $2, ht->currentScope, 1);
-        if (sym) {
-            fprintf(stderr, "Error: Function %s already defined in scope %d at line %d\n", $2, ht->currentScope, sym->line);
-        } else {
-            insert_Symbol(ht, $2, USERFUNC, ht->currentScope, yylineno);
-        }
-        enter_Scope(ht);
-    } idlist RIGHT_PARENTHESIS block { exit_Scope(ht); }
-    | FUNCTION LEFT_PARENTHESIS {
-        char anon_name[32];
-        snprintf(anon_name, sizeof(anon_name), "anon_func_%d", yylineno);
-        insert_Symbol(ht, anon_name, USERFUNC, ht->currentScope, yylineno);
-        enter_Scope(ht);
-    } idlist RIGHT_PARENTHESIS block { exit_Scope(ht); }
+    FUNCTION ID {
+        resolve_FuncSymbol($2);
+    } LEFT_PARENTHESIS {
+        fromFunct=1;
+        enter_Next_Scope(1);
+    } idlist RIGHT_PARENTHESIS block
+    | FUNCTION {
+        resolve_AnonymousFunc();
+    } LEFT_PARENTHESIS {
+        fromFunct=1;
+        enter_Next_Scope(1);
+    } idlist RIGHT_PARENTHESIS block
     ;
 
 const:
@@ -277,26 +251,14 @@ const:
 
 idlist:
     ID {
-        printf("Processing formal argument %s in scope %d\n", $1, ht->currentScope);
-        Symbol* sym = lookUp_Symbol(ht, $1, ht->currentScope, 1);
-        if (sym) {
-            fprintf(stderr, "Error: Formal argument %s already defined in scope %d at line %d\n", $1, ht->currentScope, sym->line);
-        } else {
-            insert_Symbol(ht, $1, FORMAL, ht->currentScope, yylineno);
-        }
+        resolve_FormalSymbol($1);
     } idlist_list
     |
     ;
 
 idlist_list:
     COMMA ID {
-        // Check for redeclaration in the exact scope
-        Symbol* sym = lookUp_Symbol(ht, $2, ht->currentScope, 1);
-        if (sym) {
-            fprintf(stderr, "Error: Formal argument %s already defined in scope %d at line %d\n", $2, ht->currentScope, sym->line);
-        } else {
-            insert_Symbol(ht, $2, FORMAL, ht->currentScope, yylineno);
-        }
+        resolve_FormalSymbol($2);
     } idlist_list
     |
     ;
@@ -321,17 +283,9 @@ returnstmt:
 
 %%
 
-int yyerror(char* yaccProvidedMessage) {
-    fprintf(stderr, "%s: at line %d, before token: %s\n", yaccProvidedMessage, yylineno, yytext);
-    fprintf(stderr, "INPUT NOT VALID\n");
-}
-
-/******************************/
-
 int main(int argc, char** argv) {
 
-    /*EDW ARXIKOPOIOUME TO HASHTABLE KAI VAZOUME MESA TA LIB FUNCTIONS*/
-    ht = create_HashTable();
+    Initialize_HashTable();
 
     if(argc > 1) {
         if(!(yyin = fopen(argv[1], "r"))) {
@@ -340,7 +294,7 @@ int main(int argc, char** argv) {
         }
     } else { yyin = stdin; }
  
-    /* redirect output of bison */
+    /* Redirect output of Bison */
     yyout = fopen("/dev/null", "w");  
     yyparse();
     fclose(yyout);
@@ -353,13 +307,10 @@ int main(int argc, char** argv) {
 
     /* Print Output */
     printf("\n   ======= Syntax Analysis =======\n\n");
-    // Symbol* test = insert_Symbol(ht, "hello", GLOBAL, 0, 0);
-    // Symbol* test1 = insert_Symbol(ht, "hel", LOCAL_T, 0, 1);
-    // Symbol* test2 = insert_Symbol(ht, "h", FORMAL, 0, 3);
-    print_SymTable(ht);
+    print_SymTable();
     
     /* Return Normally */
-    free_HashTable(ht);
+    free_HashTable();
     freeTokenList(&root);
 
     return 0;

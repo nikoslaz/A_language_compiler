@@ -1,394 +1,319 @@
+/**
+ * @authors nikos , nikoletta , mihalis
+ */
 #include "table.h"
 
-HashTable* create_HashTable(){
-    HashTable* ht = (HashTable*)malloc(sizeof(HashTable));
-    if(!ht){
-        printf("memory allocation failed for hashtable\n");
-        exit(1);
-    }
-    /*initialize buckets to null*/
-    for(int i=0; i < HASH_SIZE; i++){
-        ht->buckets[i] = NULL;
-    }
+/* Globals */
+HashTable* ht;
+int AnonymousCounter = 0;
+int maxScope = -1;
+int fromFunct = 0;
+Symbol* currFunction;
 
-    ht->scopes = NULL;
-    ht->scopeListHead = NULL;
-    ht->currentScope = 0; //global scope
-
-    /*inserting all the library functions*/
-    insert_Symbol(ht, "print", LIBFUNC, 0, 0);
-    insert_Symbol(ht, "input", LIBFUNC, 0, 0);
-    insert_Symbol(ht, "objectmemberkeys", LIBFUNC, 0, 0);
-    insert_Symbol(ht, "objecttotalmembers", LIBFUNC, 0, 0);
-    insert_Symbol(ht, "objectcopy", LIBFUNC, 0, 0);
-    insert_Symbol(ht, "totalarguments", LIBFUNC, 0, 0);
-    insert_Symbol(ht, "argument", LIBFUNC, 0, 0);
-    insert_Symbol(ht, "typeof", LIBFUNC, 0, 0);
-    insert_Symbol(ht, "strtonum", LIBFUNC, 0, 0);
-    insert_Symbol(ht, "sqrt", LIBFUNC, 0, 0);
-    insert_Symbol(ht, "cos", LIBFUNC, 0, 0);
-    insert_Symbol(ht, "sin", LIBFUNC, 0, 0);
-
-    return ht;
+/* Helper Function */
+void MemoryFail(void) {
+    fprintf(stderr, "Fatal Error. Memory Allocation failed\n");
+    exit(1);
 }
+
+int yyerror(char* yaccProvidedMessage) {
+    fprintf(stderr, "\nError in Line %d: %s\nINPUT NOT VALID\n",
+    yylineno, yaccProvidedMessage);
+    exit(1);
+}
+
+/*===============================================================================================*/
+/* Scope Handling */
+
+void pushNextScope(int which_scope) {
+    scope_snake* new = (scope_snake*)malloc(sizeof(scope_snake));
+    if(!new) { MemoryFail(); }
+    new->scope = which_scope;
+    new->next = ht->ScopeSnakeHead;
+    ht->ScopeSnakeHead = new;
+    return;
+}
+
+void enter_Next_Scope(int fromFunct) {
+    if(maxScope!=-1) {
+        pushNextScope(ht->currentScope);
+        printf("Pushed scope %d into stack\n", ht->currentScope);
+    }
+    ScopeList* new_scope = (ScopeList*)malloc(sizeof(ScopeList));
+    if(!new_scope) { MemoryFail(); }
+    new_scope->head = NULL;
+    new_scope->scope = ++maxScope;
+    new_scope->next = ht->ScopesHead;
+    ht->ScopesHead = new_scope;
+    ht->currentScope = maxScope;
+    new_scope->isFunc = fromFunct;
+    printf("Entered scope %d in line %d\n", maxScope, yylineno);
+    return;
+}
+
+int popNextScope(void) {
+    if(!ht->ScopeSnakeHead) { assert(0); }
+    int res = ht->ScopeSnakeHead->scope;
+    scope_snake* tmp = ht->ScopeSnakeHead;
+    ht->ScopeSnakeHead = ht->ScopeSnakeHead->next;
+    free(tmp);
+    return res;
+}
+
+void exit_Current_Scope(void) {
+    printf("Exiting current scope %d at line %d\n", ht->currentScope, yylineno);
+    /* Find current ScopeList */
+    ScopeList* scope_list = ht->ScopesHead;
+    while(scope_list && scope_list->scope != ht->currentScope) {
+        scope_list = scope_list->next;
+    }
+    if(!scope_list) { assert(0); }
+    
+    /* Set isActve to 0 */
+    Symbol* curr = scope_list->head;
+    while(curr) {
+        curr->isActive = 0;
+        curr = curr->next_in_scope;
+    }
+    
+    /* POP NEW SCOPE FROM SCOPESNAKE */
+    ht->currentScope=popNextScope();
+    printf("Popped Scope is now %d\n", ht->currentScope);
+    return;
+}
+
+/*===============================================================================================*/
+/* Insertion */
+
+Symbol* insert_mikeSymbol(char* name, SymbolType type) {
+    /* Create new Node */
+    Symbol* new = (Symbol*)malloc(sizeof(Symbol));
+    if(!new) { MemoryFail(); }
+    new->isActive = 1;
+    new->line = yylineno;
+    new->name = name;
+    new->type = type;
+    new->scope = ht->currentScope;
+    new->args = NULL;
+    new->next_in_scope = NULL;
+    if(type==USERFUNC_T) { currFunction = new; }
+    /* Link with HashTable */
+    int index = hash(name);
+    new->next_in_bucket = ht->buckets[index];
+    ht->buckets[index] = new;
+    /* Link with ScopeList */
+    ScopeList* scope_list = ht->ScopesHead;
+    while(scope_list && (scope_list->scope != ht->currentScope)) {
+        scope_list = scope_list->next;
+    }
+    if(!scope_list) { assert(0); }
+    /* If im First */
+    if(!scope_list->head) { scope_list->head = new; }
+    /* Insert at the end */
+    else {
+        Symbol* prev = scope_list->head;
+        while(prev->next_in_scope) { prev = prev->next_in_scope; }
+        prev->next_in_scope = new;
+    }
+    /* Return */
+    return new;
+}
+
+/*===============================================================================================*/
+/* Hashtable */
 
 unsigned int hash(const char* str){
     unsigned int hash = 0;
-    while(*str){
+    while(*str) {
         hash = (hash * 31 + *str) % HASH_SIZE;
         str++;
     }
-
     return hash;
 }
 
-/*i think we should do d*/
-
-
-Symbol* insert_Symbol(HashTable* ht, const char* name, SymbolType type, int scope, int line) {
-    Symbol* exists = lookUp_Symbol(ht, name, scope, 1);
-    if (exists) {
-        if (exists->type == LIBFUNC && (type == USERFUNC || type == LOCAL_T)) {
-            ScopeList* scope_list = ht->scopeListHead;
-            while (scope_list && scope_list->scope != exists->scope) {
-                scope_list = scope_list->next_full;
-            }
-            if (scope_list) {
-                Symbol* current = scope_list->head;
-                Symbol* prev = NULL;
-                while (current && strcmp(current->name, name) != 0) {
-                    prev = current;
-                    current = current->next_in_scope;
-                }
-                if (current) {
-                    if (prev) {
-                        prev->next_in_scope = current->next_in_scope;
-                    } else {
-                        scope_list->head = current->next_in_scope;
-                    }
-                }
-            }
-            unsigned int index = hash(name);
-            Symbol* bucket_current = ht->buckets[index];
-            Symbol* bucket_prev = NULL;
-            while (bucket_current && strcmp(bucket_current->name, name) != 0) {
-                bucket_prev = bucket_current;
-                bucket_current = bucket_current->next_in_bucket;
-            }
-            if (bucket_current) {
-                if (bucket_prev) {
-                    bucket_prev->next_in_bucket = bucket_current->next_in_bucket;
-                } else {
-                    ht->buckets[index] = bucket_current->next_in_bucket;
-                }
-                free(bucket_current->name);
-                free(bucket_current);
-            }
-        } else {
-            printf("Symbol %s already exists in defined scope %d at line %d\n", name, scope, line);
-            return NULL;
-        }
+void Initialize_HashTable(void){
+    ht = (HashTable*)malloc(sizeof(HashTable));
+    if(!ht) { MemoryFail(); }
+    /* Initialize all buckets to NULL */
+    for(int i=0; i < HASH_SIZE; i++) {
+        ht->buckets[i] = NULL;
     }
-
-    Symbol* newSymbol = (Symbol*)malloc(sizeof(Symbol));
-    if (!newSymbol) {
-        printf("memory alloc failed for symbol\n");
-        exit(1);
-    }
-    newSymbol->name = strdup(name);
-    newSymbol->type = type;
-    newSymbol->scope = scope;
-    newSymbol->line = line;
-    newSymbol->next_in_bucket = NULL;
-    newSymbol->next_in_scope = NULL;
-
-    unsigned int index = hash(name);
-    newSymbol->next_in_bucket = ht->buckets[index];
-    ht->buckets[index] = newSymbol;
-
-    ScopeList* scope_list = ht->scopeListHead;
-    while (scope_list && scope_list->scope != scope) {
-        scope_list = scope_list->next_full;
-    }
-    if (!scope_list) {
-        scope_list = (ScopeList*)malloc(sizeof(ScopeList));
-        if (!scope_list) {
-            fprintf(stderr, "Memory allocation failed for scope list\n");
-            exit(1);
-        }
-        scope_list->head = NULL;
-        scope_list->scope = scope;
-        scope_list->next = NULL;
-        scope_list->next_full = ht->scopeListHead;
-        ht->scopeListHead = scope_list;
-    }
-    if (!scope_list->head) {
-        scope_list->head = newSymbol;
-    } else {
-        Symbol* current = scope_list->head;
-        while (current->next_in_scope) {
-            current = current->next_in_scope;
-        }
-        current->next_in_scope = newSymbol;
-    }
-
-    return newSymbol;
+    /* Create Scope 0 */
+    ht->ScopesHead = NULL;
+    ht->ScopeSnakeHead = NULL;
+    enter_Next_Scope(0);
+    /* Insert all Library Functions */    
+    insert_mikeSymbol("print", LIBFUNC_T);
+    insert_mikeSymbol("input", LIBFUNC_T);
+    insert_mikeSymbol("objectmemberkeys", LIBFUNC_T);
+    insert_mikeSymbol("objecttotalmembers", LIBFUNC_T);
+    insert_mikeSymbol("objectcopy", LIBFUNC_T);
+    insert_mikeSymbol("totalarguments", LIBFUNC_T);
+    insert_mikeSymbol("argument", LIBFUNC_T);
+    insert_mikeSymbol("typeof", LIBFUNC_T);
+    insert_mikeSymbol("strtonum", LIBFUNC_T);
+    insert_mikeSymbol("sqrt", LIBFUNC_T);
+    insert_mikeSymbol("cos", LIBFUNC_T);
+    insert_mikeSymbol("sin", LIBFUNC_T);
+    return;
 }
 
-void enter_Scope(HashTable* ht) {
-    ScopeList* new_scope = (ScopeList*)malloc(sizeof(ScopeList));
-    if (!new_scope) {
-        fprintf(stderr, "Memory allocation failed for scope list\n");
-        exit(1);
-    }
-    new_scope->head = NULL;
-    new_scope->next = ht->scopes;
-    new_scope->scope = ht->currentScope;
-    ht->scopes = new_scope;
-    new_scope->next_full = ht->scopeListHead; 
-    printf("Entering scope %d\n", ht->currentScope);
-    ht->currentScope++;
-    printf("New current scope: %d\n", ht->currentScope);
-}
-
-/*I THINK THIS SHOULD BE CHANGED*/
-/*modified based on alpha rules: variables in the current scope should be found first
-if not found search in parent scopes up to scope 0
-for :: only scope 0 should be checked.*/
-Symbol* lookUp_Symbol(HashTable* ht, const char* name, int scope, int exact_scope) {
-    if (exact_scope) {
-        // Find the ScopeList node for the given scope
-        ScopeList* scope_list = ht->scopeListHead;
-        while (scope_list && scope_list->scope != scope) {
-            scope_list = scope_list->next;
-        }
-        if (!scope_list) {
-            return NULL;  // Scope not found
-        }
-
-        // Search only the symbols in this scope
-        Symbol* current = scope_list->head;
-        while (current) {
-            if (strcmp(current->name, name) == 0) {
-                return current;
-            }
-            current = current->next_in_scope;
-        }
-        return NULL;
-    } else {
-        // Regular lookup: search all buckets, considering parent scopes
-        unsigned int index = hash(name);
-        Symbol* current = ht->buckets[index];
-
-        while (current) {
-            if (strcmp(current->name, name) == 0) {
-                if (current->scope == scope || (scope >= 0 && current->scope <= scope)) {
-                    return current;
-                }
-            }
-            current = current->next_in_bucket;
-        }
-        return NULL;
-    }
-}
-
-/*NIKOS*/
-Symbol* lookUp_LocalSymbol(const char* name){
-    //search only current scope if found return it else null also check lib functions!!
-    
-}
-
-Symbol* insert_LocalSymbol(const char* name){
-    //search only current scope if found return it else null
-    //if scope 0 make it global, call insert global symbol, else insert local
-}
-
-Symbol* define_LocalSymbol(const char* name){
-    //calls the lookup uf found return else insert local symbol
-}
-
-
-
+/*===============================================================================================*/
 
 /*NIKOLETTA*/
 Symbol* lookUp_GlobalSymbol(const char* name){
     //search only global scope if found return it else  ERROR
 }
 
-
 Symbol* insert_GlobalSymbol(const char* name){
     //save as global 
 }
 
-/*DEFINE GLOBAL HERE*/
-
-
+/*===============================================================================================*/
 
 /*LET IT BE!!!!*/
 
-Symbol* lookUp_Symbol(const char* name){
-    //VARIABLES:search all the previous scopes including current until you find variable with the same name that can reach current scope without bool isFUnc getting in the way
-    //PIIPAPAAAAA
-    //FUNCTIONS: all the previous scopes
-    //global always visible
-    
+Symbol* resolve_RawSymbol(const char* name){
+    // VARIABLES:search all the previous scopes including current
+    // until you find variable with the same name that can reach current scope
+    // without bool isFunc getting in the way
+    // PIIPAPAAAAA
+    // FUNCTIONS: all the previous scopes
+    // globals always visible
 }
 
-Symbol* insert_Symbol(const char* name){
-    //check the scope: if 0 make it global else error
-}
+/*===============================================================================================*/
+/* Functions */
 
-
-
-/*MIXALIS*/
-Symbol* lookUp_FuncSymbol(const char* name){
-    //only current scope and libfunc if found error else call insert
-    
-}
-
-Symbol* insert_FuncSymbol(const char* name){
-    //self explanatory
-}
-
-
-Symbol* lookUp_FormalSymbol(const char* name){
-    //only current scope and libfunc if found error else call insert
-    
-}
-
-Symbol* insert_FormalSymbol(const char* name){
-    //same as local! but as formal arg
-}
-
-
-
-void exit_Scope(HashTable* ht) {
-    if (!ht->scopes) {
-        fprintf(stderr, "No scope to exit\n");
-        return;
-    }
-    ht->scopes = ht->scopes->next;
-    ht->currentScope--;
-    if (ht->currentScope < 0) {
-        fprintf(stderr, "Error: Attempted to exit below global scope\n");
-        ht->currentScope = 0;
-    }
-}
-
-
-void free_HashTable(HashTable* ht) {
-    for (int i = 0; i < HASH_SIZE; i++) {
-        Symbol* current = ht->buckets[i];
-        while (current) {
-            Symbol* temp = current;
-            current = current->next_in_bucket;
-            free(temp->name);
-            free(temp);
+int is_Lib_Func(const char* name) {
+    Symbol* curr = ht->buckets[hash(name)];
+    while(curr) {
+        if(curr->type==LIBFUNC_T && strcmp(name, curr->name)==0) {
+            return 1;
         }
-        ht->buckets[i] = NULL;
+        curr = curr->next_in_bucket;
     }
+    return 0;
+}
 
-    ScopeList* scope = ht->scopeListHead;
-    while (scope) {
-        ScopeList* temp = scope;
-        scope = scope->next_full;
-        free(temp);
+int lookUp_CurrentScope(const char* name) {
+    /* Search my Scope for any Symbol with the same name */
+    Symbol* curr = ht->buckets[hash(name)];
+    while(curr) {
+        if(curr->scope==ht->currentScope && strcmp(name, curr->name)==0) {
+            return 1;
+        }
+        curr = curr->next_in_bucket;
     }
-    ht->scopes = NULL;
-    ht->scopeListHead = NULL;
+    return 0;
+}
 
-    free(ht);
+/*===============================================================================================*/
+/* Resolves */
+
+Symbol* resolve_FuncSymbol(char* name) {
+    printf("Resolving %s in line %d\n", name, yylineno);
+    if(is_Lib_Func(name)) { yyerror("Trying to redefine Library Function"); }
+    else if(lookUp_CurrentScope(name)) { yyerror("Symbol already defined"); }
+    else { return insert_mikeSymbol(name, USERFUNC_T); }
+    assert(0);
+}
+
+Symbol* resolve_AnonymousFunc(void) {
+    printf("Resolving anonymous in line %d\n", yylineno);
+    if(AnonymousCounter>MAX_ANONYMOUS_FUNCTIONS) {
+        printf("Error. Maximum number of Anonymous Functions reached. Sorry :(\n");
+        exit(1);
+    }
+    char* anon_name = (char*)malloc(10*sizeof(char));
+    if(!anon_name) { MemoryFail(); }
+    sprintf(anon_name, "$func%d", AnonymousCounter++);
+    return insert_mikeSymbol(anon_name, USERFUNC_T);
+}
+
+Symbol* resolve_FormalSymbol(char* name) {
+    printf("Resolving %s in line %d\n", name, yylineno);
+    if(is_Lib_Func(name)) { yyerror("Trying to redefine Library Function"); }
+    else if(lookUp_CurrentScope(name)) { yyerror("Formal Argument Redefinition"); }
+    else {
+        /* Insert Symbol */
+        Symbol* new = insert_mikeSymbol(name, FORMAL_T);
+        /* Create Argument node */
+        argument_node* newarg = (argument_node*)malloc(sizeof(argument_node));
+        if(!newarg) { MemoryFail(); }
+        newarg->symbol = new;
+        newarg->next = NULL;
+        /* Link at the End */
+        if(!currFunction->args) { currFunction->args = newarg; }
+        else {
+            argument_node* currnode = currFunction->args;
+            while(currnode->next) { currnode = currnode->next; }
+            currnode->next = newarg;
+        }
+        /* Return */
+        return new;
+    }
+    assert(0);
+}
+
+Symbol* resolve_LocalSymbol(char* name) {
+    if(is_Lib_Func(name)) { yyerror("Trying to redefine Library Function"); }
+    else if(lookUp_CurrentScope(name)) { return NULL; }
+    else {
+        if(ht->currentScope==0) {
+            return insert_mikeSymbol(name, GLOBAL_T);
+        } else {
+            return insert_mikeSymbol(name, LOCAL_T);
+        }
+    }
+    assert(0);
+}
+
+/*===============================================================================================*/
+/* Final Steps */
+
+void free_HashTable(void) {
+    /* TODO */
 }
 
 const char* symbolTypeToString(SymbolType type) {
-    if (type == GLOBAL) {
-        return "global variable";
+    switch(type) {
+        case GLOBAL_T: return "global variable";
+        case LOCAL_T: return "local variable";
+        case FORMAL_T: return "formal argument";
+        case USERFUNC_T: return "user function";
+        case LIBFUNC_T: return "library function";
+        default: return "unknown";
     }
-    else if (type == LOCAL_T) {
-        return "local variable";
-    }
-    else if (type == FORMAL) {
-        return "formal argument"; 
-    }
-    else if (type == USERFUNC) {
-        return "user function";
-    }
-    else if (type == LIBFUNC) {
-        return "library function";
-    }
-    else {
-        return "unknown";
-    }
+    assert(0);
 }
 
-
-void print_SymTable(HashTable* ht) {
-    if (!ht) return;
-
-    const ScopeList* scopeNode = ht->scopeListHead;
-    if (!scopeNode) {
-        printf("No scopes to print\n");
-        return;
-    }
-
-    // Find the maximum scope number
-    int max_scope = -1;
-    const ScopeList* temp = scopeNode;
-    while (temp) {
-        if (temp->scope > max_scope) {
-            max_scope = temp->scope;
+/* Recursive Print */
+void printScopes(const ScopeList* scopelist) {
+    /* Base Case */
+    if(!scopelist) { return; }
+    /* Print in reverse order Recursively */
+    printScopes(scopelist->next);
+    /* My job */
+    printf("---------- Scope %d ----------\n", scopelist->scope);
+    Symbol* symbol = scopelist->head;
+    while(symbol) {
+        /* Do not print Library Functions :D */
+        if(symbol->type!=LIBFUNC_T) {
+            printf("\"%s\" [%s] (line %d) (scope %d)\n",
+            symbol->name, symbolTypeToString(symbol->type),
+            symbol->line, symbol->scope);
         }
-        temp = temp->next_full;
+        symbol = symbol->next_in_scope;
     }
-
-    // Print symbols for each scope from 0 to max_scope
-    for (int scope = 0; scope <= max_scope; scope++) {
-        int scope_found = 0;
-        scopeNode = ht->scopeListHead;
-        while (scopeNode) {
-            if (scopeNode->scope == scope) {
-                if (!scope_found) {
-                    printf("Scope #%d\n", scope);
-                    printf("----------\n");
-                    scope_found = 1;
-                }
-
-                const Symbol* symbol = scopeNode->head;
-                while (symbol) {
-                    const char* typeStr = symbolTypeToString(symbol->type);
-                    printf("\"%s\" [%s] (line %d) (scope %d)\n", symbol->name, typeStr, symbol->line, symbol->scope);
-                    symbol = symbol->next_in_scope;
-                }
-            }
-            scopeNode = scopeNode->next_full;
-        }
-        if (scope_found) {
-            printf("\n");  // Add a newline between scopes
-        }
-    }
+    return;
 }
 
+/* API */
+void print_SymTable(void) {
+    const ScopeList* scopeNode = ht->ScopesHead;
+    printScopes(scopeNode);
+    return;
+}
 
-// void print_SymTable(HashTable* ht) {
-//     if (!ht) return;
-
-//     const ScopeList* scopeNode = ht->scopes;
-//     int scopeIndex = 0;
-
-//     while (scopeNode) {
-//         printf("---------- Scope %d ----------\n", scopeIndex);
-
-//         const Symbol* symbol = scopeNode->head;
-//         while (symbol) {
-//             const char* typeStr = symbolTypeToString(symbol->type);
-
-//             printf("\"%s\" [%s] (line %d) (scope %d)\n", symbol->name, typeStr, symbol->line, symbol->scope);
-
-//             symbol = symbol->next_in_scope;
-//         }
-
-//         scopeNode = scopeNode->next;
-//         scopeIndex++;
-//     }
-    
-// }
+/* end of table.c */
