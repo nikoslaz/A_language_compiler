@@ -95,10 +95,10 @@ stmt:
     | whilestmt
     | forstmt
     | returnstmt
-    | funcdef
-    | block
     | BREAK SEMICOLON
     | CONTINUE SEMICOLON
+    | block
+    | funcdef
     | SEMICOLON
     ;
 
@@ -116,7 +116,7 @@ expr:
 op:
     PLUS | MINUS | MULT | DIV | MOD
     | GREATER | LESS | GREATER_EQUAL | LESS_EQUAL
-    | EQUALS | NOT_EQUALS
+    | EQUALS_EQUALS | NOT_EQUALS
     | AND | OR
     ;
 
@@ -145,18 +145,15 @@ primary:
 
 lvalue:
     ID {
-        /* TODO */
+        resolve_RawSymbol($1);
     }
     | LOCAL ID {
         resolve_LocalSymbol($2);
     }
     | COLON_COLON ID {
-        /* TODO */
+        resolve_GlobalSymbol($2);
     }
     | member
-    | call COLON_COLON ID {
-        /* TODO */
-    }
     ;
 
 member:

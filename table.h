@@ -86,17 +86,19 @@ extern int fromFunct;
 extern Symbol* currFunction;
 
 /* Functions */
-void Initialize_HashTable(void);
 unsigned int hash(const char* str);
+void Initialize_HashTable(void);
 void enter_Next_Scope(int fromFunct);
 void exit_Current_Scope(void);
 void print_SymTable(void);
 void free_HashTable(void);
 
-Symbol* resolve_FuncSymbol(char* name);
+Symbol* resolve_FuncSymbol(const char* name);
 Symbol* resolve_AnonymousFunc(void);
-Symbol* resolve_FormalSymbol(char* name);
-Symbol* resolve_LocalSymbol(char* name);
+Symbol* resolve_FormalSymbol(const char* name);
+Symbol* resolve_LocalSymbol(const char* name);
+Symbol* resolve_GlobalSymbol(const char* name);
+Symbol* resolve_RawSymbol(const char* name);
 
 #endif
 /* end of table.h */
