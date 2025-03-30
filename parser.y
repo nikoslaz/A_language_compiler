@@ -215,6 +215,7 @@ indexed_list:
 
 block:
      LEFT_BRACE {
+        /*an den einai apo function mpes se kainourgio scope*/
         if(!fromFunct) { enter_Next_Scope(0); }
         fromFunct=0;
     } stmt_list RIGHT_BRACE {

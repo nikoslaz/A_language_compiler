@@ -5,10 +5,10 @@
 
 /* Globals */
 HashTable* ht;
-int AnonymousCounter = 0;
-int maxScope = -1;
-int fromFunct = 0;
-Symbol* currFunction;
+int AnonymousCounter = 0; // Counter for naming anonymous functions
+int maxScope = -1;  // Tracks the maximum (current deepest) scope
+int fromFunct = 0;  // Flag to indicate if entering a function scope
+Symbol* currFunction;   // Pointer to the current function being processed
 
 /* Helper Function */
 void MemoryFail(void) {
