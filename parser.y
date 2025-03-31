@@ -11,6 +11,7 @@
 	char*	stringZoumi;
 	int		intZoumi;
 	double	realZoumi;
+    struct Symbol* symbolZoumi;
 }
 
 %token <stringZoumi> ID
@@ -59,6 +60,10 @@
 %token COLON_COLON
 %token PERIOD
 %token PERIOD_PERIOD
+
+%type <symbolZoumi> lvalue
+%type <symbolZoumi> member
+%type <symbolZoumi> funcdef
 
 /* PROTERAIOTHTES KAI PROSETAIRISTIKOTHTA */
 
@@ -124,15 +129,25 @@ term:
     LEFT_PARENTHESIS expr RIGHT_PARENTHESIS
     | MINUS expr %prec UMINUS_CONFLICT
     | NOT expr %prec NOT
-    | PLUS_PLUS lvalue
-    | lvalue PLUS_PLUS
-    | MINUS_MINUS lvalue
-    | lvalue MINUS_MINUS
+    | PLUS_PLUS lvalue {
+        checkFunctionSymbol($2, "increment");
+    }
+    | lvalue PLUS_PLUS {
+        checkFunctionSymbol($1, "increment");
+    }
+    | MINUS_MINUS lvalue {
+        checkFunctionSymbol($2, "decrement");
+    }
+    | lvalue MINUS_MINUS {
+        checkFunctionSymbol($1, "decrement");
+    }
     | primary
     ;
 
 assignexpr:
-    lvalue EQUALS expr
+    lvalue EQUALS expr {
+        checkFunctionSymbol($1, "assign to");
+    }
     ;
 
 primary:
@@ -145,23 +160,31 @@ primary:
 
 lvalue:
     ID {
-        resolve_RawSymbol($1);
+        $$ = resolve_RawSymbol($1);
     }
     | LOCAL ID {
-        resolve_LocalSymbol($2);
+        $$ = resolve_LocalSymbol($2);
     }
     | COLON_COLON ID {
-        resolve_GlobalSymbol($2);
+        $$ = resolve_GlobalSymbol($2);
     }
     | member
     ;
 
-member:
-    lvalue PERIOD ID
-    | lvalue LEFT_BRACKET expr RIGHT_BRACKET
-    | call PERIOD ID
-    | call LEFT_BRACKET expr RIGHT_BRACKET
-    ;
+/*JUST A CHECK!!*/
+member: lvalue PERIOD ID {
+        $$ = $1;  // simplified: pass lvalue’s Symbol*
+      }
+      | lvalue LEFT_BRACKET expr RIGHT_BRACKET {
+        $$ = $1;
+      }
+      | call PERIOD ID {
+        $$ = NULL;  // Placeholder !!!
+      }
+      | call LEFT_BRACKET expr RIGHT_BRACKET {
+        $$ = NULL;  // Placeholder !!!
+      }
+      ;
 
 call:
     call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS
@@ -215,7 +238,7 @@ indexed_list:
 
 block:
      LEFT_BRACE {
-        /*an den einai apo function mpes se kainourgio scope*/
+        /*if is is not from function enter next scope*/
         if(!fromFunct) { enter_Next_Scope(0); }
         fromFunct=0;
     } stmt_list RIGHT_BRACE {
@@ -225,13 +248,18 @@ block:
 
 funcdef:
     FUNCTION ID {
-        resolve_FuncSymbol($2);
+        Symbol* sym = resolve_FuncSymbol($2);
+        if (sym && sym->type == LIBFUNC_T) {
+          yyerror("Cannot redefine library function");
+        }
+        $$ = sym;
     } LEFT_PARENTHESIS {
         fromFunct=1;
         enter_Next_Scope(1);
     } idlist RIGHT_PARENTHESIS block
     | FUNCTION {
-        resolve_AnonymousFunc();
+        Symbol* sym = resolve_AnonymousFunc();
+        $$ = sym;
     } LEFT_PARENTHESIS {
         fromFunct=1;
         enter_Next_Scope(1);

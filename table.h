@@ -91,6 +91,7 @@ void Initialize_HashTable(void);
 void enter_Next_Scope(int fromFunct);
 void exit_Current_Scope(void);
 void print_SymTable(void);
+void checkFunctionSymbol(Symbol* sym, const char* operation);
 void free_HashTable(void);
 
 Symbol* resolve_FuncSymbol(const char* name);

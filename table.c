@@ -159,6 +159,7 @@ Symbol* is_Lib_Func(const char* name) {
     return NULL;
 }
 
+
 Symbol* lookUp_CurrentScope(const char* name) {
     /* Search my Scope for any Symbol with the same name */
     Symbol* curr = ht->buckets[hash(name)];
@@ -210,6 +211,14 @@ const char* createNewArgumentName(void) {
     if(!anon_name) { MemoryFail(); }
     sprintf(anon_name, "$func%d", AnonymousCounter++);
     return anon_name;
+}
+
+void checkFunctionSymbol(Symbol* sym, const char* operation) {
+    if (sym && (sym->type == USERFUNC_T || sym->type == LIBFUNC_T)) {
+        char msg[100];
+        snprintf(msg, sizeof(msg), "Cannot %s function", operation);
+        yyerror(msg);
+    }
 }
 
 /*===============================================================================================*/
@@ -273,7 +282,6 @@ Symbol* resolve_RawSymbol(const char* name) {
     // VARIABLES:search all the previous scopes including current
     // until you find variable with the same name that can reach current scope
     // without bool isFunc getting in the way
-    // PIIPAPAAAAA
     printf("Line %d symbol type NOT IMPLEMENTED YET!!\n", yylineno);
     // FUNCTIONS: all the previous scopes
     // globals always visible
