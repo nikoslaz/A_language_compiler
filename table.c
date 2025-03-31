@@ -146,13 +146,6 @@ void Initialize_HashTable(void){
 }
 
 /*===============================================================================================*/
-
-/*NIKOLETTA*/
-Symbol* lookUp_GlobalSymbol(char* name){
-    //search only global scope if found return it else NULL
-}
-
-/*===============================================================================================*/
 /* Functions */
 
 Symbol* is_Lib_Func(const char* name) {
@@ -291,7 +284,44 @@ Symbol* resolve_RawSymbol(const char* name) {
 /* Final Steps */
 
 void free_HashTable(void) {
-    /* TODO */
+    if (!ht) {
+        return;
+    }
+
+    /* Free all symbols and their argument nodes via ScopeList */
+    ScopeList* scope_curr = ht->ScopesHead;
+    while (scope_curr) {
+        Symbol* sym_curr = scope_curr->head;
+        while (sym_curr) {
+            argument_node* arg_curr = sym_curr->args;
+            while (arg_curr) {
+                argument_node* arg_next = arg_curr->next;
+                free(arg_curr); 
+                arg_curr = arg_next;
+            }
+            
+            Symbol* sym_next = sym_curr->next_in_scope;
+            free(sym_curr->name); 
+            free(sym_curr);
+            sym_curr = sym_next;
+        }
+        
+        ScopeList* scope_next = scope_curr->next;
+        free(scope_curr);
+        scope_curr = scope_next;
+    }
+
+    /* Free the scope_snake stack */
+    scope_snake* snake_curr = ht->ScopeSnakeHead;
+    while (snake_curr) {
+        scope_snake* snake_next = snake_curr->next;
+        free(snake_curr);
+        snake_curr = snake_next;
+    }
+
+    /* FINALLY: free the hash table */
+    free(ht);
+    ht = NULL; 
 }
 
 const char* symbolTypeToString(SymbolType type) {
