@@ -159,6 +159,16 @@ Symbol* is_Lib_Func(const char* name) {
     return NULL;
 }
 
+Symbol* is_User_Func(const char* name) {
+    Symbol* curr = ht->buckets[hash(name)];
+    while(curr) {
+        if(curr->type==USERFUNC_T && strcmp(name, curr->name)==0) {
+            return curr;
+        }
+        curr = curr->next_in_bucket;
+    }
+    return NULL;
+}
 
 Symbol* lookUp_CurrentScope(const char* name) {
     /* Search my Scope for any Symbol with the same name */
@@ -278,14 +288,87 @@ Symbol* resolve_GlobalSymbol(const char* name) {
 /*===============================================================================================*/
 /* Raw Symbol */
 
+Symbol* lookUp_All(const char* name) {
+    // Start from the current scope and move to scope 0
+    int current_scope = ht->currentScope;
+    ScopeList* scope  = ht->ScopesHead;
+    int hit_function_scope = 0;  // Track if we've passed a function scope
+
+    // Traverse scopes from current to 0
+    while (current_scope >= 0) {
+        // Find the ScopeList for the current scope
+        scope = ht->ScopesHead;
+        while (scope && scope->scope != current_scope) {
+            scope = scope->next;
+        }
+
+        // If scope exists, search its symbols
+        if (scope) {
+            Symbol* sym = scope->head;
+            while (sym) {
+                if (strcmp(sym->name, name) == 0 && sym->isActive) {
+                    // Found a symbol with the matching name
+                    if (sym->type == USERFUNC_T || sym->type == LIBFUNC_T) {
+                        // Functions: Always visible unless shadowed
+                        return sym;
+                    } else {
+                        // Variables (GLOBAL_T, LOCAL_T, FORMAL_T)
+                        if (sym->scope == 0) {
+                            // Global variables are always visible
+                            return sym;
+                        }
+                        if (hit_function_scope) {
+                            // If we've passed a function scope, only globals are visible
+                            // So, skip this symbol (we already checked scope == 0)
+                            break;
+                        }
+                        // Otherwise, this variable is visible
+                        return sym;
+                    }
+                }
+                sym = sym->next_in_scope;
+            }
+
+            // Check if this scope is a function scope
+            if (scope->isFunc) {
+                hit_function_scope = 1;
+            }
+        }
+
+        // Move to the previous scope
+        current_scope--;
+    }
+
+    // No matching symbol found
+    printf("Line %d: Symbol '%s' not found or not accessible\n", yylineno, name);
+    return NULL;
+}
+
 Symbol* resolve_RawSymbol(const char* name) {
     // VARIABLES:search all the previous scopes including current
     // until you find variable with the same name that can reach current scope
     // without bool isFunc getting in the way
     printf("Line %d symbol type NOT IMPLEMENTED YET!!\n", yylineno);
     // FUNCTIONS: all the previous scopes
-    // globals always visible
-    return NULL;
+    // globals always visible   
+
+    Symbol* res = NULL;
+
+    // Check if is library func
+    if(res = is_Lib_Func(name)) { yyerror("Trying to redefine Library Function"); }
+    // Check if is user func
+    if(res = is_User_Func(name)) { yyerror("Trying to redefine User Function"); }
+    // Look Up
+    if (res = lookUp_All(name)) { return res; }
+    else {
+        if (ht->currentScope == 0) {
+            insert_Symbol(name, GLOBAL_T);
+        }
+        else {
+            insert_Symbol(name, LOCAL_T);
+        }
+    }
+    
 }
 
 /*===============================================================================================*/
