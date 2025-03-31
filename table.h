@@ -38,29 +38,23 @@ typedef enum SymbolType {
     LIBFUNC_T
 } SymbolType;
 
-/* Linked List of previous Scopes */
-typedef struct scope_snake_t {
-    int scope;
-    struct scope_snake_t* next;
-} scope_snake;
-
 /* Used to store the Arguments of a Function */
-struct symbol_t;
+struct Symbol;
 typedef struct argument_t {
-    struct symbol_t* symbol;
+    struct Symbol* symbol;
     struct argument_t* next;
 } argument_node;
 
 /* symbol_t */
-typedef struct symbol_t {
+typedef struct Symbol {
     char* name;
     SymbolType type; // GLOBAL LOCAL FORMAL USERFUNC LIBFUNC
     int scope;
     int line;
     int isActive;
     argument_node* args;
-    struct symbol_t* next_in_scope; // for scope list
-    struct symbol_t* next_in_bucket; // for collision list
+    struct Symbol* next_in_scope; // for scope list
+    struct Symbol* next_in_bucket; // for collision list
 } Symbol;
 
 /* Linked List of the same Scope */
@@ -76,12 +70,10 @@ typedef struct HashTable {
     Symbol* buckets[HASH_SIZE];
     int currentScope;
     ScopeList* ScopesHead;
-    scope_snake* ScopeSnakeHead;
 } HashTable;
 
 extern HashTable* ht;
 extern int AnonymousCounter;
-extern int maxScope;
 extern int fromFunct;
 extern Symbol* currFunction;
 
@@ -91,7 +83,7 @@ void Initialize_HashTable(void);
 void enter_Next_Scope(int fromFunct);
 void exit_Current_Scope(void);
 void print_SymTable(void);
-void checkFunctionSymbol(Symbol* sym, const char* operation);
+void checkFunctionSymbol(struct Symbol* sym, const char* operation);
 void free_HashTable(void);
 
 Symbol* resolve_FuncSymbol(const char* name);

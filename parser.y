@@ -3,6 +3,7 @@
      * @authors nikos , nikoletta , mihalis
      */
     #include "table.h"
+    struct Symbol* tmp;
 %}
 
 %start program
@@ -63,6 +64,8 @@
 
 %type <symbolZoumi> lvalue
 %type <symbolZoumi> member
+/* 
+*/
 %type <symbolZoumi> funcdef
 
 /* PROTERAIOTHTES KAI PROSETAIRISTIKOTHTA */
@@ -81,6 +84,8 @@
 
 %right UMINUS_CONFLICT
 %nonassoc ELIST_INDEXED_CONFLICT
+%nonassoc THEN_CONFLICT
+%nonassoc ELSE
 
 %left DOT DOUBLE_DOT
 
@@ -114,15 +119,20 @@ stmt_list:
 
 expr:
     assignexpr
-    | expr op expr
+    | expr PLUS expr
+    | expr MINUS expr
+    | expr MULT expr
+    | expr DIV expr
+    | expr MOD expr
+    | expr GREATER expr
+    | expr LESS expr
+    | expr GREATER_EQUAL expr
+    | expr LESS_EQUAL expr
+    | expr EQUALS_EQUALS expr
+    | expr NOT_EQUALS expr
+    | expr AND expr
+    | expr OR expr
     | term
-    ;
-
-op:
-    PLUS | MINUS | MULT | DIV | MOD
-    | GREATER | LESS | GREATER_EQUAL | LESS_EQUAL
-    | EQUALS_EQUALS | NOT_EQUALS
-    | AND | OR
     ;
 
 term:
@@ -247,23 +257,25 @@ block:
     ;
 
 funcdef:
-    FUNCTION ID {
+    FUNCTION ID LEFT_PARENTHESIS {
         Symbol* sym = resolve_FuncSymbol($2);
         if (sym && sym->type == LIBFUNC_T) {
-          yyerror("Cannot redefine library function");
+            yyerror("Cannot redefine library function");
         }
-        $$ = sym;
-    } LEFT_PARENTHESIS {
-        fromFunct=1;
+        tmp = sym;
+        fromFunct = 1;
         enter_Next_Scope(1);
-    } idlist RIGHT_PARENTHESIS block
-    | FUNCTION {
+    } idlist RIGHT_PARENTHESIS block {
+        $$ = tmp;
+    }
+    | FUNCTION LEFT_PARENTHESIS {
         Symbol* sym = resolve_AnonymousFunc();
-        $$ = sym;
-    } LEFT_PARENTHESIS {
-        fromFunct=1;
+        tmp = sym;
+        fromFunct = 1;
         enter_Next_Scope(1);
-    } idlist RIGHT_PARENTHESIS block
+    } idlist RIGHT_PARENTHESIS block {
+        $$ = tmp;
+    }
     ;
 
 const:
@@ -290,7 +302,7 @@ idlist_list:
     ;
 
 ifstmt:
-    IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt
+    IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt %prec THEN_CONFLICT
     | IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt ELSE stmt
     ;
 

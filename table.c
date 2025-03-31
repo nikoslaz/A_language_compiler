@@ -6,7 +6,6 @@
 /* Globals */
 HashTable* ht;
 int AnonymousCounter = 0; // Counter for naming anonymous functions
-int maxScope = -1;  // Tracks the maximum (current deepest) scope
 int fromFunct = 0;  // Flag to indicate if entering a function scope
 Symbol* currFunction;   // Pointer to the current function being processed
 
@@ -21,53 +20,53 @@ int yyerror(char* yaccProvidedMessage) {
     yylineno, yaccProvidedMessage);
 }
 
+ScopeList* int_to_Scope(int index) {
+    ScopeList* scope_list = ht->ScopesHead;
+    while(scope_list && (scope_list->scope != index)) {
+        scope_list = scope_list->next;
+    }
+    if(!scope_list) {
+        printf("Error. Tried to access Non-existent scope\n");
+        exit(1);
+    }
+    return scope_list;
+}
+
 /*===============================================================================================*/
 /* Scope Handling */
 
-void pushNextScope(int which_scope) {
-    scope_snake* new = (scope_snake*)malloc(sizeof(scope_snake));
-    if(!new) { MemoryFail(); }
-    new->scope = which_scope;
-    new->next = ht->ScopeSnakeHead;
-    ht->ScopeSnakeHead = new;
-}
-
 void enter_Next_Scope(int fromFunct) {
-    if(maxScope!=-1) { pushNextScope(ht->currentScope); }
-    ScopeList* new_scope = (ScopeList*)malloc(sizeof(ScopeList));
-    if(!new_scope) { MemoryFail(); }
-    new_scope->head = NULL;
-    new_scope->scope = ++maxScope;
-    new_scope->next = ht->ScopesHead;
-    ht->ScopesHead = new_scope;
-    ht->currentScope = maxScope;
-    new_scope->isFunc = fromFunct;
-}
-
-int popNextScope(void) {
-    if(!ht->ScopeSnakeHead) { assert(0); }
-    int res = ht->ScopeSnakeHead->scope;
-    scope_snake* tmp = ht->ScopeSnakeHead;
-    ht->ScopeSnakeHead = ht->ScopeSnakeHead->next;
-    free(tmp);
-    return res;
+    ScopeList* scope_list;
+    /* First Time */
+    if(ht->currentScope == -1) {
+        scope_list=NULL;
+    } else {
+        scope_list = int_to_Scope(ht->currentScope);
+    }
+    ht->currentScope++;
+    if(!scope_list || ((ht->currentScope) > (ht->ScopesHead->scope))) {
+        ScopeList* new_scope = (ScopeList*)malloc(sizeof(ScopeList));
+        if(!new_scope) { MemoryFail(); }
+        new_scope->head = NULL;
+        new_scope->scope = ht->currentScope;
+        new_scope->isFunc = fromFunct;
+        /* Link at the Start */
+        new_scope->next = ht->ScopesHead;
+        ht->ScopesHead = new_scope;
+    }
 }
 
 void exit_Current_Scope(void) {
     /* Find current ScopeList */
-    ScopeList* scope_list = ht->ScopesHead;
-    while(scope_list && scope_list->scope != ht->currentScope) {
-        scope_list = scope_list->next;
-    }
-    if(!scope_list) { assert(0); }
+    ScopeList* scope_list = int_to_Scope(ht->currentScope);
     /* Set isActve to 0 */
     Symbol* curr = scope_list->head;
     while(curr) {
         curr->isActive = 0;
         curr = curr->next_in_scope;
     }
-    /* POP NEW SCOPE FROM SCOPESNAKE */
-    ht->currentScope=popNextScope();
+    /* Exit Scope */
+    ht->currentScope--;
 }
 
 /*===============================================================================================*/
@@ -90,11 +89,7 @@ Symbol* insert_Symbol(const char* name, SymbolType type) {
     new->next_in_bucket = ht->buckets[index];
     ht->buckets[index] = new;
     /* Link with ScopeList */
-    ScopeList* scope_list = ht->ScopesHead;
-    while(scope_list && (scope_list->scope != ht->currentScope)) {
-        scope_list = scope_list->next;
-    }
-    if(!scope_list) { assert(0); }
+    ScopeList* scope_list = int_to_Scope(ht->currentScope);
     /* If im First */
     if(!scope_list->head) { scope_list->head = new; }
     /* Insert at the end */
@@ -123,12 +118,10 @@ void Initialize_HashTable(void){
     ht = (HashTable*)malloc(sizeof(HashTable));
     if(!ht) { MemoryFail(); }
     /* Initialize all buckets to NULL */
-    for(int i=0; i < HASH_SIZE; i++) {
-        ht->buckets[i] = NULL;
-    }
+    for(int i=0; i < HASH_SIZE; i++) { ht->buckets[i] = NULL; }
     /* Create Scope 0 */
     ht->ScopesHead = NULL;
-    ht->ScopeSnakeHead = NULL;
+    ht->currentScope=-1;
     enter_Next_Scope(0);
     /* Insert all Library Functions */    
     insert_Symbol("print", LIBFUNC_T);
@@ -159,22 +152,11 @@ Symbol* is_Lib_Func(const char* name) {
     return NULL;
 }
 
-Symbol* is_User_Func(const char* name) {
-    Symbol* curr = ht->buckets[hash(name)];
-    while(curr) {
-        if(curr->type==USERFUNC_T && strcmp(name, curr->name)==0) {
-            return curr;
-        }
-        curr = curr->next_in_bucket;
-    }
-    return NULL;
-}
-
 Symbol* lookUp_CurrentScope(const char* name) {
     /* Search my Scope for any Symbol with the same name */
     Symbol* curr = ht->buckets[hash(name)];
     while(curr) {
-        if(curr->scope==ht->currentScope && strcmp(name, curr->name)==0) {
+        if(curr->scope==ht->currentScope && strcmp(name, curr->name)==0 && curr->isActive) {
             return curr;
         }
         curr = curr->next_in_bucket;
@@ -182,16 +164,8 @@ Symbol* lookUp_CurrentScope(const char* name) {
     return NULL;
 }
 
-Symbol* lookUp_GlobalScope(const char* name){
-    ScopeList* scope_list = ht->ScopesHead;
-    while (scope_list && scope_list->scope != 0 ) {
-        scope_list = scope_list->next;
-    }
-    if (!scope_list) {
-        printf("Scope 0 not found?\n");
-        return NULL;
-    }
-    //search only the symbols in this scope (0)
+Symbol* lookUp_GlobalScope(const char* name) {
+    ScopeList* scope_list = int_to_Scope(0);
     Symbol* current = scope_list->head;
     while(current) {
         if(strcmp(current->name, name) == 0) {
@@ -223,10 +197,10 @@ const char* createNewArgumentName(void) {
     return anon_name;
 }
 
-void checkFunctionSymbol(Symbol* sym, const char* operation) {
+void checkFunctionSymbol(struct Symbol* sym, const char* operation) {
     if (sym && (sym->type == USERFUNC_T || sym->type == LIBFUNC_T)) {
-        char msg[100];
-        snprintf(msg, sizeof(msg), "Cannot %s function", operation);
+        char msg[30];
+        sprintf(msg, "Cannot %s a function", operation);
         yyerror(msg);
     }
 }
@@ -288,6 +262,17 @@ Symbol* resolve_GlobalSymbol(const char* name) {
 /*===============================================================================================*/
 /* Raw Symbol */
 
+Symbol* is_User_Func(const char* name) {
+    Symbol* curr = ht->buckets[hash(name)];
+    while(curr) {
+        if(curr->type==USERFUNC_T && strcmp(name, curr->name)==0 && curr->isActive) {
+            return curr;
+        }
+        curr = curr->next_in_bucket;
+    }
+    return NULL;
+}
+
 Symbol* lookUp_All(const char* name, int* inaccessible) {
     *inaccessible = 0;  /*boolean to check if the symbol we find is accessible or not*/
     int current_scope = ht->currentScope;
@@ -295,10 +280,7 @@ Symbol* lookUp_All(const char* name, int* inaccessible) {
     int hit_function_scope = 0;
 
     while (current_scope >= 0) {
-        scope = ht->ScopesHead;
-        while (scope && scope->scope != current_scope) {
-            scope = scope->next;
-        }
+        scope = int_to_Scope(current_scope);
 
         if (scope) {
             Symbol* sym = scope->head;
@@ -356,9 +338,11 @@ Symbol* resolve_RawSymbol(const char* name) {
     if (res) {
         return res;  /*found and accessible :D*/
     } else if (inaccessible) {
-        /*inaccessible, print error*/
-        char msg[100];
-        snprintf(msg, sizeof(msg), "Symbol '%s' is not accessible due to function scope", name);
+        /* Inaccessible */
+        int size = 28+strlen(name);
+        char* msg = (char*)malloc(size*sizeof(char));
+        if(!msg) { MemoryFail(); }
+        sprintf(msg, "Symbol '%s' is not accessible", name);
         yyerror(msg);
         return NULL;
     } else {
@@ -372,9 +356,7 @@ Symbol* resolve_RawSymbol(const char* name) {
 /* Final Steps */
 
 void free_HashTable(void) {
-    if (!ht) {
-        return;
-    }
+    if (!ht) { return; }
 
     /* Free all symbols and their argument nodes via ScopeList */
     ScopeList* scope_curr = ht->ScopesHead;
@@ -397,14 +379,6 @@ void free_HashTable(void) {
         ScopeList* scope_next = scope_curr->next;
         free(scope_curr);
         scope_curr = scope_next;
-    }
-
-    /* Free the scope_snake stack */
-    scope_snake* snake_curr = ht->ScopeSnakeHead;
-    while (snake_curr) {
-        scope_snake* snake_next = snake_curr->next;
-        free(snake_curr);
-        snake_curr = snake_next;
     }
 
     /* FINALLY: free the hash table */
