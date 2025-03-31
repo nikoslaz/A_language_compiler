@@ -288,87 +288,84 @@ Symbol* resolve_GlobalSymbol(const char* name) {
 /*===============================================================================================*/
 /* Raw Symbol */
 
-Symbol* lookUp_All(const char* name) {
-    // Start from the current scope and move to scope 0
+Symbol* lookUp_All(const char* name, int* inaccessible) {
+    *inaccessible = 0;  /*boolean to check if the symbol we find is accessible or not*/
     int current_scope = ht->currentScope;
-    ScopeList* scope  = ht->ScopesHead;
-    int hit_function_scope = 0;  // Track if we've passed a function scope
+    ScopeList* scope = ht->ScopesHead;
+    int hit_function_scope = 0;
 
-    // Traverse scopes from current to 0
     while (current_scope >= 0) {
-        // Find the ScopeList for the current scope
         scope = ht->ScopesHead;
         while (scope && scope->scope != current_scope) {
             scope = scope->next;
         }
 
-        // If scope exists, search its symbols
         if (scope) {
             Symbol* sym = scope->head;
             while (sym) {
                 if (strcmp(sym->name, name) == 0 && sym->isActive) {
-                    // Found a symbol with the matching name
                     if (sym->type == USERFUNC_T || sym->type == LIBFUNC_T) {
-                        // Functions: Always visible unless shadowed
                         return sym;
                     } else {
-                        // Variables (GLOBAL_T, LOCAL_T, FORMAL_T)
                         if (sym->scope == 0) {
-                            // Global variables are always visible
                             return sym;
                         }
                         if (hit_function_scope) {
-                            // If we've passed a function scope, only globals are visible
-                            // So, skip this symbol (we already checked scope == 0)
-                            break;
+                            *inaccessible = 1;  /*found but inaccessible*/
+                            return NULL;
                         }
-                        // Otherwise, this variable is visible
                         return sym;
                     }
                 }
                 sym = sym->next_in_scope;
             }
 
-            // Check if this scope is a function scope
             if (scope->isFunc) {
                 hit_function_scope = 1;
             }
         }
 
-        // Move to the previous scope
         current_scope--;
     }
 
-    // No matching symbol found
-    printf("Line %d: Symbol '%s' not found or not accessible\n", yylineno, name);
-    return NULL;
+    return NULL;  /*not found and accessible*/
 }
 
 Symbol* resolve_RawSymbol(const char* name) {
     // VARIABLES:search all the previous scopes including current
     // until you find variable with the same name that can reach current scope
-    // without bool isFunc getting in the way
-    printf("Line %d symbol type NOT IMPLEMENTED YET!!\n", yylineno);
+    // without bool inaccessible getting in the way
     // FUNCTIONS: all the previous scopes
     // globals always visible   
 
     Symbol* res = NULL;
+    int inaccessible = 0;
 
-    // Check if is library func
-    if(res = is_Lib_Func(name)) { yyerror("Trying to redefine Library Function"); }
-    // Check if is user func
-    if(res = is_User_Func(name)) { yyerror("Trying to redefine User Function"); }
-    // Look Up
-    if (res = lookUp_All(name)) { return res; }
-    else {
-        if (ht->currentScope == 0) {
-            insert_Symbol(name, GLOBAL_T);
-        }
-        else {
-            insert_Symbol(name, LOCAL_T);
-        }
+    /*check if it's a library function*/
+    if ((res = is_Lib_Func(name))) {
+        yyerror("Trying to redefine Library Function");
+        return res;
     }
-    
+    /*check if it's a user function*/
+    if ((res = is_User_Func(name))) {
+        yyerror("Trying to redefine User Function");
+        return res;
+    }
+    /*look up the symbol*/
+    res = lookUp_All(name, &inaccessible);
+    if (res) {
+        return res;  /*found and accessible :D*/
+    } else if (inaccessible) {
+        /*inaccessible, print error*/
+        char msg[100];
+        snprintf(msg, sizeof(msg), "Symbol '%s' is not accessible due to function scope", name);
+        yyerror(msg);
+        return NULL;
+    } else {
+        /*not found, insert it in the hashtable*/
+        SymbolType type = (ht->currentScope == 0) ? GLOBAL_T : LOCAL_T;
+        return insert_Symbol(name, type);
+    }
 }
 
 /*===============================================================================================*/
