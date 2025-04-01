@@ -4,10 +4,11 @@
      */
     #include "table.h"
     struct Symbol* tmp;
+    int inLoop = 0;      // Flag to track if we're inside a loop
+    int inFunction = 0;  // Flag to track if we're inside a function
 %}
 
 %start program
-
 %union {
 	char*	stringZoumi;
 	int		intZoumi;
@@ -66,8 +67,13 @@
 %type <symbolZoumi> member
 %type <symbolZoumi> funcdef
 %type <symbolZoumi> call
-%type <symbolZoumi> normcall
-%type <symbolZoumi> callsuffix
+%type <intZoumi> callsuffix
+%type <intZoumi> normcall
+%type <intZoumi> methodcall
+%type <intZoumi> elist
+%type <intZoumi> elist_list
+%type <intZoumi> idlist
+%type <intZoumi> idlist_list
 
 /* PROTERAIOTHTES KAI PROSETAIRISTIKOTHTA */
 
@@ -106,12 +112,21 @@ stmt:
     | whilestmt
     | forstmt
     | returnstmt
-    | BREAK SEMICOLON
-    | CONTINUE SEMICOLON
+    | BREAK SEMICOLON {
+        if (!inLoop) {
+            yyerror("Use of 'break' while not in a loop");
+        }
+    }
+    | CONTINUE SEMICOLON {
+        if (!inLoop) {
+            yyerror("Use of 'continue' while not in a loop");
+        }
+    }
     | block
     | funcdef
     | SEMICOLON
     ;
+
 
 stmt_list:
     stmt stmt_list
@@ -141,23 +156,53 @@ term:
     | MINUS expr %prec UMINUS_CONFLICT
     | NOT expr %prec NOT
     | PLUS_PLUS lvalue {
-        checkFunctionSymbol($2, "increment");
+        if ($2 && ($2->type == USERFUNC_T || $2->type == LIBFUNC_T)) {
+            char msg[100];
+            snprintf(msg, sizeof(msg), "Using %s as an lvalue", $2->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
+            yyerror(msg);
+        } else {
+            checkFunctionSymbol($2, "increment");
+        }
     }
     | lvalue PLUS_PLUS {
-        checkFunctionSymbol($1, "increment");
+        if ($1 && ($1->type == USERFUNC_T || $1->type == LIBFUNC_T)) {
+            char msg[100];
+            snprintf(msg, sizeof(msg), "Using %s as an lvalue", $1->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
+            yyerror(msg);
+        } else {
+            checkFunctionSymbol($1, "increment");
+        }
     }
     | MINUS_MINUS lvalue {
-        checkFunctionSymbol($2, "decrement");
+        if ($2 && ($2->type == USERFUNC_T || $2->type == LIBFUNC_T)) {
+            char msg[100];
+            snprintf(msg, sizeof(msg), "Using %s as an lvalue", $2->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
+            yyerror(msg);
+        } else {
+            checkFunctionSymbol($2, "decrement");
+        }
     }
     | lvalue MINUS_MINUS {
-        checkFunctionSymbol($1, "decrement");
+        if ($1 && ($1->type == USERFUNC_T || $1->type == LIBFUNC_T)) {
+            char msg[100];
+            snprintf(msg, sizeof(msg), "Using %s as an lvalue", $1->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
+            yyerror(msg);
+        } else {
+            checkFunctionSymbol($1, "decrement");
+        }
     }
     | primary
     ;
 
 assignexpr:
     lvalue EQUALS expr {
-        checkFunctionSymbol($1, "assign to");
+        if ($1 && ($1->type == USERFUNC_T || $1->type == LIBFUNC_T)) {
+            char msg[100];
+            snprintf(msg, sizeof(msg), "Using %s as an lvalue", $1->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
+            yyerror(msg);
+        } else {
+            checkFunctionSymbol($1, "assign to");
+        }
     }
     ;
 
@@ -171,7 +216,27 @@ primary:
 
 lvalue:
     ID {
-        $$ = resolve_RawSymbol($1);
+        int inaccessible = 0;
+        Symbol* sym = lookUp_All($1, &inaccessible);
+        if (sym == NULL) {
+            if (inaccessible && inFunction) {
+                char msg[100];
+                snprintf(msg, sizeof(msg), "Cannot access '%s' inside function", $1);
+                yyerror(msg);
+                $$ = NULL;
+            } else {
+                $$ = resolve_RawSymbol($1);
+            }
+        } else {
+            if (inaccessible && inFunction) {
+                char msg[100];
+                snprintf(msg, sizeof(msg), "Cannot access '%s' inside function", $1);
+                yyerror(msg);
+                $$ = NULL;
+            } else {
+                $$ = sym;
+            }
+        }
     }
     | LOCAL ID {
         $$ = resolve_LocalSymbol($2);
@@ -184,52 +249,225 @@ lvalue:
 
 /*JUST A CHECK!!*/
 member: lvalue PERIOD ID {
-        $$ = $1;  // simplified: pass lvalue’s Symbol*
+        $$ = $1;  // Pass lvalue’s Symbol*
       }
       | lvalue LEFT_BRACKET expr RIGHT_BRACKET {
         $$ = $1;
       }
       | call PERIOD ID {
-        $$ = NULL;  // Placeholder !!!
+        $$ = $1;  // Use the temporary symbol from the call
       }
       | call LEFT_BRACKET expr RIGHT_BRACKET {
-        $$ = NULL;  // Placeholder !!!
+        $$ = $1;
       }
       ;
 
 call:
-    call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS /*recursive call*/{
-            $$ = checkFunctionCall($1, "Invalid recursive function call");
+    call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS {
+        Symbol* sym = checkFunctionCall($1, "Invalid recursive function call");
+        if (sym) {
+            if (!sym->varArgs) {  // Skip validation for varArgs functions
+                int formal_count = 0;
+                argument_node* args = sym->args;
+                while (args) {
+                    formal_count++;
+                    args = args->next;
+                }
+                if (formal_count != $3) {
+                    char msg[100];
+                    snprintf(msg, sizeof(msg), "Function expects %d arguments, but %d were provided", formal_count, $3);
+                    yyerror(msg);
+                }
+            }
+            $$ = createTempSymbol();
+        } else {
+            $$ = NULL;
         }
-    | lvalue callsuffix /*a call on an lvalue*/{
-          $$ = checkFunctionCall($1, "Invalid function call");
-      }
-    | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS LEFT_PARENTHESIS elist RIGHT_PARENTHESIS /*an anonymous function call*/ {
-          $$ = handleAnonymousFuncCall($2);
-      }
+    }
+    | lvalue callsuffix {
+        int inaccessible = 0;
+        Symbol* sym = lookUp_All($1->name, &inaccessible);
+        if (sym == NULL) {
+            if (inaccessible && inFunction) {
+                char msg[100];
+                snprintf(msg, sizeof(msg), "Cannot access '%s' inside function", $1->name);
+                yyerror(msg);
+                $$ = NULL;
+            } else {
+                char msg[100];
+                snprintf(msg, sizeof(msg), "Undefined function '%s'", $1->name);
+                yyerror(msg);
+                $$ = NULL;
+            }
+        } else {
+            if (inaccessible && inFunction) {
+                char msg[100];
+                snprintf(msg, sizeof(msg), "Cannot access '%s' inside function", $1->name);
+                yyerror(msg);
+                $$ = NULL;
+            } else if (sym->type != USERFUNC_T && sym->type != LIBFUNC_T) {
+                char msg[100];
+                snprintf(msg, sizeof(msg), "'%s' is not a function", $1->name);
+                yyerror(msg);
+                $$ = NULL;
+            } else {
+                sym = checkFunctionCall(sym, "Invalid function call");
+                if (sym) {
+                    if (!sym->varArgs) {  // Skip validation for varArgs functions
+                        int formal_count = 0;
+                        argument_node* args = sym->args;
+                        while (args) {
+                            formal_count++;
+                            args = args->next;
+                        }
+                        if (formal_count != $2) {
+                            char msg[100];
+                            snprintf(msg, sizeof(msg), "Function '%s' expects %d arguments, but %d were provided", sym->name, formal_count, $2);
+                            yyerror(msg);
+                        }
+                    }
+                    $$ = createTempSymbol();
+                } else {
+                    $$ = NULL;
+                }
+            }
+        }
+    }
+    | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS LEFT_PARENTHESIS elist RIGHT_PARENTHESIS {
+        Symbol* sym = handleAnonymousFuncCall($2);
+        if (sym) {
+            if (!sym->varArgs) {  // Skip validation for varArgs functions
+                int formal_count = 0;
+                argument_node* args = sym->args;
+                while (args) {
+                    formal_count++;
+                    args = args->next;
+                }
+                if (formal_count != $5) {
+                    char msg[100];
+                    snprintf(msg, sizeof(msg), "Anonymous function expects %d arguments, but %d were provided", formal_count, $5);
+                    yyerror(msg);
+                }
+            }
+            $$ = createTempSymbol();
+        } else {
+            $$ = NULL;
+        }
+    }
     ;
-
+    
 callsuffix:
-    normcall
-    | methodcall
+    normcall { $$ = $1; }
+    | methodcall { $$ = $1; }
     ;
 
 normcall:
-    LEFT_PARENTHESIS elist RIGHT_PARENTHESIS
+    LEFT_PARENTHESIS elist RIGHT_PARENTHESIS {
+        $$ = $2;
+    }
     ;
 
 methodcall:
-    PERIOD_PERIOD ID LEFT_PARENTHESIS elist RIGHT_PARENTHESIS
+    PERIOD_PERIOD ID LEFT_PARENTHESIS elist RIGHT_PARENTHESIS {
+        int inaccessible = 0;
+        Symbol* sym = lookUp_All($2, &inaccessible);
+        if (sym == NULL) {
+            if (inaccessible && inFunction) {
+                char msg[100];
+                snprintf(msg, sizeof(msg), "Cannot access '%s' inside function", $2);
+                yyerror(msg);
+            } else {
+                char msg[100];
+                snprintf(msg, sizeof(msg), "Undefined method '%s'", $2);
+                yyerror(msg);
+            }
+            $$ = 0;
+        } else {
+            if (inaccessible && inFunction) {
+                char msg[100];
+                snprintf(msg, sizeof(msg), "Cannot access '%s' inside function", $2);
+                yyerror(msg);
+                $$ = 0;
+            } else if (sym->type != USERFUNC_T && sym->type != LIBFUNC_T) {
+                char msg[100];
+                snprintf(msg, sizeof(msg), "'%s' is not a function", $2);
+                yyerror(msg);
+                $$ = 0;
+            } else {
+                if (!sym->varArgs) {  // Skip validation for varArgs functions
+                    int formal_count = 0;
+                    argument_node* args = sym->args;
+                    while (args) {
+                        formal_count++;
+                        args = args->next;
+                    }
+                    if (formal_count != $4) {
+                        char msg[100];
+                        snprintf(msg, sizeof(msg), "Method '%s' expects %d arguments, but %d were provided", $2, formal_count, $4);
+                        yyerror(msg);
+                    }
+                }
+                $$ = $4;
+            }
+        }
+    }
     ;
 
-elist:
-    expr elist_list
-    |
+call:
+    PERIOD_PERIOD ID LEFT_PARENTHESIS elist RIGHT_PARENTHESIS {
+        // Treat as a regular function call for now
+        int inaccessible = 0;
+        Symbol* sym = lookUp_All($2, &inaccessible);
+        if (sym == NULL) {
+            if (inaccessible && inFunction) {
+                char msg[100];
+                snprintf(msg, sizeof(msg), "Cannot access '%s' inside function", $2);
+                yyerror(msg);
+            } else {
+                char msg[100];
+                snprintf(msg, sizeof(msg), "Undefined method '%s'", $2);
+                yyerror(msg);
+            }
+            $$ = 0;
+        } else {
+            if (inaccessible && inFunction) {
+                char msg[100];
+                snprintf(msg, sizeof(msg), "Cannot access '%s' inside function", $2);
+                yyerror(msg);
+                $$ = 0;
+            } else if (sym->type != USERFUNC_T && sym->type != LIBFUNC_T) {
+                char msg[100];
+                snprintf(msg, sizeof(msg), "'%s' is not a function", $2);
+                yyerror(msg);
+                $$ = 0;
+            } else {
+                int formal_count = 0;
+                argument_node* args = sym->args;
+                while (args) {
+                    formal_count++;
+                    args = args->next;
+                }
+                if (formal_count != $4) {
+                    char msg[100];
+                    snprintf(msg, sizeof(msg), "Method '%s' expects %d arguments, but %d were provided", $2, formal_count, $4);
+                    yyerror(msg);
+                }
+                $$ = $4;
+            }
+        }
+    }
     ;
 
-elist_list:
-    COMMA expr elist_list
-    |
+elist: expr elist_list {
+        $$ = 1 + $2; 
+    }
+    | { $$ = 0; }
+    ;
+
+elist_list: COMMA expr elist_list {
+        $$ = 1 + $3;
+    }
+    | { $$ = 0; }
     ;
 
 objectdef:
@@ -255,11 +493,15 @@ indexed_list:
 
 block:
      LEFT_BRACE {
-        /*if is is not from function enter next scope*/
-        if(!fromFunct) { enter_Next_Scope(0); }
-        fromFunct=0;
+        if (!fromFunct) {
+            enter_Next_Scope(0);
+        } else {
+            inFunction = 1;  // Entering a function body
+        }
+        fromFunct = 0;
     } stmt_list RIGHT_BRACE {
         exit_Current_Scope();
+        inFunction = 0;  // Exiting a function body
     }
     ;
 
@@ -297,15 +539,25 @@ const:
 idlist:
     ID {
         resolve_FormalSymbol($1);
-    } idlist_list
-    |
+        $$ = 1;
+    } idlist_list {
+        $$ = 1 + $3;
+    }
+    | {
+        $$ = 0;
+    }
     ;
 
 idlist_list:
     COMMA ID {
         resolve_FormalSymbol($2);
-    } idlist_list
-    |
+        $$ = 1;
+    } idlist_list {
+        $$ = 1 + $3;  // Use $3 (idlist_list) instead of $2 (ID)
+    }
+    | {
+        $$ = 0;
+    }
     ;
 
 ifstmt:
@@ -314,16 +566,24 @@ ifstmt:
     ;
 
 whilestmt:
-    WHILE LEFT_PARENTHESIS expr RIGHT_PARENTHESIS stmt
+    WHILE LEFT_PARENTHESIS expr RIGHT_PARENTHESIS {
+        inLoop++;
+    } stmt {
+        inLoop--;
+    }
     ;
 
 forstmt:
-    FOR LEFT_PARENTHESIS elist SEMICOLON expr SEMICOLON elist RIGHT_PARENTHESIS stmt
+    FOR LEFT_PARENTHESIS elist SEMICOLON expr SEMICOLON elist RIGHT_PARENTHESIS {
+        inLoop++;
+    } stmt {
+        inLoop--;
+    }
     ;
 
 returnstmt:
-    RETURN SEMICOLON
-    | RETURN expr SEMICOLON
+    RETURN SEMICOLON 
+    | RETURN expr SEMICOLON 
     ;
 
 %%

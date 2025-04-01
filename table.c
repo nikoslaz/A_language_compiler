@@ -67,12 +67,22 @@ void exit_Current_Scope(void) {
     }
     /* Exit Scope */
     ht->currentScope--;
+    currFunction = NULL; //reset curr function
 }
 
 /*===============================================================================================*/
 /* Insertion */
 
 Symbol* insert_Symbol(const char* name, SymbolType type) {
+    /* Check for collision in the current scope */
+    Symbol* existing = lookUp_CurrentScope(name);
+    if (existing && existing->isActive) {
+        char msg[100];
+        snprintf(msg, sizeof(msg), "Symbol '%s' already defined at line %d", name, existing->line);
+        yyerror(msg);
+        return NULL;
+    }
+
     /* Create new Node */
     Symbol* new = (Symbol*)malloc(sizeof(Symbol));
     if(!new) { MemoryFail(); }
@@ -82,6 +92,8 @@ Symbol* insert_Symbol(const char* name, SymbolType type) {
     new->type = type;
     new->scope = ht->currentScope;
     new->args = NULL;
+    new->varArgs = (type == LIBFUNC_T) ? 1 : 0;  // Library functions accept variable arguments
+    new->next_in_bucket = NULL;  // Changed: Initialize next_in_bucket
     new->next_in_scope = NULL;
     if(type==USERFUNC_T) { currFunction = new; }
     /* Link with HashTable */
@@ -100,6 +112,13 @@ Symbol* insert_Symbol(const char* name, SymbolType type) {
     }
     /* Return */
     return new;
+}
+
+Symbol* createTempSymbol() {
+    static int temp_counter = 0;
+    char temp_name[32];
+    snprintf(temp_name, sizeof(temp_name), "__temp%d", temp_counter++);
+    return insert_Symbol(temp_name, LOCAL_T);
 }
 
 /*===============================================================================================*/
@@ -197,15 +216,14 @@ const char* createNewArgumentName(void) {
     return anon_name;
 }
 
-void checkFunctionSymbol(struct Symbol* sym, const char* operation) {
+void checkFunctionSymbol(Symbol* sym, const char* operation) {
     if (sym && (sym->type == USERFUNC_T || sym->type == LIBFUNC_T)) {
-        char msg[30];
-        sprintf(msg, "Cannot %s a function", operation);
+        char msg[100];
+        snprintf(msg, sizeof(msg), "Cannot %s function", operation);
         yyerror(msg);
     }
 }
 
-// Helper function to validate a function call
 Symbol* checkFunctionCall(Symbol* sym, const char* errorPrefix) {
     if (sym == NULL) {
         char msg[100];
@@ -213,16 +231,9 @@ Symbol* checkFunctionCall(Symbol* sym, const char* errorPrefix) {
         yyerror(msg);
         return NULL;
     }
-    if (sym->type != USERFUNC_T && sym->type != LIBFUNC_T) {
-        char msg[100];
-        snprintf(msg, sizeof(msg), "'%s' is not a function", sym->name);
-        yyerror(msg);
-        return NULL;
-    }
     return sym;
 }
 
-// Helper function for anonymous function calls
 Symbol* handleAnonymousFuncCall(Symbol* funcdef) {
     if (funcdef == NULL) {
         yyerror("Invalid anonymous function call: funcdef is NULL");
@@ -230,6 +241,7 @@ Symbol* handleAnonymousFuncCall(Symbol* funcdef) {
     }
     return funcdef;
 }
+
 
 /*===============================================================================================*/
 /* Resolves */
@@ -239,8 +251,12 @@ Symbol* resolve_FuncSymbol(const char* name) {
     if(res = is_Lib_Func(name)) {
         yyerror("Trying to redefine Library Function");
     } else if(res = lookUp_CurrentScope(name)) {
-        yyerror("Symbol already defined");
-    } else { res = insert_Symbol(name, USERFUNC_T); }
+        char msg[100];
+        snprintf(msg, sizeof(msg), "Symbol '%s' already defined at line %d", name, res->line);
+        yyerror(msg);
+    } else {
+        res = insert_Symbol(name, USERFUNC_T);
+    }
     return res;
 }
 
@@ -258,12 +274,18 @@ Symbol* resolve_AnonymousFunc(void) {
 
 Symbol* resolve_FormalSymbol(const char* name) {
     Symbol* res = NULL;
-    if(res = is_Lib_Func(name)) { yyerror("Symbol is a Library Function"); }
-    else if(res = lookUp_CurrentScope(name)) { yyerror("Formal Argument Redefinition"); }
-    else {
+    if(res = is_Lib_Func(name)) {
+        yyerror("Symbol is a Library Function");
+    } else if(res = lookUp_CurrentScope(name)) {
+        char msg[100];
+        snprintf(msg, sizeof(msg), "Formal Argument '%s' already defined at line %d", name, res->line);
+        yyerror(msg);
+    } else {
         /* Create Symbol and link with Function Arguments */
         res = insert_Symbol(name, FORMAL_T);
-        createArgumentNode(res);
+        if (res) {
+            createArgumentNode(res);
+        }
     }
     return res;
 }
@@ -281,7 +303,11 @@ Symbol* resolve_LocalSymbol(const char* name) {
 
 Symbol* resolve_GlobalSymbol(const char* name) {
     Symbol* res = lookUp_GlobalScope(name);
-    if(!res) { yyerror("Global Variable not found"); }
+    if(!res) {
+        char msg[100];
+        snprintf(msg, sizeof(msg), "Global Variable '%s' not found", name);
+        yyerror(msg);
+    }
     return res;
 }
 
