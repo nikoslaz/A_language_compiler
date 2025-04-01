@@ -84,6 +84,8 @@ void enter_Next_Scope(int fromFunct);
 void exit_Current_Scope(void);
 void print_SymTable(void);
 void checkFunctionSymbol(struct Symbol* sym, const char* operation);
+Symbol* checkFunctionCall(Symbol* sym, const char* errorPrefix);
+Symbol* handleAnonymousFuncCall(Symbol* funcdef);
 void free_HashTable(void);
 
 Symbol* resolve_FuncSymbol(const char* name);

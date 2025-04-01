@@ -64,9 +64,10 @@
 
 %type <symbolZoumi> lvalue
 %type <symbolZoumi> member
-/* 
-*/
 %type <symbolZoumi> funcdef
+%type <symbolZoumi> call
+%type <symbolZoumi> normcall
+%type <symbolZoumi> callsuffix
 
 /* PROTERAIOTHTES KAI PROSETAIRISTIKOTHTA */
 
@@ -197,9 +198,15 @@ member: lvalue PERIOD ID {
       ;
 
 call:
-    call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS
-    | lvalue callsuffix
-    | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS LEFT_PARENTHESIS elist RIGHT_PARENTHESIS
+    call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS /*recursive call*/{
+            $$ = checkFunctionCall($1, "Invalid recursive function call");
+        }
+    | lvalue callsuffix /*a call on an lvalue*/{
+          $$ = checkFunctionCall($1, "Invalid function call");
+      }
+    | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS LEFT_PARENTHESIS elist RIGHT_PARENTHESIS /*an anonymous function call*/ {
+          $$ = handleAnonymousFuncCall($2);
+      }
     ;
 
 callsuffix:

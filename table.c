@@ -205,6 +205,32 @@ void checkFunctionSymbol(struct Symbol* sym, const char* operation) {
     }
 }
 
+// Helper function to validate a function call
+Symbol* checkFunctionCall(Symbol* sym, const char* errorPrefix) {
+    if (sym == NULL) {
+        char msg[100];
+        snprintf(msg, sizeof(msg), "%s: base symbol is NULL", errorPrefix);
+        yyerror(msg);
+        return NULL;
+    }
+    if (sym->type != USERFUNC_T && sym->type != LIBFUNC_T) {
+        char msg[100];
+        snprintf(msg, sizeof(msg), "'%s' is not a function", sym->name);
+        yyerror(msg);
+        return NULL;
+    }
+    return sym;
+}
+
+// Helper function for anonymous function calls
+Symbol* handleAnonymousFuncCall(Symbol* funcdef) {
+    if (funcdef == NULL) {
+        yyerror("Invalid anonymous function call: funcdef is NULL");
+        return NULL;
+    }
+    return funcdef;
+}
+
 /*===============================================================================================*/
 /* Resolves */
 
