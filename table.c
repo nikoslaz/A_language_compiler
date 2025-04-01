@@ -114,6 +114,32 @@ Symbol* insert_Symbol(const char* name, SymbolType type) {
     return new;
 }
 
+Symbol* createTempSymbol() {
+    static int temp_counter = 0;
+    char temp_name[32];
+    snprintf(temp_name, sizeof(temp_name), "__temp%d", temp_counter++);
+
+    // Allocate a new Symbol without inserting it into the hash table
+    Symbol* new = (Symbol*)malloc(sizeof(Symbol));
+    if (!new) {
+        fprintf(stderr, "Fatal Error. Memory Allocation failed\n");
+        exit(1);
+    }
+
+    // Initialize the symbol fields
+    new->name = strdup(temp_name);
+    new->type = LOCAL_T;  // Treat it as a local variable for simplicity
+    new->scope = ht->currentScope;  // Use current scope for context
+    new->line = yylineno;  // Current line number
+    new->isActive = 1;  // Mark as active
+    new->varArgs = 0;  // No variable arguments
+    new->args = NULL;  // No arguments
+    new->next_in_scope = NULL;  // Not linked in scope list
+    new->next_in_bucket = NULL;  // Not linked in hash bucket
+
+    return new;
+}
+
 /*===============================================================================================*/
 /* Hashtable */
 

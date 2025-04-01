@@ -6,6 +6,8 @@
     struct Symbol* tmp;
     int inLoop = 0;      // Flag to track if we're inside a loop
     int inFunction = 0;  // Flag to track if we're inside a function
+
+    ScopeList* int_to_Scope(int index);  // Declare the function
 %}
 
 %start program
@@ -228,14 +230,7 @@ lvalue:
                 $$ = resolve_RawSymbol($1);
             }
         } else {
-            if (inaccessible && inFunction) {
-                char msg[100];
-                snprintf(msg, sizeof(msg), "Cannot access '%s' inside function", $1);
-                yyerror(msg);
-                $$ = NULL;
-            } else {
-                $$ = sym;
-            }
+            $$ = sym;
         }
     }
     | LOCAL ID {
@@ -279,7 +274,7 @@ call:
                     yyerror(msg);
                 }
             }
-            $$ = NULL;
+            $$ = createTempSymbol();
         } else {
             $$ = NULL;
         }
@@ -326,7 +321,7 @@ call:
                             yyerror(msg);
                         }
                     }
-                    $$ = NULL;
+                    $$ = createTempSymbol();
                 } else {
                     $$ = NULL;
                 }
@@ -349,7 +344,7 @@ call:
                     yyerror(msg);
                 }
             }
-            $$ = NULL;
+            $$ = createTempSymbol();
         } else {
             $$ = NULL;
         }
@@ -492,16 +487,18 @@ indexed_list:
     ;
 
 block:
-     LEFT_BRACE {
+    LEFT_BRACE {
         if (!fromFunct) {
             enter_Next_Scope(0);
         } else {
-            inFunction = 1;  // Entering a function body
+            inFunction = 1;
+            enter_Next_Scope(1);
         }
-        fromFunct = 0;
+        inLoop++; // For break,continue
     } stmt_list RIGHT_BRACE {
         exit_Current_Scope();
-        inFunction = 0;  // Exiting a function body
+        inFunction = 0;
+        inLoop--; // For break,continue
     }
     ;
 
@@ -568,8 +565,16 @@ forstmt:
     ;
 
 returnstmt:
-    RETURN SEMICOLON 
-    | RETURN expr SEMICOLON 
+    RETURN SEMICOLON {
+        if (!inFunction) {
+            yyerror("Use of 'return' outside a function");
+        }
+    }
+    | RETURN expr SEMICOLON {
+        if (!inFunction) {
+            yyerror("Use of 'return' outside a function");
+        }
+    }
     ;
 
 %%
