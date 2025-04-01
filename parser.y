@@ -279,7 +279,7 @@ call:
                     yyerror(msg);
                 }
             }
-            $$ = createTempSymbol();
+            $$ = NULL;
         } else {
             $$ = NULL;
         }
@@ -326,7 +326,7 @@ call:
                             yyerror(msg);
                         }
                     }
-                    $$ = createTempSymbol();
+                    $$ = NULL;
                 } else {
                     $$ = NULL;
                 }
@@ -349,7 +349,7 @@ call:
                     yyerror(msg);
                 }
             }
-            $$ = createTempSymbol();
+            $$ = NULL;
         } else {
             $$ = NULL;
         }
@@ -537,27 +537,13 @@ const:
     ;
 
 idlist:
-    ID {
-        resolve_FormalSymbol($1);
-        $$ = 1;
-    } idlist_list {
-        $$ = 1 + $3;
-    }
-    | {
-        $$ = 0;
-    }
+    ID { resolve_FormalSymbol($1); $$ = 1; }
+    | idlist COMMA ID { resolve_FormalSymbol($3); $$ = $1 + 1; }
+    | { $$ = 0; }
     ;
 
 idlist_list:
-    COMMA ID {
-        resolve_FormalSymbol($2);
-        $$ = 1;
-    } idlist_list {
-        $$ = 1 + $3;  // Use $3 (idlist_list) instead of $2 (ID)
-    }
-    | {
-        $$ = 0;
-    }
+    /* Empty */
     ;
 
 ifstmt:

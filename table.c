@@ -114,13 +114,6 @@ Symbol* insert_Symbol(const char* name, SymbolType type) {
     return new;
 }
 
-Symbol* createTempSymbol() {
-    static int temp_counter = 0;
-    char temp_name[32];
-    snprintf(temp_name, sizeof(temp_name), "__temp%d", temp_counter++);
-    return insert_Symbol(temp_name, LOCAL_T);
-}
-
 /*===============================================================================================*/
 /* Hashtable */
 
