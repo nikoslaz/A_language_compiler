@@ -488,17 +488,15 @@ indexed_list:
 
 block:
     LEFT_BRACE {
-        if (!fromFunct) {
-            enter_Next_Scope(0);
-        } else {
-            inFunction = 1;
-            enter_Next_Scope(1);
-        }
-        inLoop++; // For break,continue
+        // if (!fromFunct) {
+        //     enter_Next_Scope(0); // Only enter a new scope if not coming from a function
+        // }
+        // inLoop++; // For break,continue
     } stmt_list RIGHT_BRACE {
-        exit_Current_Scope();
-        inFunction = 0;
-        inLoop--; // For break,continue
+        // if (!fromFunct) {
+        //     exit_Current_Scope(); // Only exit the scope if we entered it here
+        // }
+        // inLoop--; // For break,continue
     }
     ;
 
@@ -513,6 +511,8 @@ funcdef:
         enter_Next_Scope(1);
     } idlist RIGHT_PARENTHESIS block {
         $$ = tmp;
+        exit_Current_Scope();
+        fromFunct = 0;
     }
     | FUNCTION LEFT_PARENTHESIS {
         Symbol* sym = resolve_AnonymousFunc();
@@ -521,6 +521,8 @@ funcdef:
         enter_Next_Scope(1);
     } idlist RIGHT_PARENTHESIS block {
         $$ = tmp;
+        exit_Current_Scope();
+        fromFunct = 0;
     }
     ;
 
