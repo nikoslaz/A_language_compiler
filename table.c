@@ -454,20 +454,32 @@ void printArgs(argument_node* node) {
 /* Recursive Print */
 void printScopes(const ScopeList* scopelist) {
     /* Base Case */
-    if(!scopelist) { return; }
+    if (!scopelist) {
+        return;
+    }
+    
     /* Print in reverse order Recursively */
     printScopes(scopelist->next);
-    /* My job */
-    printf("---------- Scope %d ----------\n", scopelist->scope);
+    
+    /* Print table header */
+    printf("---------------------  Scope %-2d  ----------------------\n", scopelist->scope);
+    
+    /* Column headers */
+    printf("| %-15s | %-15s | %-6s | %-6s |\n", "Name", "Type", "Line", "Scope");
+    printf("|-----------------|-----------------|--------|--------|\n");
+    
+    /* Print symbols */
     Symbol* symbol = scopelist->head;
-    while(symbol) {
-        /* Do not print Library Functions :D */
-        if(symbol->type!=LIBFUNC_T) {
-            printf("\"%s\" [%s] (line %d) (scope %d)",
-            symbol->name, symbolTypeToString(symbol->type),
-            symbol->line, symbol->scope);
-            if(symbol->type == USERFUNC_T) {
-                if(!symbol->args) {
+    while (symbol) {
+        if (symbol->type != LIBFUNC_T) {
+            printf("| %-15s | %-15s | %-6d | %-6d |",
+                   symbol->name,
+                   symbolTypeToString(symbol->type),
+                   symbol->line,
+                   symbol->scope);
+            
+            if (symbol->type == USERFUNC_T) {
+                if (!symbol->args) {
                     printf(" with no args");
                 } else {
                     printf(" with args: %s", symbol->args->symbol->name);
