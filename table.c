@@ -181,6 +181,7 @@ void createArgumentNode(Symbol* mySymbol) {
     newarg->symbol = mySymbol;
     newarg->next = NULL;
     /* Link at the end of args list */
+    if(!currFunction) { return; }
     if(!currFunction->args) { currFunction->args = newarg; }
     else {
         argument_node* currnode = currFunction->args;

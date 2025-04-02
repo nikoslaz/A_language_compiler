@@ -209,7 +209,7 @@ primary:
     | call
     | objectdef
     | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS
-    | const 
+    | const
     ;
 
 lvalue:
@@ -271,6 +271,7 @@ call:
                 }
             }
             $$ = createTempSymbol();
+            // $$ = NULL;
         } else {
             $$ = NULL;
         }
@@ -455,9 +456,6 @@ block:
 funcdef:
     FUNCTION ID LEFT_PARENTHESIS {
         Symbol* sym = resolve_FuncSymbol($2);
-        if (sym && sym->type == LIBFUNC_T) {
-            yyerror("Cannot redefine library function");
-        }
         tmp = sym;
         fromFunct = 1;
         inFunction++;
