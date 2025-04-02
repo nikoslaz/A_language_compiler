@@ -58,6 +58,7 @@ void enter_Next_Scope(int fromFunct) {
 void exit_Current_Scope(void) {
     /* Find current ScopeList */
     ScopeList* scope_list = int_to_Scope(ht->currentScope);
+    scope_list->isFunc=0;
     /* Set isActve to 0 */
     Symbol* curr = scope_list->head;
     while(curr) {
@@ -462,7 +463,7 @@ void printScopes(const ScopeList* scopelist) {
     printScopes(scopelist->next);
     
     /* Print table header */
-    printf("---------------------  Scope %-2d  ----------------------\n", scopelist->scope);
+    printf("\n---------------------  Scope %-2d  ----------------------\n", scopelist->scope);
     
     /* Column headers */
     printf("| %-15s | %-15s | %-6s | %-6s |\n", "Name", "Type", "Line", "Scope");
@@ -496,6 +497,7 @@ void printScopes(const ScopeList* scopelist) {
 void print_SymTable(void) {
     const ScopeList* scopeNode = ht->ScopesHead;
     printScopes(scopeNode);
+    printf("\n\n");
 }
 
 /* end of table.c */

@@ -70,13 +70,9 @@
 %type <symbolZoumi> funcdef
 
 %type <symbolZoumi> call
-%type <intZoumi> callsuffix
 %type <intZoumi> normcall
-%type <intZoumi> methodcall
 %type <intZoumi> elist
 %type <intZoumi> elist_list
-/* %type <intZoumi> idlist
-%type <intZoumi> idlist_list */
 
 /* PROTERAIOTHTES KAI PROSETAIRISTIKOTHTA */
 
@@ -255,26 +251,7 @@ member: lvalue PERIOD ID {
 
 call:
     call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS {
-        Symbol* sym = checkFunctionCall($1, "Invalid recursive function call");
-        if (sym) {
-            if (!sym->varArgs) {  // Skip validation for varArgs functions
-                int formal_count = 0;
-                argument_node* args = sym->args;
-                while (args) {
-                    formal_count++;
-                    args = args->next;
-                }
-                if (formal_count != $3) {
-                    char msg[100];
-                    snprintf(msg, sizeof(msg), "Function expects %d arguments, but %d were provided", formal_count, $3);
-                    yyerror(msg);
-                }
-            }
-            $$ = createTempSymbol();
-            // $$ = NULL;
-        } else {
-            $$ = NULL;
-        }
+        $$ = $1;
     }
     | lvalue callsuffix {
         int inaccessible = 0;
@@ -282,51 +259,7 @@ call:
         if(!$1) {
             sym = NULL;
         } else { sym = lookUp_All($1->name, &inaccessible); }
-        if (sym == NULL) {
-            if (inaccessible && inFunction) {
-                char msg[100];
-                snprintf(msg, sizeof(msg), "Cannot access lvalue inside function");
-                yyerror(msg);
-                $$ = NULL;
-            } else {
-                char msg[100];
-                snprintf(msg, sizeof(msg), "Undefined function");
-                yyerror(msg);
-                $$ = NULL;
-            }
-        } else {
-            if (inaccessible && inFunction) {
-                char msg[100];
-                snprintf(msg, sizeof(msg), "Cannot access '%s' inside function", $1->name);
-                yyerror(msg);
-                $$ = NULL;
-            } else if (sym->type != USERFUNC_T && sym->type != LIBFUNC_T) {
-                char msg[100];
-                snprintf(msg, sizeof(msg), "'%s' is not a function", $1->name);
-                yyerror(msg);
-                $$ = NULL;
-            } else {
-                sym = checkFunctionCall(sym, "Invalid function call");
-                if (sym) {
-                    if (!sym->varArgs) {  // Skip validation for varArgs functions
-                        int formal_count = 0;
-                        argument_node* args = sym->args;
-                        while (args) {
-                            formal_count++;
-                            args = args->next;
-                        }
-                        if (formal_count != $2) {
-                            char msg[100];
-                            snprintf(msg, sizeof(msg), "Function '%s' expects %d arguments, but %d were provided", sym->name, formal_count, $2);
-                            yyerror(msg);
-                        }
-                    }
-                    $$ = createTempSymbol();
-                } else {
-                    $$ = NULL;
-                }
-            }
-        }
+        $$ = NULL;
     }
     | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS LEFT_PARENTHESIS elist RIGHT_PARENTHESIS {
         Symbol* sym = handleAnonymousFuncCall($2);
@@ -338,11 +271,6 @@ call:
                     formal_count++;
                     args = args->next;
                 }
-                if (formal_count != $5) {
-                    char msg[100];
-                    snprintf(msg, sizeof(msg), "Anonymous function expects %d arguments, but %d were provided", formal_count, $5);
-                    yyerror(msg);
-                }
             }
             $$ = createTempSymbol();
         } else {
@@ -352,8 +280,8 @@ call:
     ;
 
 callsuffix:
-    normcall { $$ = $1; }
-    | methodcall { $$ = $1; }
+    normcall
+    | methodcall
     ;
 
 normcall:
@@ -363,49 +291,7 @@ normcall:
     ;
 
 methodcall:
-    PERIOD_PERIOD ID LEFT_PARENTHESIS elist RIGHT_PARENTHESIS {
-        int inaccessible = 0;
-        Symbol* sym = lookUp_All($2, &inaccessible);
-        if (sym == NULL) {
-            if (inaccessible && inFunction) {
-                char msg[100];
-                snprintf(msg, sizeof(msg), "Cannot access '%s' inside function", $2);
-                yyerror(msg);
-            } else {
-                char msg[100];
-                snprintf(msg, sizeof(msg), "Undefined method '%s'", $2);
-                yyerror(msg);
-            }
-            $$ = 0;
-        } else {
-            if (inaccessible && inFunction) {
-                char msg[100];
-                snprintf(msg, sizeof(msg), "Cannot access '%s' inside function", $2);
-                yyerror(msg);
-                $$ = 0;
-            } else if (sym->type != USERFUNC_T && sym->type != LIBFUNC_T) {
-                char msg[100];
-                snprintf(msg, sizeof(msg), "'%s' is not a function", $2);
-                yyerror(msg);
-                $$ = 0;
-            } else {
-                if (!sym->varArgs) {  // Skip validation for varArgs functions
-                    int formal_count = 0;
-                    argument_node* args = sym->args;
-                    while (args) {
-                        formal_count++;
-                        args = args->next;
-                    }
-                    if (formal_count != $4) {
-                        char msg[100];
-                        snprintf(msg, sizeof(msg), "Method '%s' expects %d arguments, but %d were provided", $2, formal_count, $4);
-                        yyerror(msg);
-                    }
-                }
-                $$ = $4;
-            }
-        }
-    }
+    PERIOD_PERIOD ID LEFT_PARENTHESIS elist RIGHT_PARENTHESIS
     ;
 
 elist: expr elist_list {
@@ -461,6 +347,7 @@ funcdef:
         inFunction++;
         enter_Next_Scope(fromFunct);
     } idlist RIGHT_PARENTHESIS block {
+        fromFunct = 0;
         inFunction--;
         $$ = tmp;
     }
@@ -471,6 +358,7 @@ funcdef:
         inFunction++;
         enter_Next_Scope(fromFunct);
     } idlist RIGHT_PARENTHESIS block {
+        fromFunct = 0;
         inFunction--;
         $$ = tmp;
     }
@@ -488,21 +376,15 @@ const:
 idlist:
     ID {
         resolve_FormalSymbol($1);
-        // $$ = 1;
-    } idlist_list {
-        // $$ = $1 + 1;
-    }
-    | // { $$ = 0;}
+    } idlist_list
+    |
     ;
 
 idlist_list:
     COMMA ID {
         resolve_FormalSymbol($2);
-        // $$ = 1;
-    } idlist_list {
-        // $$ = $1 + 1;
-    }
-    | // { $$ = 0; }
+    } idlist_list
+    |
     ;
 
 ifstmt:

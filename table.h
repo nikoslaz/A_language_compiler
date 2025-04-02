@@ -83,15 +83,14 @@ void Initialize_HashTable(void);
 void enter_Next_Scope(int fromFunct);
 void exit_Current_Scope(void);
 void print_SymTable(void);
-void checkFunctionSymbol(struct Symbol* sym, const char* operation);
+void free_HashTable(void);
 
+void checkFunctionSymbol(struct Symbol* sym, const char* operation);
 Symbol* checkFunctionCall(Symbol* sym, const char* errorPrefix);
 Symbol* handleAnonymousFuncCall(Symbol* funcdef);
 Symbol* createTempSymbol(void);
 Symbol* lookUp_All(const char* name, int* inaccessible);
 Symbol* lookUp_CurrentScope(const char* name);
-
-void free_HashTable(void);
 
 Symbol* resolve_FuncSymbol(const char* name);
 Symbol* resolve_AnonymousFunc(void);
