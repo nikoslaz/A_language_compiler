@@ -1,12 +1,14 @@
 %{
+    /* parser.y */
     /**
      * @authors nikos , nikoletta , mihalis
      */
     #include "table.h"
     struct Symbol* tmp;
+
+    /* Globals */
     int inLoop = 0;
     int inFunction = 0;
-    int fromFunct = 0;
 %}
 
 %start program
@@ -150,7 +152,7 @@ term:
     | MINUS expr %prec UMINUS_CONFLICT
     | NOT expr %prec NOT
     | PLUS_PLUS lvalue {
-        if ($2 && ($2->type == USERFUNC_T || $2->type == LIBFUNC_T)) {
+        if($2 && ($2->type == USERFUNC_T || $2->type == LIBFUNC_T)) {
             char msg[34];
             snprintf(msg, sizeof(msg), "Using %s as an lvalue", $2->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
             yyerror(msg);
@@ -159,7 +161,7 @@ term:
         }
     }
     | lvalue PLUS_PLUS {
-        if ($1 && ($1->type == USERFUNC_T || $1->type == LIBFUNC_T)) {
+        if($1 && ($1->type == USERFUNC_T || $1->type == LIBFUNC_T)) {
             char msg[34];
             snprintf(msg, sizeof(msg), "Using %s as an lvalue", $1->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
             yyerror(msg);
@@ -168,7 +170,7 @@ term:
         }
     }
     | MINUS_MINUS lvalue {
-        if ($2 && ($2->type == USERFUNC_T || $2->type == LIBFUNC_T)) {
+        if($2 && ($2->type == USERFUNC_T || $2->type == LIBFUNC_T)) {
             char msg[34];
             snprintf(msg, sizeof(msg), "Using %s as an lvalue", $2->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
             yyerror(msg);
@@ -177,7 +179,7 @@ term:
         }
     }
     | lvalue MINUS_MINUS {
-        if ($1 && ($1->type == USERFUNC_T || $1->type == LIBFUNC_T)) {
+        if($1 && ($1->type == USERFUNC_T || $1->type == LIBFUNC_T)) {
             char msg[34];
             snprintf(msg, sizeof(msg), "Using %s as an lvalue", $1->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
             yyerror(msg);
@@ -190,7 +192,7 @@ term:
 
 assignexpr:
     lvalue EQUALS expr {
-        if ($1 && ($1->type == USERFUNC_T || $1->type == LIBFUNC_T)) {
+        if($1 && ($1->type == USERFUNC_T || $1->type == LIBFUNC_T)) {
             char msg[34];
             snprintf(msg, sizeof(msg), "Using %s as an lvalue", $1->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
             yyerror(msg);
@@ -212,8 +214,8 @@ lvalue:
     ID {
         int inaccessible = 0;
         Symbol* sym = lookUp_All($1, &inaccessible);
-        if (sym == NULL) {
-            if (inaccessible && inFunction) {
+        if(sym == NULL) {
+            if(inaccessible && inFunction) {
                 char msg[100];
                 snprintf(msg, sizeof(msg), "Cannot access '%s' inside function", $1);
                 yyerror(msg);
@@ -234,25 +236,15 @@ lvalue:
     | member
     ;
 
-/*JUST A CHECK!!*/
-member: lvalue PERIOD ID {
-        $$ = $1;  // simplified: pass lvalue’s Symbol*
-      }
-      | lvalue LEFT_BRACKET expr RIGHT_BRACKET {
-        $$ = $1;
-      }
-      | call PERIOD ID {
-        $$ = $1;
-      }
-      | call LEFT_BRACKET expr RIGHT_BRACKET {
-        $$ = $1;
-      }
-      ;
+member: 
+    lvalue PERIOD ID { $$ = $1; }
+    | lvalue LEFT_BRACKET expr RIGHT_BRACKET { $$ = $1; }
+    | call PERIOD ID { $$ = $1; }
+    | call LEFT_BRACKET expr RIGHT_BRACKET { $$ = $1; }
+    ;
 
 call:
-    call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS {
-        $$ = $1;
-    }
+    call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS { $$ = $1; }
     | lvalue callsuffix {
         int inaccessible = 0;
         Symbol* sym;
@@ -263,15 +255,7 @@ call:
     }
     | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS LEFT_PARENTHESIS elist RIGHT_PARENTHESIS {
         Symbol* sym = handleAnonymousFuncCall($2);
-        if (sym) {
-            if (!sym->varArgs) {  // Skip validation for varArgs functions
-                int formal_count = 0;
-                argument_node* args = sym->args;
-                while (args) {
-                    formal_count++;
-                    args = args->next;
-                }
-            }
+        if(sym) {
             $$ = createTempSymbol();
         } else {
             $$ = NULL;
@@ -294,15 +278,13 @@ methodcall:
     PERIOD_PERIOD ID LEFT_PARENTHESIS elist RIGHT_PARENTHESIS
     ;
 
-elist: expr elist_list {
-        $$ = 1 + $2; 
-    }
+elist: 
+    expr elist_list { $$ = 1 + $2; }
     | { $$ = 0; }
     ;
 
-elist_list: COMMA expr elist_list {
-        $$ = 1 + $3;
-    }
+elist_list: 
+    COMMA expr elist_list { $$ = 1 + $3; }
     | { $$ = 0; }
     ;
 
@@ -329,7 +311,7 @@ indexed_list:
 
 block:
      LEFT_BRACE {
-        /*if is is not from function enter next scope*/
+        /* Functions make their own scopes */
         if(!fromFunct) { enter_Next_Scope(fromFunct); }
         fromFunct=0;
         inLoop++;
@@ -374,16 +356,12 @@ const:
     ;
 
 idlist:
-    ID {
-        resolve_FormalSymbol($1);
-    } idlist_list
+    ID { resolve_FormalSymbol($1); } idlist_list
     |
     ;
 
 idlist_list:
-    COMMA ID {
-        resolve_FormalSymbol($2);
-    } idlist_list
+    COMMA ID { resolve_FormalSymbol($2); } idlist_list
     |
     ;
 
@@ -439,14 +417,14 @@ int main(int argc, char** argv) {
     yyparse();
     fclose(yyout);
 
-    /* Comments not closed */
+    /* Comments not closed properly */
     if(comment_depth > 0){
         printf("Error! The comment in line %d is not closed properly.\n", comment_startlines[comment_top]);
         exit(1);
     }
 
     /* Print Output */
-    printf("\n   ======= Syntax Analysis =======\n\n");
+    printf("\n           ======= Syntax Analysis =======\n");
     print_SymTable();
     
     /* Return Normally */
@@ -455,3 +433,5 @@ int main(int argc, char** argv) {
 
     return 0;
 }
+
+/* end of parser.y */

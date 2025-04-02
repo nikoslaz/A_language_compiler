@@ -1,3 +1,4 @@
+/* table.c */
 /**
  * @authors nikos , nikoletta , mihalis
  */
@@ -5,8 +6,11 @@
 
 /* Globals */
 HashTable* ht;
-int AnonymousCounter = 0; // Counter for naming anonymous functions
-Symbol* currFunction;   // Pointer to the current function being processed
+int fromFunct = 0;
+/* Counter for naming anonymous functions */
+int AnonymousCounter = 0;
+/* Pointer to the current function being processed */
+Symbol* currFunction;
 
 /* Helper Function */
 void MemoryFail(void) {
@@ -14,6 +18,7 @@ void MemoryFail(void) {
     exit(1);
 }
 
+/* yyerror */
 int yyerror(char* yaccProvidedMessage) {
     fprintf(stderr, "Error in Line %d: %s\n",
     yylineno, yaccProvidedMessage);
@@ -37,13 +42,15 @@ ScopeList* int_to_Scope(int index) {
 void enter_Next_Scope(int fromFunct) {
     ScopeList* scope_list;
     /* First Time */
-    if(ht->currentScope == -1) {
-        scope_list=NULL;
-    } else {
+    if(ht->currentScope == -1) { scope_list=NULL; }
+    else {
         scope_list = int_to_Scope(ht->currentScope);
     }
+    /* Increment Index */
     ht->currentScope++;
+    /* If not already in, insert in descending order */
     if(!scope_list || ((ht->currentScope) > (ht->ScopesHead->scope))) {
+        /* Create new node */
         ScopeList* new_scope = (ScopeList*)malloc(sizeof(ScopeList));
         if(!new_scope) { MemoryFail(); }
         new_scope->head = NULL;
@@ -58,13 +65,14 @@ void enter_Next_Scope(int fromFunct) {
 void exit_Current_Scope(void) {
     /* Find current ScopeList */
     ScopeList* scope_list = int_to_Scope(ht->currentScope);
-    scope_list->isFunc=0;
     /* Set isActve to 0 */
     Symbol* curr = scope_list->head;
     while(curr) {
         curr->isActive = 0;
         curr = curr->next_in_scope;
     }
+    /* Reset isFunc */
+    scope_list->isFunc=0;
     /* Exit Scope */
     ht->currentScope--;
 }
@@ -153,7 +161,7 @@ Symbol* is_Lib_Func(const char* name) {
 }
 
 Symbol* lookUp_CurrentScope(const char* name) {
-    /* Search my Scope for any Symbol with the same name */
+    /* Search my Scope for any active Symbol with the same name */
     Symbol* curr = ht->buckets[hash(name)];
     while(curr) {
         if(curr->scope==ht->currentScope && strcmp(name, curr->name)==0 && curr->isActive) {
@@ -165,6 +173,7 @@ Symbol* lookUp_CurrentScope(const char* name) {
 }
 
 Symbol* lookUp_GlobalScope(const char* name) {
+    /* Search global Scope for any Symbol with the same name */
     ScopeList* scope_list = int_to_Scope(0);
     Symbol* current = scope_list->head;
     while(current) {
@@ -176,6 +185,7 @@ Symbol* lookUp_GlobalScope(const char* name) {
     return NULL;
 }
 
+/* Used only for functions */
 void createArgumentNode(Symbol* mySymbol) {
     argument_node* newarg = (argument_node*)malloc(sizeof(argument_node));
     if(!newarg) { MemoryFail(); }
@@ -191,7 +201,7 @@ void createArgumentNode(Symbol* mySymbol) {
     }
 }
 
-const char* createNewArgumentName(void) {
+const char* createNewFunctionName(void) {
     char* anon_name = (char*)malloc(10*sizeof(char));
     if(!anon_name) { MemoryFail(); }
     sprintf(anon_name, "$func%d", AnonymousCounter++);
@@ -215,7 +225,8 @@ Symbol* resolve_FuncSymbol(const char* name) {
         yyerror("Trying to redefine Library Function");
     } else if(res = lookUp_CurrentScope(name)) {
         yyerror("Symbol already defined");
-    } /* Not already defined, insert it as a user function */ 
+    }
+    /* Not already defined, insert it as a user function */ 
     else { res = insert_Symbol(name, USERFUNC_T); }
     return res;
 }
@@ -227,7 +238,7 @@ Symbol* resolve_AnonymousFunc(void) {
         return res;
     }
     /* Anonymous are always added with a unique name */
-    const char* anon_name = createNewArgumentName();
+    const char* anon_name = createNewFunctionName();
     res = insert_Symbol(anon_name, USERFUNC_T);
     return res;
 }
@@ -249,6 +260,7 @@ Symbol* resolve_LocalSymbol(const char* name) {
     if(res = is_Lib_Func(name)) { yyerror("Trying to redefine Library Function"); }
     else if(res = lookUp_CurrentScope(name)) { return res; }
     else {
+        /* Not already defined, insert it as a local or global variable */ 
         if(ht->currentScope==0) { res = insert_Symbol(name, GLOBAL_T); }
         else { res = insert_Symbol(name, LOCAL_T); }
     }
@@ -256,6 +268,7 @@ Symbol* resolve_LocalSymbol(const char* name) {
 }
 
 Symbol* resolve_GlobalSymbol(const char* name) {
+    /* Only check if it exists */
     Symbol* res = lookUp_GlobalScope(name);
     if(!res) { yyerror("Global Variable not found"); }
     return res;
@@ -276,47 +289,43 @@ Symbol* is_User_Func(const char* name) {
 }
 
 Symbol* lookUp_All(const char* name, int* inaccessible) {
-    *inaccessible = 0;  /*boolean to check if the symbol we find is accessible or not*/
+    /* Boolean to check if the symbol we find is accessible or not */
+    *inaccessible = 0;
     int current_scope = ht->currentScope;
     ScopeList* scope = ht->ScopesHead;
     int hit_function_scope = 0;
-
+    /* Work towards outer scopes */
     while (current_scope >= 0) {
         scope = int_to_Scope(current_scope);
-
-        if (scope) {
-            Symbol* sym = scope->head;
-            while (sym) {
-                if (strcmp(sym->name, name) == 0 && sym->isActive) {
-                    if (sym->type == USERFUNC_T || sym->type == LIBFUNC_T) {
-                        return sym;
-                    } else {
-                        if (sym->scope == 0) {
-                            return sym;
-                        }
-                        if (hit_function_scope) {
-                            *inaccessible = 1;  /*found but inaccessible*/
-                            return NULL;
-                        }
-                        return sym;
+        Symbol* sym = scope->head;
+        while (sym) {
+            if (strcmp(sym->name, name) == 0 && sym->isActive) {
+                if (sym->type == USERFUNC_T || sym->type == LIBFUNC_T) {
+                    return sym;
+                } else {
+                    /* Global always accessible */
+                    if (sym->scope == 0) { return sym; }
+                    if (hit_function_scope) {
+                        /* found but inaccessible */
+                        *inaccessible = 1;
+                        return NULL;
                     }
+                    return sym;
                 }
-                sym = sym->next_in_scope;
             }
-
-            if (scope->isFunc) {
-                hit_function_scope = 1;
-            }
+            sym = sym->next_in_scope;
         }
-
+        /* Encounter a function, so i cant go further */
+        if (scope->isFunc) { hit_function_scope = 1; }
+        /* Move to previous scope */
         current_scope--;
     }
-
-    return NULL;  /*not found and accessible*/
+    /* Not found */
+    return NULL;
 }
 
 Symbol* resolve_RawSymbol(const char* name) {
-    // VARIABLES:search all the previous scopes including current
+    // VARIABLES: search all the previous scopes including current
     // until you find variable with the same name that can reach current scope
     // without bool inaccessible getting in the way
     // FUNCTIONS: all the previous scopes
@@ -325,21 +334,19 @@ Symbol* resolve_RawSymbol(const char* name) {
     Symbol* res = NULL;
     int inaccessible = 0;
 
-    /*check if it's a library function*/
-    if ((res = is_Lib_Func(name))) {
+    if((res = is_Lib_Func(name))) {
         yyerror("Trying to redefine Library Function");
         return res;
     }
-    /*check if it's a user function*/
-    if ((res = is_User_Func(name))) {
+    if((res = is_User_Func(name))) {
         yyerror("Trying to redefine User Function");
         return res;
     }
-    /*look up the symbol*/
+
     res = lookUp_All(name, &inaccessible);
-    if (res) {
-        return res;  /*found and accessible :D*/
-    } else if (inaccessible) {
+    if(res) {
+        return res;  /* Found and accessible! :D */
+    } else if(inaccessible) {
         /* Inaccessible */
         int size = 28+strlen(name);
         char* msg = (char*)malloc(size*sizeof(char));
@@ -348,7 +355,7 @@ Symbol* resolve_RawSymbol(const char* name) {
         yyerror(msg);
         return NULL;
     } else {
-        /*not found, insert it in the hashtable*/
+        /* Not found, insert it in the Hashtable */
         SymbolType type = (ht->currentScope == 0) ? GLOBAL_T : LOCAL_T;
         return insert_Symbol(name, type);
     }
@@ -376,7 +383,7 @@ Symbol* handleAnonymousFuncCall(Symbol* funcdef) {
 }
 
 Symbol* createTempSymbol(void) {
-    /* Return symbol but does not inserts it in Symbol Table (function)*/
+    /* Returns a symbol but does not insert it in Symbol Table (function) */
     static int temp_counter = 0;
     char temp_name[32];
     snprintf(temp_name, sizeof(temp_name), "__temp%d", temp_counter++);
@@ -392,7 +399,6 @@ Symbol* createTempSymbol(void) {
     new->scope = ht->currentScope;  
     new->line = yylineno;  
     new->isActive = 1;  
-    new->varArgs = 0;  
     new->args = NULL;  
     new->next_in_scope = NULL;  
     new->next_in_bucket = NULL;  
@@ -453,10 +459,9 @@ void printArgs(argument_node* node) {
 }
 
 void printScopes(const ScopeList* scopelist) {
-    if (!scopelist) {
-        return;
-    }
+    if (!scopelist) { return; }
     
+    /* Recursion */
     printScopes(scopelist->next);
     
     printf("\n---------------------  Scope %-2d  ----------------------\n", scopelist->scope);
@@ -471,7 +476,7 @@ void printScopes(const ScopeList* scopelist) {
                    symbolTypeToString(symbol->type),
                    symbol->line,
                    symbol->scope);
-            
+            /* Also print arguments! */
             if (symbol->type == USERFUNC_T) {
                 if (!symbol->args) {
                     printf(" with no args");
@@ -484,6 +489,7 @@ void printScopes(const ScopeList* scopelist) {
         }
         symbol = symbol->next_in_scope;
     }
+    printf("-------------------------------------------------------\n");
 }
 
 /* API */

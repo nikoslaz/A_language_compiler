@@ -45,25 +45,28 @@ typedef struct argument_t {
     struct argument_t* next;
 } argument_node;
 
-/* symbol_t */
+/* Store all relative fields of a Symbol */
 typedef struct Symbol {
     char* name;
-    SymbolType type; // GLOBAL LOCAL FORMAL USERFUNC LIBFUNC
+    SymbolType type;
     int scope;
     int line;
     int isActive;
-    int varArgs;
     argument_node* args;
-    struct Symbol* next_in_scope; // for scope list
-    struct Symbol* next_in_bucket; // for collision list
+    /* For scope list */
+    struct Symbol* next_in_scope;
+    /* For collision list */
+    struct Symbol* next_in_bucket;
 } Symbol;
 
 /* Linked List of the same Scope */
 typedef struct ScopeList {
     int scope;
-    Symbol* head; 
-    struct ScopeList* next;
     int isFunc;
+    /* Linked List of Symbols */
+    Symbol* head;
+    /* Next Scope in descending order */
+    struct ScopeList* next;
 } ScopeList;
 
 /* Simple HashTable */
@@ -73,8 +76,10 @@ typedef struct HashTable {
     ScopeList* ScopesHead;
 } HashTable;
 
+/* Globals */
 extern HashTable* ht;
 extern int AnonymousCounter;
+extern int fromFunct;
 extern Symbol* currFunction;
 
 /* Functions */
@@ -85,6 +90,7 @@ void exit_Current_Scope(void);
 void print_SymTable(void);
 void free_HashTable(void);
 
+/* Helper Functions */
 void checkFunctionSymbol(struct Symbol* sym, const char* operation);
 Symbol* checkFunctionCall(Symbol* sym, const char* errorPrefix);
 Symbol* handleAnonymousFuncCall(Symbol* funcdef);
@@ -92,13 +98,13 @@ Symbol* createTempSymbol(void);
 Symbol* lookUp_All(const char* name, int* inaccessible);
 Symbol* lookUp_CurrentScope(const char* name);
 
+/* Resolve Symbols */
 Symbol* resolve_FuncSymbol(const char* name);
 Symbol* resolve_AnonymousFunc(void);
 Symbol* resolve_FormalSymbol(const char* name);
 Symbol* resolve_LocalSymbol(const char* name);
 Symbol* resolve_GlobalSymbol(const char* name);
 Symbol* resolve_RawSymbol(const char* name);
-
 
 #endif
 /* end of table.h */
