@@ -4,13 +4,13 @@
      */
     #include "table.h"
     struct Symbol* tmp;
-    int inLoop = 0;      // Flag to track if we're inside a loop
-    int inFunction = 0;  // Flag to track if we're inside a function
-
-    ScopeList* int_to_Scope(int index);  // Declare the function
+    int inLoop = 0;
+    int inFunction = 0;
+    int fromFunct = 0;
 %}
 
 %start program
+
 %union {
 	char*	stringZoumi;
 	int		intZoumi;
@@ -68,14 +68,15 @@
 %type <symbolZoumi> lvalue
 %type <symbolZoumi> member
 %type <symbolZoumi> funcdef
+
 %type <symbolZoumi> call
 %type <intZoumi> callsuffix
 %type <intZoumi> normcall
 %type <intZoumi> methodcall
 %type <intZoumi> elist
 %type <intZoumi> elist_list
-%type <intZoumi> idlist
-%type <intZoumi> idlist_list
+/* %type <intZoumi> idlist
+%type <intZoumi> idlist_list */
 
 /* PROTERAIOTHTES KAI PROSETAIRISTIKOTHTA */
 
@@ -96,7 +97,7 @@
 %nonassoc THEN_CONFLICT
 %nonassoc ELSE
 
-%left DOT DOUBLE_DOT
+%left PERIOD PERIOD_PERIOD
 
 %left RIGHT_BRACKET LEFT_BRACKET
 
@@ -115,20 +116,15 @@ stmt:
     | forstmt
     | returnstmt
     | BREAK SEMICOLON {
-        if (!inLoop) {
-            yyerror("Use of 'break' while not in a loop");
-        }
+        if(!inLoop) { yyerror("Use of 'break' outside loop"); }
     }
     | CONTINUE SEMICOLON {
-        if (!inLoop) {
-            yyerror("Use of 'continue' while not in a loop");
-        }
+        if(!inLoop) { yyerror("Use of 'continue' outside loop"); }
     }
     | block
     | funcdef
     | SEMICOLON
     ;
-
 
 stmt_list:
     stmt stmt_list
@@ -159,7 +155,7 @@ term:
     | NOT expr %prec NOT
     | PLUS_PLUS lvalue {
         if ($2 && ($2->type == USERFUNC_T || $2->type == LIBFUNC_T)) {
-            char msg[100];
+            char msg[34];
             snprintf(msg, sizeof(msg), "Using %s as an lvalue", $2->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
             yyerror(msg);
         } else {
@@ -168,7 +164,7 @@ term:
     }
     | lvalue PLUS_PLUS {
         if ($1 && ($1->type == USERFUNC_T || $1->type == LIBFUNC_T)) {
-            char msg[100];
+            char msg[34];
             snprintf(msg, sizeof(msg), "Using %s as an lvalue", $1->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
             yyerror(msg);
         } else {
@@ -177,7 +173,7 @@ term:
     }
     | MINUS_MINUS lvalue {
         if ($2 && ($2->type == USERFUNC_T || $2->type == LIBFUNC_T)) {
-            char msg[100];
+            char msg[34];
             snprintf(msg, sizeof(msg), "Using %s as an lvalue", $2->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
             yyerror(msg);
         } else {
@@ -186,7 +182,7 @@ term:
     }
     | lvalue MINUS_MINUS {
         if ($1 && ($1->type == USERFUNC_T || $1->type == LIBFUNC_T)) {
-            char msg[100];
+            char msg[34];
             snprintf(msg, sizeof(msg), "Using %s as an lvalue", $1->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
             yyerror(msg);
         } else {
@@ -199,7 +195,7 @@ term:
 assignexpr:
     lvalue EQUALS expr {
         if ($1 && ($1->type == USERFUNC_T || $1->type == LIBFUNC_T)) {
-            char msg[100];
+            char msg[34];
             snprintf(msg, sizeof(msg), "Using %s as an lvalue", $1->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
             yyerror(msg);
         } else {
@@ -244,13 +240,13 @@ lvalue:
 
 /*JUST A CHECK!!*/
 member: lvalue PERIOD ID {
-        $$ = $1;  // Pass lvalue’s Symbol*
+        $$ = $1;  // simplified: pass lvalue’s Symbol*
       }
       | lvalue LEFT_BRACKET expr RIGHT_BRACKET {
         $$ = $1;
       }
       | call PERIOD ID {
-        $$ = $1;  // Use the temporary symbol from the call
+        $$ = $1;
       }
       | call LEFT_BRACKET expr RIGHT_BRACKET {
         $$ = $1;
@@ -281,16 +277,19 @@ call:
     }
     | lvalue callsuffix {
         int inaccessible = 0;
-        Symbol* sym = lookUp_All($1->name, &inaccessible);
+        Symbol* sym;
+        if(!$1) {
+            sym = NULL;
+        } else { sym = lookUp_All($1->name, &inaccessible); }
         if (sym == NULL) {
             if (inaccessible && inFunction) {
                 char msg[100];
-                snprintf(msg, sizeof(msg), "Cannot access '%s' inside function", $1->name);
+                snprintf(msg, sizeof(msg), "Cannot access lvalue inside function");
                 yyerror(msg);
                 $$ = NULL;
             } else {
                 char msg[100];
-                snprintf(msg, sizeof(msg), "Undefined function '%s'", $1->name);
+                snprintf(msg, sizeof(msg), "Undefined function");
                 yyerror(msg);
                 $$ = NULL;
             }
@@ -350,7 +349,7 @@ call:
         }
     }
     ;
-    
+
 callsuffix:
     normcall { $$ = $1; }
     | methodcall { $$ = $1; }
@@ -408,51 +407,6 @@ methodcall:
     }
     ;
 
-call:
-    PERIOD_PERIOD ID LEFT_PARENTHESIS elist RIGHT_PARENTHESIS {
-        // Treat as a regular function call for now
-        int inaccessible = 0;
-        Symbol* sym = lookUp_All($2, &inaccessible);
-        if (sym == NULL) {
-            if (inaccessible && inFunction) {
-                char msg[100];
-                snprintf(msg, sizeof(msg), "Cannot access '%s' inside function", $2);
-                yyerror(msg);
-            } else {
-                char msg[100];
-                snprintf(msg, sizeof(msg), "Undefined method '%s'", $2);
-                yyerror(msg);
-            }
-            $$ = 0;
-        } else {
-            if (inaccessible && inFunction) {
-                char msg[100];
-                snprintf(msg, sizeof(msg), "Cannot access '%s' inside function", $2);
-                yyerror(msg);
-                $$ = 0;
-            } else if (sym->type != USERFUNC_T && sym->type != LIBFUNC_T) {
-                char msg[100];
-                snprintf(msg, sizeof(msg), "'%s' is not a function", $2);
-                yyerror(msg);
-                $$ = 0;
-            } else {
-                int formal_count = 0;
-                argument_node* args = sym->args;
-                while (args) {
-                    formal_count++;
-                    args = args->next;
-                }
-                if (formal_count != $4) {
-                    char msg[100];
-                    snprintf(msg, sizeof(msg), "Method '%s' expects %d arguments, but %d were provided", $2, formal_count, $4);
-                    yyerror(msg);
-                }
-                $$ = $4;
-            }
-        }
-    }
-    ;
-
 elist: expr elist_list {
         $$ = 1 + $2; 
     }
@@ -487,16 +441,14 @@ indexed_list:
     ;
 
 block:
-    LEFT_BRACE {
-        // if (!fromFunct) {
-        //     enter_Next_Scope(0); // Only enter a new scope if not coming from a function
-        // }
-        // inLoop++; // For break,continue
+     LEFT_BRACE {
+        /*if is is not from function enter next scope*/
+        if(!fromFunct) { enter_Next_Scope(fromFunct); }
+        fromFunct=0;
+        inLoop++;
     } stmt_list RIGHT_BRACE {
-        // if (!fromFunct) {
-        //     exit_Current_Scope(); // Only exit the scope if we entered it here
-        // }
-        // inLoop--; // For break,continue
+        exit_Current_Scope();
+        inLoop--;
     }
     ;
 
@@ -508,21 +460,21 @@ funcdef:
         }
         tmp = sym;
         fromFunct = 1;
-        enter_Next_Scope(1);
+        inFunction++;
+        enter_Next_Scope(fromFunct);
     } idlist RIGHT_PARENTHESIS block {
+        inFunction--;
         $$ = tmp;
-        exit_Current_Scope();
-        fromFunct = 0;
     }
     | FUNCTION LEFT_PARENTHESIS {
         Symbol* sym = resolve_AnonymousFunc();
         tmp = sym;
         fromFunct = 1;
-        enter_Next_Scope(1);
+        inFunction++;
+        enter_Next_Scope(fromFunct);
     } idlist RIGHT_PARENTHESIS block {
+        inFunction--;
         $$ = tmp;
-        exit_Current_Scope();
-        fromFunct = 0;
     }
     ;
 
@@ -536,13 +488,23 @@ const:
     ;
 
 idlist:
-    ID { resolve_FormalSymbol($1); $$ = 1; }
-    | idlist COMMA ID { resolve_FormalSymbol($3); $$ = $1 + 1; }
-    | { $$ = 0; }
+    ID {
+        resolve_FormalSymbol($1);
+        // $$ = 1;
+    } idlist_list {
+        // $$ = $1 + 1;
+    }
+    | // { $$ = 0;}
     ;
 
 idlist_list:
-    /* Empty */
+    COMMA ID {
+        resolve_FormalSymbol($2);
+        // $$ = 1;
+    } idlist_list {
+        // $$ = $1 + 1;
+    }
+    | // { $$ = 0; }
     ;
 
 ifstmt:

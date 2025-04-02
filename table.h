@@ -52,7 +52,7 @@ typedef struct Symbol {
     int scope;
     int line;
     int isActive;
-    int varArgs;  // Added: Indicates if the function accepts variable arguments
+    int varArgs;
     argument_node* args;
     struct Symbol* next_in_scope; // for scope list
     struct Symbol* next_in_bucket; // for collision list
@@ -75,9 +75,7 @@ typedef struct HashTable {
 
 extern HashTable* ht;
 extern int AnonymousCounter;
-extern int fromFunct;
 extern Symbol* currFunction;
-
 
 /* Functions */
 unsigned int hash(const char* str);
@@ -86,11 +84,13 @@ void enter_Next_Scope(int fromFunct);
 void exit_Current_Scope(void);
 void print_SymTable(void);
 void checkFunctionSymbol(struct Symbol* sym, const char* operation);
+
 Symbol* checkFunctionCall(Symbol* sym, const char* errorPrefix);
 Symbol* handleAnonymousFuncCall(Symbol* funcdef);
-Symbol* createTempSymbol();
+Symbol* createTempSymbol(void);
 Symbol* lookUp_All(const char* name, int* inaccessible);
 Symbol* lookUp_CurrentScope(const char* name);
+
 void free_HashTable(void);
 
 Symbol* resolve_FuncSymbol(const char* name);
@@ -99,6 +99,7 @@ Symbol* resolve_FormalSymbol(const char* name);
 Symbol* resolve_LocalSymbol(const char* name);
 Symbol* resolve_GlobalSymbol(const char* name);
 Symbol* resolve_RawSymbol(const char* name);
+
 
 #endif
 /* end of table.h */
