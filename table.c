@@ -19,6 +19,9 @@ int yyerror(char* yaccProvidedMessage) {
     yylineno, yaccProvidedMessage);
 }
 
+/*===============================================================================================*/
+/* Scope Handling */
+
 ScopeList* int_to_Scope(int index) {
     ScopeList* scope_list = ht->ScopesHead;
     while(scope_list && (scope_list->scope != index)) {
@@ -30,9 +33,6 @@ ScopeList* int_to_Scope(int index) {
     }
     return scope_list;
 }
-
-/*===============================================================================================*/
-/* Scope Handling */
 
 void enter_Next_Scope(int fromFunct) {
     ScopeList* scope_list;
@@ -215,7 +215,8 @@ Symbol* resolve_FuncSymbol(const char* name) {
         yyerror("Trying to redefine Library Function");
     } else if(res = lookUp_CurrentScope(name)) {
         yyerror("Symbol already defined");
-    } else { res = insert_Symbol(name, USERFUNC_T); }
+    } /* Not already defined, insert it as a user function */ 
+    else { res = insert_Symbol(name, USERFUNC_T); }
     return res;
 }
 
@@ -375,27 +376,26 @@ Symbol* handleAnonymousFuncCall(Symbol* funcdef) {
 }
 
 Symbol* createTempSymbol(void) {
+    /* Return symbol but does not inserts it in Symbol Table (function)*/
     static int temp_counter = 0;
     char temp_name[32];
     snprintf(temp_name, sizeof(temp_name), "__temp%d", temp_counter++);
 
-    // Allocate a new Symbol without inserting it into the hash table
     Symbol* new = (Symbol*)malloc(sizeof(Symbol));
     if (!new) {
         fprintf(stderr, "Fatal Error. Memory Allocation failed\n");
         exit(1);
     }
 
-    // Initialize the symbol fields
     new->name = strdup(temp_name);
-    new->type = LOCAL_T;  // Treat it as a local variable for simplicity
-    new->scope = ht->currentScope;  // Use current scope for context
-    new->line = yylineno;  // Current line number
-    new->isActive = 1;  // Mark as active
-    new->varArgs = 0;  // No variable arguments
-    new->args = NULL;  // No arguments
-    new->next_in_scope = NULL;  // Not linked in scope list
-    new->next_in_bucket = NULL;  // Not linked in hash bucket
+    new->type = LOCAL_T;  
+    new->scope = ht->currentScope;  
+    new->line = yylineno;  
+    new->isActive = 1;  
+    new->varArgs = 0;  
+    new->args = NULL;  
+    new->next_in_scope = NULL;  
+    new->next_in_bucket = NULL;  
 
     return new;
 }
@@ -452,24 +452,17 @@ void printArgs(argument_node* node) {
     printArgs(node->next);
 }
 
-/* Recursive Print */
 void printScopes(const ScopeList* scopelist) {
-    /* Base Case */
     if (!scopelist) {
         return;
     }
     
-    /* Print in reverse order Recursively */
     printScopes(scopelist->next);
     
-    /* Print table header */
     printf("\n---------------------  Scope %-2d  ----------------------\n", scopelist->scope);
-    
-    /* Column headers */
     printf("| %-15s | %-15s | %-6s | %-6s |\n", "Name", "Type", "Line", "Scope");
     printf("|-----------------|-----------------|--------|--------|\n");
     
-    /* Print symbols */
     Symbol* symbol = scopelist->head;
     while (symbol) {
         if (symbol->type != LIBFUNC_T) {
