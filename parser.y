@@ -4,6 +4,7 @@
      * @authors nikos , nikoletta , mihalis
      */
     #include "table.h"
+    #include "alpha_quads.h"
     struct Symbol* tmp;
 
     /* Globals */
@@ -199,6 +200,7 @@ assignexpr:
         } else {
             checkFunctionSymbol($1, "assign to");
         }
+        createNewQuad(0, NULL, NULL, NULL, 0, 0);
     }
     ;
 
