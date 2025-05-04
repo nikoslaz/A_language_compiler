@@ -35,7 +35,8 @@ typedef enum SymbolType {
     LOCAL_T,
     FORMAL_T,
     USERFUNC_T,
-    LIBFUNC_T
+    LIBFUNC_T,
+    TEMPORARY_T
 } SymbolType;
 
 /* Used to store the Arguments of a Function */
@@ -50,6 +51,7 @@ typedef struct Symbol {
     char* name;
     SymbolType type;
     int scope;
+    int offset;
     int line;
     int isActive;
     argument_node* args;
@@ -63,6 +65,7 @@ typedef struct Symbol {
 typedef struct ScopeList {
     int scope;
     int isFunc;
+    int scopeOffset;
     /* Linked List of Symbols */
     Symbol* head;
     /* Next Scope in descending order */
@@ -89,6 +92,7 @@ void enter_Next_Scope(int fromFunct);
 void exit_Current_Scope(void);
 void print_SymTable(void);
 void free_HashTable(void);
+void MemoryFail(void);
 
 /* Helper Functions */
 void checkFunctionSymbol(struct Symbol* sym, const char* operation);
@@ -99,6 +103,7 @@ Symbol* lookUp_All(const char* name, int* inaccessible);
 Symbol* lookUp_CurrentScope(const char* name);
 
 /* Resolve Symbols */
+Symbol* insert_Symbol(const char* name, SymbolType type);
 Symbol* resolve_FuncSymbol(const char* name);
 Symbol* resolve_AnonymousFunc(void);
 Symbol* resolve_FormalSymbol(const char* name);

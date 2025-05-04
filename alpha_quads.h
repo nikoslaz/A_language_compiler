@@ -14,6 +14,7 @@
 #define EXPAND_SIZE 1024
 #define CURR_SIZE (totalquads*sizeof(quad))
 #define NEW_SIZE (CURR_SIZE+EXPAND_SIZE*sizeof(quad))
+#define MAX_TEMPS 9999999999
 
 typedef enum iopcode_e {
     OP_ASSIGN,
@@ -37,18 +38,18 @@ typedef enum expr_type_e {
 typedef struct expr_s {
     expr_type type;
     Symbol* symbol;
-    struct expr_s* index;
+    struct expr_s* index;   /* Pointer to table */
     double numConst;
     char* stringConst;
     unsigned int boolConst;
-    struct expr_s* next;
-} expression;
+    struct expr_s* next;    /* For lists */
+} expr;
 
 typedef struct quad_s {
     opcode op;
-    expression* result;
-    expression* arg1;
-    expression* arg2;
+    expr* arg1;
+    expr* arg2;
+    expr* result;
     unsigned int label;
     unsigned int line;
 } quad;
@@ -56,8 +57,10 @@ typedef struct quad_s {
 extern quad* quads;
 extern unsigned int totalquads;
 extern unsigned int currquad;
+extern unsigned int temp_counter;
 
-quad* createNewQuad(opcode op, expression* result, expression* arg1, expression* arg2, unsigned int label, unsigned int line);
+quad* createNewQuad(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label, unsigned int line);
+void printQuads(void);
 
 #endif
 /* end of alpha_quads.h */

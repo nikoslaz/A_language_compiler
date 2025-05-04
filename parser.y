@@ -200,7 +200,7 @@ assignexpr:
         } else {
             checkFunctionSymbol($1, "assign to");
         }
-        createNewQuad(0, NULL, NULL, NULL, 0, 0);
+        createNewQuad(OP_ASSIGN, NULL, NULL, NULL, 0, 0);
     }
     ;
 
@@ -428,6 +428,7 @@ int main(int argc, char** argv) {
     /* Print Output */
     printf("\n           ======= Syntax Analysis =======\n");
     print_SymTable();
+    printQuads();
     
     /* Return Normally */
     free_HashTable();

@@ -28,3 +28,14 @@ DODODODODO
 Table variables
 Merikh Apotimhsh
 
+/* WHAT IT SHOULD LOOK LIKE */
+
+expr: expr PLUS expr {
+    // Create the temporary result for the operation
+    Symbol* temp = create_temp_symbol();
+    // Generate a quad for the addition operation
+    generate_quad("+", $1, $3, temp);
+    // Assign the result to $$ (the expression result)
+    $$ = create_arith_expr(temp);
+}
+

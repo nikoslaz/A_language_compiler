@@ -56,6 +56,7 @@ void enter_Next_Scope(int fromFunct) {
         new_scope->head = NULL;
         new_scope->scope = ht->currentScope;
         new_scope->isFunc = fromFunct;
+        new_scope->scopeOffset=0;
         /* Link at the Start */
         new_scope->next = ht->ScopesHead;
         ht->ScopesHead = new_scope;
@@ -73,6 +74,7 @@ void exit_Current_Scope(void) {
     }
     /* Reset isFunc */
     scope_list->isFunc=0;
+    scope_list->scopeOffset=0;
     /* Exit Scope */
     ht->currentScope--;
 }
@@ -89,6 +91,8 @@ Symbol* insert_Symbol(const char* name, SymbolType type) {
     new->name = strdup(name);
     new->type = type;
     new->scope = ht->currentScope;
+    if(type!=LIBFUNC_T) { new->offset = int_to_Scope(ht->currentScope)->scopeOffset++; }
+    else { new->offset = 0; }
     new->args = NULL;
     new->next_in_scope = NULL;
     if(type==USERFUNC_T) { currFunction = new; }
@@ -461,22 +465,21 @@ void printArgs(argument_node* node) {
 void printScopes(const ScopeList* scopelist) {
     if (!scopelist) { return; }
     
-    /* Recursion */
     printScopes(scopelist->next);
     
-    printf("\n---------------------  Scope %-2d  ----------------------\n", scopelist->scope);
-    printf("| %-15s | %-15s | %-6s | %-6s |\n", "Name", "Type", "Line", "Scope");
-    printf("|-----------------|-----------------|--------|--------|\n");
+    printf("\n-----------------------  Scope %-2d  ------------------------------\n", scopelist->scope);
+    printf("| %-15s | %-15s | %-6s | %-6s | %-7s |\n", "Name", "Type", "Line", "Scope", "Offset");
+    printf("|-----------------|-----------------|--------|--------|---------|\n");
     
     Symbol* symbol = scopelist->head;
     while (symbol) {
         if (symbol->type != LIBFUNC_T) {
-            printf("| %-15s | %-15s | %-6d | %-6d |",
+            printf("| %-15s | %-15s | %-6d | %-6d | %-7d |",
                    symbol->name,
                    symbolTypeToString(symbol->type),
                    symbol->line,
-                   symbol->scope);
-            /* Also print arguments! */
+                   symbol->scope,
+                   symbol->offset);
             if (symbol->type == USERFUNC_T) {
                 if (!symbol->args) {
                     printf(" with no args");
@@ -489,7 +492,7 @@ void printScopes(const ScopeList* scopelist) {
         }
         symbol = symbol->next_in_scope;
     }
-    printf("-------------------------------------------------------\n");
+    printf("-----------------------------------------------------------------\n");
 }
 
 /* API */
