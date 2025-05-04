@@ -11,6 +11,7 @@ DODODODODO
 - Create vartype enum (program, local, formal etc)
 - Create Variable enum (FunctionAddress, Table, etc)
 - Implement Scope Spaces, scope stack, offset inside space, etc (MIXADRILL)
+- OFFSET MUST NOT RESET WHEN NOT IN FUNCTION (LOOK FAQ)
 - Method to create, read, delete temp variables
 
 ---------------------------------------------------------------------------------
