@@ -6,7 +6,6 @@
     #include "table.h"
     #include "alpha_quads.h"
     struct Symbol* tmp;
-    expr*   expr_temp;
 
     /* Globals */
     int inLoop = 0;
@@ -20,7 +19,6 @@
 	int		intZoumi;
 	double	realZoumi;
     struct Symbol* symbolZoumi;
-    // Maybe add this
     struct expr_s*   exprZoumi;  
 }
 
@@ -73,7 +71,6 @@
 
 %type <symbolZoumi> funcdef
 
-/* If we add expr we need these also: */
 %type <exprZoumi> expr       
 %type <exprZoumi> term       
 %type <exprZoumi> assignexpr 
@@ -148,7 +145,7 @@ stmt_list:
 expr:
     assignexpr { $$ = $1; }
     | expr PLUS expr {
-        expr_temp = (expr*)malloc(sizeof(expr));
+        expr* expr_temp = (expr*)malloc(sizeof(expr));
         if(!expr_temp) {
             yyerror("Error allocating memory(expr PLUS expr)\n");
         }
@@ -160,7 +157,7 @@ expr:
         $$ = expr_temp;
     }
     | expr MINUS expr {
-        expr_temp = (expr*)malloc(sizeof(expr));
+        expr* expr_temp = (expr*)malloc(sizeof(expr));
         if(!expr_temp) {
             yyerror("Error allocating memory(expr MINUS expr)\n");
         }
@@ -172,7 +169,7 @@ expr:
         $$ = expr_temp;
     }
     | expr MULT expr {
-        expr_temp = (expr*)malloc(sizeof(expr));
+        expr* expr_temp = (expr*)malloc(sizeof(expr));
         if(!expr_temp) {
             yyerror("Error allocating memory(expr MULT expr)\n");
         }
@@ -184,7 +181,7 @@ expr:
         $$ = expr_temp;
     }
     | expr DIV expr {
-        expr_temp = (expr*)malloc(sizeof(expr));
+        expr* expr_temp = (expr*)malloc(sizeof(expr));
         if(!expr_temp) {
             yyerror("Error allocating memory(expr DIV expr)\n");
         }
@@ -196,7 +193,7 @@ expr:
         $$ = expr_temp;
     }
     | expr MOD expr {
-        expr_temp = (expr*)malloc(sizeof(expr));
+        expr* expr_temp = (expr*)malloc(sizeof(expr));
         if(!expr_temp) {
             yyerror("Error allocating memory(expr MOD expr)\n");
         }
@@ -320,7 +317,7 @@ lvalue:
                 $$ = NULL;
             } else {
                 tmp = resolve_RawSymbol($1);
-                expr_temp = (expr*)malloc(sizeof(expr));
+                expr* expr_temp = (expr*)malloc(sizeof(expr));
                 if(!expr_temp) {
                     MemoryFail();
                 }
@@ -334,7 +331,7 @@ lvalue:
                 $$ = expr_temp;
             }
         } else {            
-            expr_temp = (expr*)malloc(sizeof(expr));
+            expr* expr_temp = (expr*)malloc(sizeof(expr));
             if(!expr_temp) {
                 MemoryFail();
             }
@@ -350,7 +347,7 @@ lvalue:
     }
     | LOCAL ID {
         tmp = resolve_RawSymbol($2);
-        expr_temp = (expr*)malloc(sizeof(expr));
+        expr* expr_temp = (expr*)malloc(sizeof(expr));
         if(!expr_temp) {
             MemoryFail();
         }
@@ -365,7 +362,7 @@ lvalue:
     }
     | COLON_COLON ID {
         tmp = resolve_RawSymbol($2);
-        expr_temp = (expr*)malloc(sizeof(expr));
+        expr* expr_temp = (expr*)malloc(sizeof(expr));
         if(!expr_temp) {
             MemoryFail();
         }
@@ -494,7 +491,7 @@ funcdef:
 
 const:
     INT {
-        expr_temp = (expr*)malloc(sizeof(expr));
+        expr* expr_temp = (expr*)malloc(sizeof(expr));
         if(!expr_temp) {
             yyerror("Error allocating memory(const INT)\n");
         }
@@ -506,7 +503,7 @@ const:
         $$ = expr_temp;
     }
     | REAL {
-        expr_temp = (expr*)malloc(sizeof(expr));
+        expr* expr_temp = (expr*)malloc(sizeof(expr));
         if(!expr_temp) {
             yyerror("Error allocating memory(const REAL)\n");
         }
@@ -518,7 +515,7 @@ const:
         $$ = expr_temp;
     }
     | STRING {
-        expr_temp = (expr*)malloc(sizeof(expr));
+        expr* expr_temp = (expr*)malloc(sizeof(expr));
         if(!expr_temp) {
             yyerror("Error allocating memory(const STRING)\n");
         }
@@ -530,7 +527,7 @@ const:
         $$ = expr_temp;
     }
     | NIL {
-        expr_temp = (expr*)malloc(sizeof(expr));
+        expr* expr_temp = (expr*)malloc(sizeof(expr));
         if(!expr_temp) {
             yyerror("Error allocating memory(const NIL)\n");
         }
@@ -541,7 +538,7 @@ const:
         $$ = expr_temp;
     }
     | TRUE {
-        expr_temp = (expr*)malloc(sizeof(expr));
+        expr* expr_temp = (expr*)malloc(sizeof(expr));
         if(!expr_temp) {
             yyerror("Error allocating memory(const TRUE)\n");
         }
@@ -553,7 +550,7 @@ const:
         $$ = expr_temp;
     }
     | FALSE {
-        expr_temp = (expr*)malloc(sizeof(expr));
+        expr* expr_temp = (expr*)malloc(sizeof(expr));
         if(!expr_temp) {
             yyerror("Error allocating memory(const FALSE)\n");
         }
