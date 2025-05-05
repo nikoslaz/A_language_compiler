@@ -38,7 +38,7 @@ typedef enum expr_type_e {
 typedef struct expr_s {
     expr_type type;
     Symbol* symbol;
-    struct expr_s* index;   /* Pointer to table */
+    struct expr_s* index;   /* for tables */
     double numConst;
     char* stringConst;
     unsigned int boolConst;
@@ -47,9 +47,9 @@ typedef struct expr_s {
 
 typedef struct quad_s {
     opcode op;
+    expr* result;
     expr* arg1;
     expr* arg2;
-    expr* result;
     unsigned int label;
     unsigned int line;
 } quad;
@@ -59,8 +59,8 @@ extern unsigned int totalquads;
 extern unsigned int currquad;
 extern unsigned int temp_counter;
 
-quad* emit(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label);
 Symbol* create_temp_symbol(void);
+quad* emit(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label);
 void printQuads(void);
 
 #endif

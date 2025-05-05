@@ -316,6 +316,7 @@ term:
 assignexpr:
     lvalue EQUALS expr {
         if($1 && ($1->type == EXP_PROGRAMFUNC || $1->type == EXP_LIBRARYFUNC)) {
+            // MORE CHECKING
             char msg[34];
             snprintf(msg, sizeof(msg), "Using %s as an lvalue", $1->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
             yyerror(msg);

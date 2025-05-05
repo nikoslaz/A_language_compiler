@@ -466,7 +466,7 @@ const char* symbolTypeToString(SymbolType type) {
         case FORMAL_T: return "formal argument";
         case USERFUNC_T: return "user function";
         case LIBFUNC_T: return "library function";
-        case TEMPORARY_T: return "temporary variable";
+        case TEMPORARY_T: return "temp variable";
         default: return "unknown";
     }
     assert(0);

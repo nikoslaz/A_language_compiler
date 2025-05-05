@@ -38,6 +38,11 @@ quad* emit(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label) 
 }
 
 /*===============================================================================================*/
+/* Expression Constructors */
+
+
+/*===============================================================================================*/
+/* Print */
 
 const char* opcodeToStr(opcode op) {
     switch (op) {
@@ -98,18 +103,18 @@ const char* exprToStr(expr* e) {
 }
 
 void printQuads(void) {
-    printf("\n%-4s %-14s %-15s %-15s %-15s %-5s\n", "#", "OP", "RESULT", "ARG1", "ARG2", "LABEL");
-    printf("-------------------------------------------------------------------------------\n");
+    printf("\n%-5s|   %-3s %-14s %-15s %-15s %-15s %-5s\n", "LINE", "#", "OP", "RESULT", "ARG1", "ARG2", "LABEL");
+    printf("-----+----------------------------------------------------------------------------\n");
     for (unsigned int i = 0; i < currquad; ++i) {
-        printf("%-4u %-14s %-15s %-15s %-15s",
-        i, opcodeToStr(quads[i].op),
+        printf(" %-4u|   %-3u %-14s %-15s %-15s %-15s",
+        quads[i].line, i, opcodeToStr(quads[i].op),
         exprToStr(quads[i].result), exprToStr(quads[i].arg1), exprToStr(quads[i].arg2));
         if(quads[i].op == OP_IFEQ || quads[i].op == OP_IFNOTEQ || quads[i].op == OP_IFLESS ||
         quads[i].op == OP_IFGREATER || quads[i].op == OP_IFLESSEQ || quads[i].op == OP_IFGREATEREQ)
         { printf(" %-5u\n", quads[i].label); }
         else { printf("\n"); }
     }
-    printf("-------------------------------------------------------------------------------\n\n");
+    printf("-----+----------------------------------------------------------------------------\n\n");
 }
 
 /* end of alpha_quads.c */
