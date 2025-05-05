@@ -225,21 +225,17 @@ expr:
 term:
     LEFT_PARENTHESIS expr RIGHT_PARENTHESIS { $$ = $2; }
     | MINUS expr %prec UMINUS_CONFLICT {
-        /* NEEDS WORK */
-        $$ = (expr*)malloc(sizeof(expr));
-        if(!$$) {
-            yyerror("Error allocating memory(Uminus)\n");
-        };
-        $$->type = EXP_ARITH;
-        $$->symbol = create_temp_symbol();
-        $$->index = NULL;
-        $$->next = NULL;
-        // Create a zero constant expr for UMINUS (0 - expr) if needed,
-        // or use a dedicated UMINUS opcode if your VM supports it.
-        // Let's assume OP_UMINUS exists as per alpha_quads.h
-        emit(OP_UMINUS, $$ /*result*/, $2 /*arg1*/, NULL /*arg2*/, 0 /*label*/);
+        if (!$2 || !($2->type == EXP_VARIABLE || $2->type == EXP_ARITH || $2->type == EXP_CONSTNUMBER)) {
+            yyerror("Error: Invalid arguments(MINUS expr)\n");
+            $$ = NULL;
+        }
+        else {
+            expr* expr_temp = create_arith_expr();
+            emit(OP_UMINUS, expr_temp /*result*/, $2 /*arg1*/, NULL /*arg2*/, 0 /*label*/);
+            $$ = expr_temp;
+        }
     }
-    | NOT expr %prec NOT
+    | NOT expr %prec NOT { $$ = $2; }
     | PLUS_PLUS lvalue {
         if($2 && ($2->type == USERFUNC_T || $2->type == LIBFUNC_T)) {
             char msg[34];
