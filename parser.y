@@ -200,7 +200,7 @@ assignexpr:
         } else {
             checkFunctionSymbol($1, "assign to");
         }
-        createNewQuad(OP_ASSIGN, NULL, NULL, NULL, 0, 0);
+        emit(OP_ASSIGN, NULL, NULL, NULL, 0);
     }
     ;
 

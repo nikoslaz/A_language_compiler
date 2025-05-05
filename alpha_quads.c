@@ -19,7 +19,7 @@ Symbol* create_temp_symbol(void) {
     return insert_Symbol(temp_name, TEMPORARY_T);
 }
 
-quad* createNewQuad(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label, unsigned int line) {
+quad* emit(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label) {
     if (currquad == totalquads) {
         totalquads += EXPAND_SIZE;
         quads = realloc(quads, totalquads * sizeof(quad));
@@ -32,7 +32,7 @@ quad* createNewQuad(opcode op, expr* result, expr* arg1, expr* arg2, unsigned in
     new->arg2 = arg2;
     new->result = result;
     new->label = label;
-    new->line = line;
+    new->line = yylineno;
     quads[currquad++] = *new;
     return new;
 }
