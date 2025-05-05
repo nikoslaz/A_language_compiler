@@ -19,7 +19,7 @@ Symbol* create_temp_symbol(void) {
     return insert_Symbol(temp_name, TEMPORARY_T);
 }
 
-quad* emit(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label) {
+quad* emit(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label, unsigned int line) {
     if (currquad == totalquads) {
         totalquads += EXPAND_SIZE;
         quads = realloc(quads, totalquads * sizeof(quad));
@@ -32,7 +32,7 @@ quad* emit(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label) 
     new->arg2 = arg2;
     new->result = result;
     new->label = label;
-    new->line = yylineno;
+    new->line = line;
     quads[currquad++] = *new;
     return new;
 }
@@ -98,7 +98,7 @@ const char* exprToStr(expr* e) {
 }
 
 void printQuads(void) {
-    printf("\n%-4s %-14s %-15s %-15s %-15s %-5s\n", "#", "OP", "ARG1", "ARG2", "RESULT", "LINE");
+    printf("\n%-4s %-14s %-15s %-15s %-15s %-5s\n", "#", "OP", "ARG1", "ARG2", "RESULT", "LABEL");
     printf("-------------------------------------------------------------------------------\n");
 
     for (unsigned int i = 0; i < currquad; ++i) {
@@ -107,7 +107,7 @@ void printQuads(void) {
         exprToStr(quads[i].arg1), exprToStr(quads[i].arg2), exprToStr(quads[i].result));
         if(quads[i].op == OP_IFEQ || quads[i].op == OP_IFNOTEQ || quads[i].op == OP_IFLESS ||
         quads[i].op == OP_IFGREATER || quads[i].op == OP_IFLESSEQ || quads[i].op == OP_IFGREATEREQ)
-        { printf(" %-5u\n", quads[i].line); }
+        { printf(" %-5u\n", quads[i].label); }
         else { printf("\n"); }
     }
 

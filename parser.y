@@ -6,6 +6,7 @@
     #include "table.h"
     #include "alpha_quads.h"
     struct Symbol* tmp;
+    expr*   expr_temp;
 
     /* Globals */
     int inLoop = 0;
@@ -19,6 +20,8 @@
 	int		intZoumi;
 	double	realZoumi;
     struct Symbol* symbolZoumi;
+    // Maybe add this
+    struct expr_s*   exprZoumi;  
 }
 
 %token <stringZoumi> ID
@@ -68,9 +71,16 @@
 %token PERIOD
 %token PERIOD_PERIOD
 
-%type <symbolZoumi> lvalue
-%type <symbolZoumi> member
 %type <symbolZoumi> funcdef
+
+/* If we add expr we need these also: */
+%type <exprZoumi> expr       
+%type <exprZoumi> term       
+%type <exprZoumi> assignexpr 
+%type <exprZoumi> primary    
+%type <exprZoumi> lvalue 
+%type <exprZoumi> member 
+%type <exprZoumi> const      
 
 %type <symbolZoumi> call
 %type <intZoumi> normcall
@@ -109,7 +119,12 @@ program:
     ;
 
 stmt:
-    expr SEMICOLON
+    expr SEMICOLON 
+    // MAYBE GARBAGE COLLECTION HERE ????????
+    // The result expr* ($1) is calculated but not used further in this context.
+    // If $1 represents a temporary result that's not otherwise used,
+    // you might consider freeing it here, but be extremely careful.
+    // For now, let's assume memory management is handled elsewhere or ignored.
     | ifstmt
     | whilestmt
     | forstmt
@@ -131,12 +146,68 @@ stmt_list:
     ;
 
 expr:
-    assignexpr
-    | expr PLUS expr
-    | expr MINUS expr
-    | expr MULT expr
-    | expr DIV expr
-    | expr MOD expr
+    assignexpr { $$ = $1; }
+    | expr PLUS expr {
+        expr_temp = (expr*)malloc(sizeof(expr));
+        if(!expr_temp) {
+            yyerror("Error allocating memory(expr PLUS expr)\n");
+        }
+        expr_temp->type = EXP_ARITH;
+        expr_temp->symbol = create_temp_symbol();
+        expr_temp->index = NULL;
+        expr_temp->next = NULL;
+        emit(OP_ADD, expr_temp /*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/, yylineno /*line*/);
+        $$ = expr_temp;
+    }
+    | expr MINUS expr {
+        expr_temp = (expr*)malloc(sizeof(expr));
+        if(!expr_temp) {
+            yyerror("Error allocating memory(expr MINUS expr)\n");
+        }
+        expr_temp->type = EXP_ARITH;
+        expr_temp->symbol = create_temp_symbol();
+        expr_temp->index = NULL;
+        expr_temp->next = NULL;
+        emit(OP_SUB, expr_temp /*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/, yylineno /*line*/);
+        $$ = expr_temp;
+    }
+    | expr MULT expr {
+        expr_temp = (expr*)malloc(sizeof(expr));
+        if(!expr_temp) {
+            yyerror("Error allocating memory(expr MULT expr)\n");
+        }
+        expr_temp->type = EXP_ARITH;
+        expr_temp->symbol = create_temp_symbol();
+        expr_temp->index = NULL;
+        expr_temp->next = NULL;
+        emit(OP_MUL, expr_temp /*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/, yylineno /*line*/);
+        $$ = expr_temp;
+    }
+    | expr DIV expr {
+        expr_temp = (expr*)malloc(sizeof(expr));
+        if(!expr_temp) {
+            yyerror("Error allocating memory(expr DIV expr)\n");
+        }
+        expr_temp->type = EXP_ARITH; // Result of arithmetic
+        expr_temp->symbol = create_temp_symbol(); // Get a new temporary symbol
+        expr_temp->index = NULL;
+        expr_temp->next = NULL;
+        emit(OP_DIV, expr_temp /*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/, yylineno /*line*/);
+        $$ = expr_temp;
+    }
+    | expr MOD expr {
+        expr_temp = (expr*)malloc(sizeof(expr));
+        if(!expr_temp) {
+            yyerror("Error allocating memory(expr MOD expr)\n");
+        }
+        expr_temp->type = EXP_ARITH; // Result of arithmetic
+        expr_temp->symbol = create_temp_symbol(); // Get a new temporary symbol
+        expr_temp->index = NULL;
+        expr_temp->next = NULL;
+        emit(OP_MOD, expr_temp /*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/, yylineno /*line*/);
+        $$ = expr_temp;
+    }
+    /* TODO: Backpatching needed */
     | expr GREATER expr
     | expr LESS expr
     | expr GREATER_EQUAL expr
@@ -145,12 +216,25 @@ expr:
     | expr NOT_EQUALS expr
     | expr AND expr
     | expr OR expr
-    | term
+    | term 
     ;
 
 term:
-    LEFT_PARENTHESIS expr RIGHT_PARENTHESIS
-    | MINUS expr %prec UMINUS_CONFLICT
+    LEFT_PARENTHESIS expr RIGHT_PARENTHESIS { $$ = $2; }
+    | MINUS expr %prec UMINUS_CONFLICT {
+        $$ = (expr*)malloc(sizeof(expr));
+        if(!$$) {
+            yyerror("Error allocating memory(Uminus)\n");
+        };
+        $$->type = EXP_ARITH;
+        $$->symbol = create_temp_symbol();
+        $$->index = NULL;
+        $$->next = NULL;
+        // Create a zero constant expr for UMINUS (0 - expr) if needed,
+        // or use a dedicated UMINUS opcode if your VM supports it.
+        // Let's assume OP_UMINUS exists as per alpha_quads.h
+        emit(OP_UMINUS, $$ /*result*/, $2 /*arg1*/, NULL /*arg2*/, 0 /*label*/, yylineno /*line*/);
+    }
     | NOT expr %prec NOT
     | PLUS_PLUS lvalue {
         if($2 && ($2->type == USERFUNC_T || $2->type == LIBFUNC_T)) {
@@ -158,7 +242,7 @@ term:
             snprintf(msg, sizeof(msg), "Using %s as an lvalue", $2->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
             yyerror(msg);
         } else {
-            checkFunctionSymbol($2, "increment");
+            checkFunctionSymbol($2->symbol, "increment");
         }
     }
     | lvalue PLUS_PLUS {
@@ -167,7 +251,7 @@ term:
             snprintf(msg, sizeof(msg), "Using %s as an lvalue", $1->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
             yyerror(msg);
         } else {
-            checkFunctionSymbol($1, "increment");
+            checkFunctionSymbol($1->symbol, "increment");
         }
     }
     | MINUS_MINUS lvalue {
@@ -176,7 +260,7 @@ term:
             snprintf(msg, sizeof(msg), "Using %s as an lvalue", $2->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
             yyerror(msg);
         } else {
-            checkFunctionSymbol($2, "decrement");
+            checkFunctionSymbol($2->symbol, "decrement");
         }
     }
     | lvalue MINUS_MINUS {
@@ -185,31 +269,43 @@ term:
             snprintf(msg, sizeof(msg), "Using %s as an lvalue", $1->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
             yyerror(msg);
         } else {
-            checkFunctionSymbol($1, "decrement");
+            checkFunctionSymbol($1->symbol, "decrement");
         }
     }
-    | primary
+    | primary { $$ = $1; }
     ;
 
 assignexpr:
     lvalue EQUALS expr {
-        if($1 && ($1->type == USERFUNC_T || $1->type == LIBFUNC_T)) {
+        if($1 && ($1->type == EXP_PROGRAMFUNC || $1->type == EXP_LIBRARYFUNC)) {
             char msg[34];
             snprintf(msg, sizeof(msg), "Using %s as an lvalue", $1->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
             yyerror(msg);
-        } else {
-            checkFunctionSymbol($1, "assign to");
+            $$ = NULL;
+        } else if ($1 && $3) { // Check if both sides are valid expr*
+            // Emit the assign quad
+            emit(OP_ASSIGN, $1 /*result(lvalue)*/, $3 /*arg1(rvalue)*/, NULL /*arg2*/, 0 /*label*/, yylineno /*line*/);
+
+            // Assignment expressions usually evaluate to the assigned value (r-value)
+            $$ = $3;
+
+            // We likely don't need the specific l-value expr* ($1) beyond this point
+            // *unless* it was a temporary created for table access. Be careful with freeing.
+            // For simple variable lvalues, $1 just points to the symbol, don't free it.
+        } 
+        else {
+            yyerror("Invalid assignment operation");
+            $$ = NULL;
         }
-        emit(OP_ASSIGN, NULL, NULL, NULL, 0);
     }
     ;
 
 primary:
-    lvalue
+    lvalue { $$ = $1; }
     | call
     | objectdef
     | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS
-    | const
+    | const { $$ = $1; }
     ;
 
 lvalue:
@@ -223,21 +319,69 @@ lvalue:
                 yyerror(msg);
                 $$ = NULL;
             } else {
-                $$ = resolve_RawSymbol($1);
+                tmp = resolve_RawSymbol($1);
+                expr_temp = (expr*)malloc(sizeof(expr));
+                if(!expr_temp) {
+                    MemoryFail();
+                }
+                expr_temp->type = EXP_VARIABLE;
+                expr_temp->symbol = tmp;
+                expr_temp->index = 0;
+                expr_temp->numConst = 0;
+                expr_temp->stringConst = 0;
+                expr_temp->boolConst = 0;
+                expr_temp->next = NULL;
+                $$ = expr_temp;
             }
-        } else {
-            $$ = sym;
+        } else {            
+            expr_temp = (expr*)malloc(sizeof(expr));
+            if(!expr_temp) {
+                MemoryFail();
+            }
+            expr_temp->type = EXP_VARIABLE;
+            expr_temp->symbol = sym;
+            expr_temp->index = 0;
+            expr_temp->numConst = 0;
+            expr_temp->stringConst = 0;
+            expr_temp->boolConst = 0;
+            expr_temp->next = NULL;
+            $$ = expr_temp;
         }
     }
     | LOCAL ID {
-        $$ = resolve_LocalSymbol($2);
+        tmp = resolve_RawSymbol($2);
+        expr_temp = (expr*)malloc(sizeof(expr));
+        if(!expr_temp) {
+            MemoryFail();
+        }
+        expr_temp->type = EXP_VARIABLE;
+        expr_temp->symbol = tmp;
+        expr_temp->index = 0;
+        expr_temp->numConst = 0;
+        expr_temp->stringConst = 0;
+        expr_temp->boolConst = 0;
+        expr_temp->next = NULL;
+        $$ = expr_temp;
     }
     | COLON_COLON ID {
-        $$ = resolve_GlobalSymbol($2);
+        tmp = resolve_RawSymbol($2);
+        expr_temp = (expr*)malloc(sizeof(expr));
+        if(!expr_temp) {
+            MemoryFail();
+        }
+        expr_temp->type = EXP_VARIABLE;
+        expr_temp->symbol = tmp;
+        expr_temp->index = 0;
+        expr_temp->numConst = 0;
+        expr_temp->stringConst = 0;
+        expr_temp->boolConst = 0;
+        expr_temp->next = NULL;
+        $$ = expr_temp;
     }
     | member
     ;
 
+/* TODO: Implement TABLEGETELEM/TABLESETELEM logic here */
 member: 
     lvalue PERIOD ID { $$ = $1; }
     | lvalue LEFT_BRACKET expr RIGHT_BRACKET { $$ = $1; }
@@ -252,7 +396,7 @@ call:
         Symbol* sym;
         if(!$1) {
             sym = NULL;
-        } else { sym = lookUp_All($1->name, &inaccessible); }
+        } else { sym = lookUp_All($1->symbol->name, &inaccessible); }
         $$ = NULL;
     }
     | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS LEFT_PARENTHESIS elist RIGHT_PARENTHESIS {
@@ -349,19 +493,86 @@ funcdef:
     ;
 
 const:
-    INT
-    | REAL
-    | STRING
-    | NIL
-    | TRUE
-    | FALSE
+    INT {
+        expr_temp = (expr*)malloc(sizeof(expr));
+        if(!expr_temp) {
+            yyerror("Error allocating memory(const INT)\n");
+        }
+        expr_temp->type = EXP_CONSTNUMBER;
+        expr_temp->numConst = (double)$1;
+        expr_temp->symbol = NULL;
+        expr_temp->index = NULL;
+        expr_temp->next = NULL;
+        $$ = expr_temp;
+    }
+    | REAL {
+        expr_temp = (expr*)malloc(sizeof(expr));
+        if(!expr_temp) {
+            yyerror("Error allocating memory(const REAL)\n");
+        }
+        expr_temp->type = EXP_CONSTNUMBER;
+        expr_temp->numConst = $1;
+        expr_temp->symbol = NULL;
+        expr_temp->index = NULL;
+        expr_temp->next = NULL;
+        $$ = expr_temp;
+    }
+    | STRING {
+        expr_temp = (expr*)malloc(sizeof(expr));
+        if(!expr_temp) {
+            yyerror("Error allocating memory(const STRING)\n");
+        }
+        expr_temp->type = EXP_CONSTSTRING;
+        expr_temp->stringConst = strdup($1);
+        expr_temp->symbol = NULL;
+        expr_temp->index = NULL;
+        expr_temp->next = NULL;
+        $$ = expr_temp;
+    }
+    | NIL {
+        expr_temp = (expr*)malloc(sizeof(expr));
+        if(!expr_temp) {
+            yyerror("Error allocating memory(const NIL)\n");
+        }
+        expr_temp->type = EXP_NIL;
+        expr_temp->symbol = NULL;
+        expr_temp->index = NULL;
+        expr_temp->next = NULL;
+        $$ = expr_temp;
+    }
+    | TRUE {
+        expr_temp = (expr*)malloc(sizeof(expr));
+        if(!expr_temp) {
+            yyerror("Error allocating memory(const TRUE)\n");
+        }
+        expr_temp->type = EXP_BOOL;
+        expr_temp->boolConst = 1;
+        expr_temp->symbol = NULL;
+        expr_temp->index = NULL;
+        expr_temp->next = NULL;
+        $$ = expr_temp;
+    }
+    | FALSE {
+        expr_temp = (expr*)malloc(sizeof(expr));
+        if(!expr_temp) {
+            yyerror("Error allocating memory(const FALSE)\n");
+        }
+        expr_temp->type = EXP_BOOL;
+        expr_temp->boolConst = 0;
+        expr_temp->symbol = NULL;
+        expr_temp->index = NULL;
+        expr_temp->next = NULL;
+        $$ = expr_temp;
+    }
     ;
 
+// EXPR
 idlist:
     ID { resolve_FormalSymbol($1); } idlist_list
     |
     ;
 
+// EXPR
 idlist_list:
     COMMA ID { resolve_FormalSymbol($2); } idlist_list
     |
