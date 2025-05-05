@@ -17,7 +17,7 @@ $(TARGET): $(SCANNER).o $(PARSER).o $(LIST).o $(TABLE).o $(QUADS).o
 %.o: %.c
 	$(CC) -c -o $@ $^
 # Source Codes
-$(PARSER).c $(PARSER).h: $(PARSER).y $(TABLE).h $(QUADS).h
+$(PARSER).c $(PARSER).h: $(PARSER).y
 	bison --yacc -d -v -o $(PARSER).c $(PARSER).y
 $(SCANNER).c: $(SCANNER).l $(LIST).h $(PARSER).h
 	flex $(SCANNER).l

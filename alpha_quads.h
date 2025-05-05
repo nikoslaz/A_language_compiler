@@ -61,6 +61,14 @@ extern unsigned int temp_counter;
 
 Symbol* create_temp_symbol(void);
 quad* emit(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label);
+
+expr* create_arith_expr(void);
+expr* create_var_expr(Symbol* symbol);
+expr* create_constnum_expr(double value);
+expr* create_conststring_expr(char* value);
+expr* create_constbool_expr(unsigned int value);
+expr* create_nil_expr(void);
+
 void printQuads(void);
 
 #endif

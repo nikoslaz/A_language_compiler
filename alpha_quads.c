@@ -40,6 +40,83 @@ quad* emit(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label) 
 /*===============================================================================================*/
 /* Expression Constructors */
 
+expr* create_arith_expr(void) {
+    expr* temp=(expr*)malloc(sizeof(expr));
+    if(!temp) { MemoryFail(); }
+    temp->type=EXP_ARITH;
+    temp->symbol=create_temp_symbol();
+    temp->index=NULL;
+    temp->numConst=0;
+    temp->stringConst=NULL;
+    temp->boolConst=0;
+    temp->next=NULL;
+    return temp;
+}
+
+expr* create_var_expr(Symbol* symbol) {
+    expr* temp=(expr*)malloc(sizeof(expr));
+    if(!temp) { MemoryFail(); }
+    temp->type=EXP_VARIABLE;
+    temp->symbol=symbol;
+    temp->index=0;
+    temp->numConst=0;
+    temp->stringConst=0;
+    temp->boolConst=0;
+    temp->next=NULL;
+    return temp;
+}
+
+expr* create_constnum_expr(double value) {
+    expr* temp=(expr*)malloc(sizeof(expr));
+    if(!temp) { MemoryFail(); }
+    temp->type=EXP_CONSTNUMBER;
+    temp->symbol=NULL;
+    temp->index=NULL;
+    temp->numConst=value;
+    temp->stringConst=0;
+    temp->boolConst=0;
+    temp->next=NULL;
+    return temp;
+}
+
+expr* create_conststring_expr(char* value) {
+    expr* temp=(expr*)malloc(sizeof(expr));
+    if(!temp) { MemoryFail(); }
+    temp->type=EXP_CONSTSTRING;
+    temp->symbol=NULL;
+    temp->numConst=0;
+    temp->stringConst=value;
+    temp->boolConst=0;
+    temp->index=NULL;
+    temp->next=NULL;
+    return temp;
+}
+
+expr* create_constbool_expr(unsigned int value) {
+    expr* temp=(expr*)malloc(sizeof(expr));
+    if(!temp) { MemoryFail(); }
+    temp->type=EXP_CONSTBOOL;
+    temp->symbol=NULL;
+    temp->numConst=0;
+    temp->stringConst=NULL;
+    temp->boolConst=value;
+    temp->index=NULL;
+    temp->next=NULL;
+    return temp;
+}
+
+expr* create_nil_expr(void) {
+    expr* temp=(expr*)malloc(sizeof(expr));
+    if(!temp) { MemoryFail(); }
+    temp->type=EXP_NIL;
+    temp->symbol=NULL;
+    temp->numConst=0;
+    temp->stringConst=NULL;
+    temp->boolConst=0;
+    temp->index=NULL;
+    temp->next=NULL;
+    return temp;
+}
 
 /*===============================================================================================*/
 /* Print */
