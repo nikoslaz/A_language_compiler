@@ -145,67 +145,108 @@ stmt_list:
 expr:
     assignexpr { $$ = $1; }
     | expr PLUS expr {
-        expr* expr_temp = (expr*)malloc(sizeof(expr));
-        if(!expr_temp) {
-            yyerror("Error allocating memory(expr PLUS expr)\n");
+        if (!$1 || !$3 
+            || !($1->type == EXP_VARIABLE || $1->type == EXP_ARITH || $1->type == EXP_CONSTNUMBER)
+            || !($3->type == EXP_VARIABLE || $3->type == EXP_ARITH || $3->type == EXP_CONSTNUMBER)) {
+            yyerror("Error: Invalid arguments(expr PLUS expr)\n");
+            $$ = NULL;
+        } 
+        else {
+            expr* expr_temp = (expr*)malloc(sizeof(expr));
+            if(!expr_temp) {
+                MemoryFail();
+            }
+            expr_temp->type = EXP_ARITH;
+            expr_temp->symbol = create_temp_symbol();
+            expr_temp->index = NULL;
+            expr_temp->next = NULL;
+            emit(OP_ADD, expr_temp /*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/, yylineno /*line*/);
+            $$ = expr_temp;
         }
-        expr_temp->type = EXP_ARITH;
-        expr_temp->symbol = create_temp_symbol();
-        expr_temp->index = NULL;
-        expr_temp->next = NULL;
-        emit(OP_ADD, expr_temp /*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/, yylineno /*line*/);
-        $$ = expr_temp;
     }
     | expr MINUS expr {
-        expr* expr_temp = (expr*)malloc(sizeof(expr));
-        if(!expr_temp) {
-            yyerror("Error allocating memory(expr MINUS expr)\n");
+        if (!$1 || !$3 
+            || !($1->type == EXP_VARIABLE || $1->type == EXP_ARITH || $1->type == EXP_CONSTNUMBER)
+            || !($3->type == EXP_VARIABLE || $3->type == EXP_ARITH || $3->type == EXP_CONSTNUMBER)) {
+            yyerror("Error: Invalid arguments(expr MINUS expr)\n");
+            $$ = NULL;
         }
-        expr_temp->type = EXP_ARITH;
-        expr_temp->symbol = create_temp_symbol();
-        expr_temp->index = NULL;
-        expr_temp->next = NULL;
-        emit(OP_SUB, expr_temp /*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/, yylineno /*line*/);
-        $$ = expr_temp;
+        else {
+            expr* expr_temp = (expr*)malloc(sizeof(expr));
+            if(!expr_temp) {
+                MemoryFail();
+            }
+            expr_temp->type = EXP_ARITH;
+            expr_temp->symbol = create_temp_symbol();
+            expr_temp->index = NULL;
+            expr_temp->next = NULL;
+            emit(OP_SUB, expr_temp /*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/, yylineno /*line*/);
+            $$ = expr_temp;
+        }
     }
     | expr MULT expr {
-        expr* expr_temp = (expr*)malloc(sizeof(expr));
-        if(!expr_temp) {
-            yyerror("Error allocating memory(expr MULT expr)\n");
+        if (!$1 || !$3 
+            || !($1->type == EXP_VARIABLE || $1->type == EXP_ARITH || $1->type == EXP_CONSTNUMBER)
+            || !($3->type == EXP_VARIABLE || $3->type == EXP_ARITH || $3->type == EXP_CONSTNUMBER)) {
+            yyerror("Error: Invalid arguments(expr MULT expr)\n");
+            $$ = NULL;
         }
-        expr_temp->type = EXP_ARITH;
-        expr_temp->symbol = create_temp_symbol();
-        expr_temp->index = NULL;
-        expr_temp->next = NULL;
-        emit(OP_MUL, expr_temp /*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/, yylineno /*line*/);
-        $$ = expr_temp;
+        else {
+            expr* expr_temp = (expr*)malloc(sizeof(expr));
+            if(!expr_temp) {
+                MemoryFail();
+            }
+            expr_temp->type = EXP_ARITH;
+            expr_temp->symbol = create_temp_symbol();
+            expr_temp->index = NULL;
+            expr_temp->next = NULL;
+            emit(OP_MUL, expr_temp /*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/, yylineno /*line*/);
+            $$ = expr_temp;
+        }
     }
     | expr DIV expr {
-        expr* expr_temp = (expr*)malloc(sizeof(expr));
-        if(!expr_temp) {
-            yyerror("Error allocating memory(expr DIV expr)\n");
+        if (!$1 || !$3 
+            || !($1->type == EXP_VARIABLE || $1->type == EXP_ARITH || $1->type == EXP_CONSTNUMBER)
+            || !($3->type == EXP_VARIABLE || $3->type == EXP_ARITH || $3->type == EXP_CONSTNUMBER)) {
+            yyerror("Error: Invalid arguments(expr DIV expr)\n");
+            $$ = NULL;
         }
-        expr_temp->type = EXP_ARITH; // Result of arithmetic
-        expr_temp->symbol = create_temp_symbol(); // Get a new temporary symbol
-        expr_temp->index = NULL;
-        expr_temp->next = NULL;
-        emit(OP_DIV, expr_temp /*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/, yylineno /*line*/);
-        $$ = expr_temp;
+        else {
+            expr* expr_temp = (expr*)malloc(sizeof(expr));
+            if(!expr_temp) {
+                MemoryFail();
+            }
+            expr_temp->type = EXP_ARITH; // Result of arithmetic
+            expr_temp->symbol = create_temp_symbol(); // Get a new temporary symbol
+            expr_temp->index = NULL;
+            expr_temp->next = NULL;
+            emit(OP_DIV, expr_temp /*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/, yylineno /*line*/);
+            $$ = expr_temp;
+        }
+
     }
     | expr MOD expr {
-        expr* expr_temp = (expr*)malloc(sizeof(expr));
-        if(!expr_temp) {
-            yyerror("Error allocating memory(expr MOD expr)\n");
+        if (!$1 || !$3 
+            || !($1->type == EXP_VARIABLE || $1->type == EXP_ARITH || $1->type == EXP_CONSTNUMBER)
+            || !($3->type == EXP_VARIABLE || $3->type == EXP_ARITH || $3->type == EXP_CONSTNUMBER)) {
+            yyerror("Error: Invalid arguments(expr MOD expr)\n");
+            $$ = NULL;
         }
-        expr_temp->type = EXP_ARITH; // Result of arithmetic
-        expr_temp->symbol = create_temp_symbol(); // Get a new temporary symbol
-        expr_temp->index = NULL;
-        expr_temp->next = NULL;
-        emit(OP_MOD, expr_temp /*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/, yylineno /*line*/);
-        $$ = expr_temp;
+        else {
+            expr* expr_temp = (expr*)malloc(sizeof(expr));
+            if(!expr_temp) {
+                MemoryFail();
+            }
+            expr_temp->type = EXP_ARITH; // Result of arithmetic
+            expr_temp->symbol = create_temp_symbol(); // Get a new temporary symbol
+            expr_temp->index = NULL;
+            expr_temp->next = NULL;
+            emit(OP_MOD, expr_temp /*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/, yylineno /*line*/);
+            $$ = expr_temp;
+        }
     }
     /* TODO: Backpatching needed */
-    | expr GREATER expr
+    | expr GREATER expr {}
     | expr LESS expr
     | expr GREATER_EQUAL expr
     | expr LESS_EQUAL expr

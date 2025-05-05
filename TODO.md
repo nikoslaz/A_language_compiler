@@ -5,14 +5,15 @@ DODODODODO
 
 ---------------------------------------------------------------------------------
 
-- Check operations between constants in compile time
-- Create quad structs, dynamic array
-- Create opcode enum
-- Create vartype enum (program, local, formal etc)
-- Create Variable enum (FunctionAddress, Table, etc)
-- Implement Scope Spaces, scope stack, offset inside space, etc (MIXADRILL)
-- OFFSET MUST NOT RESET WHEN NOT IN FUNCTION (LOOK FAQ)
-- Method to create, read, delete temp variables
+<!-- - Check operations between constants in compile time -->
+<!-- - Create quad structs, dynamic array -->
+<!-- - Create opcode enum -->
+<!-- - Create vartype enum (program, local, formal etc) -->
+<!-- - Create Variable enum (FunctionAddress, Table, etc) -->
+- Implement Scope Spaces, scope stack, offset inside space, etc (MIXADRILL) GOAT
+- OFFSET MUST NOT RESET WHEN NOT IN FUNCTION (LOOK FAQ) (MIXADRILL) GOAT
+<!-- - Method to create, read, delete temp variables -> CREATE, READ  -->
+- Maybe Garbage collection(at the end)?????
 
 ---------------------------------------------------------------------------------
 // Require Backpatching, breaklist, continuelist, merge method
@@ -28,15 +29,3 @@ DODODODODO
 
 Table variables
 Merikh Apotimhsh
-
-/* WHAT IT SHOULD LOOK LIKE */
-
-expr: expr PLUS expr {
-    // Create the temporary result for the operation
-    Symbol* temp = create_temp_symbol();
-    // Generate a quad for the addition operation
-    generate_quad("+", $1, $3, temp);
-    // Assign the result to $$ (the expression result)
-    $$ = create_arith_expr(temp);
-}
-
