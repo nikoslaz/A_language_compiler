@@ -19,7 +19,7 @@ Symbol* create_temp_symbol(void) {
     return insert_Symbol(temp_name, TEMPORARY_T);
 }
 
-quad* emit(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label, unsigned int line) {
+quad* emit(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label) {
     if (currquad == totalquads) {
         totalquads += EXPAND_SIZE;
         quads = realloc(quads, totalquads * sizeof(quad));
@@ -32,7 +32,7 @@ quad* emit(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label, 
     new->arg2 = arg2;
     new->result = result;
     new->label = label;
-    new->line = line;
+    new->line = yylineno;
     quads[currquad++] = *new;
     return new;
 }
@@ -71,7 +71,6 @@ const char* opcodeToStr(opcode op) {
 }
 
 const char* exprToStr(expr* e) {
-    char* buffer = (char*)malloc(1024*sizeof(char));
     if (!e) return "NULL";
     switch (e->type) {
         case EXP_VARIABLE:
@@ -82,6 +81,7 @@ const char* exprToStr(expr* e) {
         case EXP_ASSIGN:
             return e->symbol ? e->symbol->name : "unknown_symbol";
         case EXP_CONSTNUMBER:
+            char* buffer = (char*)malloc(1024*sizeof(char));
             snprintf(buffer, sizeof(buffer), "%.2f", e->numConst);
             return buffer;
         case EXP_CONSTSTRING:
@@ -100,7 +100,6 @@ const char* exprToStr(expr* e) {
 void printQuads(void) {
     printf("\n%-4s %-14s %-15s %-15s %-15s %-5s\n", "#", "OP", "RESULT", "ARG1", "ARG2", "LABEL");
     printf("-------------------------------------------------------------------------------\n");
-
     for (unsigned int i = 0; i < currquad; ++i) {
         printf("%-4u %-14s %-15s %-15s %-15s",
         i, opcodeToStr(quads[i].op),
@@ -110,7 +109,6 @@ void printQuads(void) {
         { printf(" %-5u\n", quads[i].label); }
         else { printf("\n"); }
     }
-
     printf("-------------------------------------------------------------------------------\n\n");
 }
 

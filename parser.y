@@ -160,7 +160,7 @@ expr:
             expr_temp->symbol = create_temp_symbol();
             expr_temp->index = NULL;
             expr_temp->next = NULL;
-            emit(OP_ADD, expr_temp /*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/, yylineno /*line*/);
+            emit(OP_ADD, expr_temp /*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/);
             $$ = expr_temp;
         }
     }
@@ -180,7 +180,7 @@ expr:
             expr_temp->symbol = create_temp_symbol();
             expr_temp->index = NULL;
             expr_temp->next = NULL;
-            emit(OP_SUB, expr_temp /*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/, yylineno /*line*/);
+            emit(OP_SUB, expr_temp /*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/);
             $$ = expr_temp;
         }
     }
@@ -200,7 +200,7 @@ expr:
             expr_temp->symbol = create_temp_symbol();
             expr_temp->index = NULL;
             expr_temp->next = NULL;
-            emit(OP_MUL, expr_temp /*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/, yylineno /*line*/);
+            emit(OP_MUL, expr_temp /*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/);
             $$ = expr_temp;
         }
     }
@@ -220,7 +220,7 @@ expr:
             expr_temp->symbol = create_temp_symbol(); // Get a new temporary symbol
             expr_temp->index = NULL;
             expr_temp->next = NULL;
-            emit(OP_DIV, expr_temp /*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/, yylineno /*line*/);
+            emit(OP_DIV, expr_temp /*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/);
             $$ = expr_temp;
         }
 
@@ -241,7 +241,7 @@ expr:
             expr_temp->symbol = create_temp_symbol(); // Get a new temporary symbol
             expr_temp->index = NULL;
             expr_temp->next = NULL;
-            emit(OP_MOD, expr_temp /*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/, yylineno /*line*/);
+            emit(OP_MOD, expr_temp /*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/);
             $$ = expr_temp;
         }
     }
@@ -271,7 +271,7 @@ term:
         // Create a zero constant expr for UMINUS (0 - expr) if needed,
         // or use a dedicated UMINUS opcode if your VM supports it.
         // Let's assume OP_UMINUS exists as per alpha_quads.h
-        emit(OP_UMINUS, $$ /*result*/, $2 /*arg1*/, NULL /*arg2*/, 0 /*label*/, yylineno /*line*/);
+        emit(OP_UMINUS, $$ /*result*/, $2 /*arg1*/, NULL /*arg2*/, 0 /*label*/);
     }
     | NOT expr %prec NOT
     | PLUS_PLUS lvalue {
@@ -321,10 +321,8 @@ assignexpr:
             yyerror(msg);
             $$ = NULL;
         } else if ($1 && $3) { // Check if both sides are valid expr*
-            // Emit the assign quad
-            emit(OP_ASSIGN, $1 /*result(lvalue)*/, $3 /*arg1(rvalue)*/, NULL /*arg2*/, 0 /*label*/, yylineno /*line*/);
+            emit(OP_ASSIGN, $1 /*result(lvalue)*/, $3 /*arg1(rvalue)*/, NULL /*arg2*/, 0 /*label*/);
 
-            // Assignment expressions usually evaluate to the assigned value (r-value)
             $$ = $3;
 
             // We likely don't need the specific l-value expr* ($1) beyond this point
