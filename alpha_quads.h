@@ -59,7 +59,8 @@ extern unsigned int totalquads;
 extern unsigned int currquad;
 extern unsigned int temp_counter;
 
-quad* createNewQuad(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label, unsigned int line);
+quad* emit(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label, unsigned int line);
+Symbol* create_temp_symbol(void);
 void printQuads(void);
 
 #endif
