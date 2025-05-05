@@ -71,7 +71,7 @@ const char* opcodeToStr(opcode op) {
 }
 
 const char* exprToStr(expr* e) {
-    static char buffer[1024];
+    char* buffer = (char*)malloc(1024*sizeof(char));
     if (!e) return "NULL";
     switch (e->type) {
         case EXP_VARIABLE:
@@ -98,13 +98,13 @@ const char* exprToStr(expr* e) {
 }
 
 void printQuads(void) {
-    printf("\n%-4s %-14s %-15s %-15s %-15s %-5s\n", "#", "OP", "ARG1", "ARG2", "RESULT", "LABEL");
+    printf("\n%-4s %-14s %-15s %-15s %-15s %-5s\n", "#", "OP", "RESULT", "ARG1", "ARG2", "LABEL");
     printf("-------------------------------------------------------------------------------\n");
 
     for (unsigned int i = 0; i < currquad; ++i) {
         printf("%-4u %-14s %-15s %-15s %-15s",
         i, opcodeToStr(quads[i].op),
-        exprToStr(quads[i].arg1), exprToStr(quads[i].arg2), exprToStr(quads[i].result));
+        exprToStr(quads[i].result), exprToStr(quads[i].arg1), exprToStr(quads[i].arg2));
         if(quads[i].op == OP_IFEQ || quads[i].op == OP_IFNOTEQ || quads[i].op == OP_IFLESS ||
         quads[i].op == OP_IFGREATER || quads[i].op == OP_IFLESSEQ || quads[i].op == OP_IFGREATEREQ)
         { printf(" %-5u\n", quads[i].label); }
