@@ -10,10 +10,11 @@ DODODODODO
 <!-- - Create opcode enum -->
 <!-- - Create vartype enum (program, local, formal etc) -->
 <!-- - Create Variable enum (FunctionAddress, Table, etc) -->
-- Implement Scope Spaces, scope stack, offset inside space, etc (MIXADRILL) GOAT
-- OFFSET MUST NOT RESET WHEN NOT IN FUNCTION (LOOK FAQ) (MIXADRILL) GOAT
+<!--- Implement Scope Spaces, scope stack, offset inside space, etc (MIXADRILL) GOAT  -->
+<!--- OFFSET MUST NOT RESET WHEN NOT IN FUNCTION (LOOK FAQ) (MIXADRILL) GOAT  -->
 <!-- - Method to create, read, delete temp variables -> CREATE, READ  -->
 - Maybe Garbage collection(at the end)?????
+- DUAL assign quads (for lists mostly)
 
 ---------------------------------------------------------------------------------
 // Require Backpatching, breaklist, continuelist, merge method

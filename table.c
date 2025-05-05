@@ -61,6 +61,7 @@ void enter_Next_Scope(int fromFunct) {
         new_scope->next = ht->ScopesHead;
         ht->ScopesHead = new_scope;
     }
+    int_to_Scope(ht->currentScope)->isFunc = fromFunct;
 }
 
 void exit_Current_Scope(void) {
@@ -79,6 +80,15 @@ void exit_Current_Scope(void) {
     ht->currentScope--;
 }
 
+int isGlobalishScope(void) {
+    ScopeList* scope_list = int_to_Scope(ht->currentScope);
+    while(scope_list->scope != 0) {
+        if(scope_list->isFunc) { return 0; }
+        scope_list = scope_list->next;
+    }
+    return 1;
+}
+
 /*===============================================================================================*/
 /* Insertion */
 
@@ -91,8 +101,13 @@ Symbol* insert_Symbol(const char* name, SymbolType type) {
     new->name = strdup(name);
     new->type = type;
     new->scope = ht->currentScope;
-    if(type!=LIBFUNC_T) { new->offset = int_to_Scope(ht->currentScope)->scopeOffset++; }
-    else { new->offset = 0; }
+    if(type!=LIBFUNC_T) {
+        if(isGlobalishScope()) {
+            new->offset = int_to_Scope(0)->scopeOffset++;
+        } else {
+            new->offset = int_to_Scope(ht->currentScope)->scopeOffset++;
+        }
+    } else { new->offset = 0; }
     new->args = NULL;
     new->next_in_scope = NULL;
     if(type==USERFUNC_T) { currFunction = new; }
