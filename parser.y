@@ -284,8 +284,12 @@ assignexpr:
             yyerror(msg);
             $$ = NULL;
         } else if ($1 && $3) { // Check if both sides are valid expr*
+            // First assign
             emit(OP_ASSIGN, $1 /*result(lvalue)*/, $3 /*arg1(rvalue)*/, NULL /*arg2*/, 0 /*label*/);
-            $$ = $1;
+            expr* expr_result = create_arith_expr();
+            // Second assign
+            emit(OP_ASSIGN, expr_result /*result(lvalue)*/, $1 /*arg1(rvalue)*/, NULL /*arg2*/, 0 /*label*/);
+            $$ = expr_result;
         } 
         else {
             yyerror("Invalid assignment operation");
