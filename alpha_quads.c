@@ -159,11 +159,11 @@ void backpatch(PatchList* list, unsigned int target_quad_index) {
     }
 }
 
-expr* create_bool_expr() {
+expr* create_bool_expr(Symbol* symbol) {
     expr* temp=(expr*)malloc(sizeof(expr));
     if(!temp) { MemoryFail(); }
     temp->type=EXP_BOOL;
-    temp->symbol=NULL;
+    temp->symbol=symbol;
     temp->index=NULL;
     temp->numConst=0;
     temp->stringConst=NULL;

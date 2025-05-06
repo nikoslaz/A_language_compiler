@@ -80,6 +80,7 @@
 %type <exprZoumi> member 
 %type <exprZoumi> const
 
+
 %type <intZoumi> M // (marks target)
 %type <exprZoumi> N // (emits JUMP)
 
@@ -151,10 +152,11 @@ M: {
 };
 
 N: {
-    expr* expr_temp = create_bool_expr();
+    Symbol* temp_symbol = create_temp_symbol();
+    expr* expr_temp = create_bool_expr(temp_symbol);
     expr_temp->truelist  = NULL;
     expr_temp->falselist = makelist(nextquad());
-    emit(OP_JUMP, NULL/*result*/, NULL/*arg1*/, NULL/*arg2*/, 0 /*label*/);
+    emit(OP_JUMP, NULL, NULL, NULL, 0);
     $$ = expr_temp;
 }
 
@@ -228,102 +230,96 @@ expr:
     }
     /* TODO: Backpatching needed */
     | expr GREATER expr {
-        expr* expr_temp = create_bool_expr();
+        Symbol* temp_symbol = create_temp_symbol();
+        expr* expr_temp = create_bool_expr(temp_symbol);
         expr_temp->truelist  = makelist(nextquad());
         expr_temp->falselist = makelist(nextquad() + 1);
 
-        emit(OP_IFGREATER, NULL/*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/);
-        emit(OP_JUMP, NULL/*result*/, NULL/*arg1*/, NULL/*arg2*/, 0 /*label*/);
+        emit(OP_IFGREATER, expr_temp , $1 , $3 , 0);
         $$ = expr_temp;
 
         // MAYBE GARBAGE COLLECTION HERE ????????
         // Free $1, $3 if they were temp const results
     }
     | expr LESS expr {
-        expr* expr_temp = create_bool_expr();
+        Symbol* temp_symbol = create_temp_symbol();
+        expr* expr_temp = create_bool_expr(temp_symbol);
         expr_temp->truelist  = makelist(nextquad());
         expr_temp->falselist = makelist(nextquad() + 1);
 
-        emit(OP_IFLESS, NULL/*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/);
-        emit(OP_JUMP, NULL/*result*/, NULL/*arg1*/, NULL/*arg2*/, 0 /*label*/);
+        emit(OP_IFLESS, expr_temp, $1, $3, 0);
         $$ = expr_temp;
 
         // MAYBE GARBAGE COLLECTION HERE ????????
         // Free $1, $3 if they were temp const results
     }
     | expr GREATER_EQUAL expr {
-        expr* expr_temp = create_bool_expr();
+        Symbol* temp_symbol = create_temp_symbol();
+        expr* expr_temp = create_bool_expr(temp_symbol);
         expr_temp->truelist  = makelist(nextquad());
         expr_temp->falselist = makelist(nextquad() + 1);
 
-        emit(OP_IFGREATEREQ, NULL/*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/);
-        emit(OP_JUMP, NULL/*result*/, NULL/*arg1*/, NULL/*arg2*/, 0 /*label*/);
+        emit(OP_IFGREATEREQ, expr_temp, $1, $3, 0);
         $$ = expr_temp;
 
         // MAYBE GARBAGE COLLECTION HERE ????????
         // Free $1, $3 if they were temp const results
     }
     | expr LESS_EQUAL expr {
-        expr* expr_temp = create_bool_expr();
+        Symbol* temp_symbol = create_temp_symbol();
+        expr* expr_temp = create_bool_expr(temp_symbol);
         expr_temp->truelist  = makelist(nextquad());
         expr_temp->falselist = makelist(nextquad() + 1);
 
-        emit(OP_IFLESSEQ, NULL/*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/);
-        emit(OP_JUMP, NULL/*result*/, NULL/*arg1*/, NULL/*arg2*/, 0 /*label*/);
+        emit(OP_IFLESSEQ, expr_temp, $1, $3, 0);
         $$ = expr_temp;
 
         // MAYBE GARBAGE COLLECTION HERE ????????
         // Free $1, $3 if they were temp const results
     }
     | expr EQUALS_EQUALS expr {
-        expr* expr_temp = create_bool_expr();
+        Symbol* temp_symbol = create_temp_symbol();
+        expr* expr_temp = create_bool_expr(temp_symbol);
         expr_temp->truelist  = makelist(nextquad());
         expr_temp->falselist = makelist(nextquad() + 1);
 
-        emit(OP_IFEQ, NULL/*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/);
-        emit(OP_JUMP, NULL/*result*/, NULL/*arg1*/, NULL/*arg2*/, 0 /*label*/);
+        emit(OP_IFEQ, expr_temp, $1, $3, 0);
         $$ = expr_temp;
 
         // MAYBE GARBAGE COLLECTION HERE ????????
         // Free $1, $3 if they were temp const results
     }
     | expr NOT_EQUALS expr {
-        expr* expr_temp = create_bool_expr();
+        Symbol* temp_symbol = create_temp_symbol();
+        expr* expr_temp = create_bool_expr(temp_symbol);
         expr_temp->truelist  = makelist(nextquad());
         expr_temp->falselist = makelist(nextquad() + 1);
 
-        emit(OP_IFNOTEQ, NULL/*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/);
-        emit(OP_JUMP, NULL/*result*/, NULL/*arg1*/, NULL/*arg2*/, 0 /*label*/);
+        emit(OP_IFNOTEQ, expr_temp, $1, $3, 0);
         $$ = expr_temp;
 
         // MAYBE GARBAGE COLLECTION HERE ????????
         // Free $1, $3 if they were temp const results
     }
     | expr AND expr { // Assumes OP_IFAND or similar for non-short-circuiting jump
-        expr* expr_temp = create_bool_expr();
+        Symbol* temp_symbol = create_temp_symbol();
+        expr* expr_temp = create_bool_expr(temp_symbol);
         expr_temp->truelist  = makelist(nextquad());
         expr_temp->falselist = makelist(nextquad() + 1);
 
-        // Assuming an opcode like OP_IFAND exists that evaluates $1 and $3,
-        // then jumps if ($1 AND $3) is true. This is non-short-circuiting.
-        // Proper short-circuiting typically requires grammar modifications (e.g., M-rules)
-        // and different backpatching logic.
-        emit(OP_AND, NULL/*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/); // Replace OP_IFAND with actual opcode if different
-        emit(OP_JUMP, NULL/*result*/, NULL/*arg1*/, NULL/*arg2*/, 0 /*label*/);
+        emit(OP_AND, expr_temp, $1, $3, 0);
         $$ = expr_temp;
 
         // MAYBE GARBAGE COLLECTION HERE ????????
         // Free $1, $3 if they were temp const results
     }
     | expr OR expr { // Assumes OP_IFOR or similar for non-short-circuiting jump
-        expr* expr_temp = create_bool_expr();
+        Symbol* temp_symbol = create_temp_symbol();
+        expr* expr_temp = create_bool_expr(temp_symbol);
         expr_temp->truelist  = makelist(nextquad());
         expr_temp->falselist = makelist(nextquad() + 1);
 
-        // Assuming an opcode like OP_IFOR exists that evaluates $1 and $3,
-        // then jumps if ($1 OR $3) is true. This is non-short-circuiting.
-        emit(OP_OR, NULL/*result*/, $1 /*arg1*/, $3 /*arg2*/, 0 /*label*/); // Replace OP_IFOR with actual opcode if different
-        emit(OP_JUMP, NULL/*result*/, NULL/*arg1*/, NULL/*arg2*/, 0 /*label*/);
+        emit(OP_OR, expr_temp, $1, $3, 0);
         $$ = expr_temp;
 
         // MAYBE GARBAGE COLLECTION HERE ????????
@@ -332,8 +328,9 @@ expr:
     | expr OR M expr {
         // $1 = E1 (expr*), $3 = M.quad (unsigned int), $4 = E2 (expr*)
         backpatch($1->falselist, $3); // Patch E1 false jumps to start of E2
-    
-        expr* expr_temp = create_bool_expr();
+
+        Symbol* temp_symbol = create_temp_symbol();
+        expr* expr_temp = create_bool_expr(temp_symbol);
         expr_temp->truelist = merge($1->truelist, $4->truelist);
         expr_temp->falselist = $4->falselist; // E1's falselist is now patched
         $$ = expr_temp;
@@ -341,13 +338,15 @@ expr:
     | expr AND M expr {
         backpatch($1->truelist, $3); // Patch E1 true jumps to start of E2
 
-        expr* expr_temp = create_bool_expr();
+        Symbol* temp_symbol = create_temp_symbol();
+        expr* expr_temp = create_bool_expr(temp_symbol);
         expr_temp->truelist = $4->truelist; // E1's truelist is now patched
         expr_temp->falselist = merge($1->falselist, $4->falselist);
         $$ = expr_temp;
     }
     | NOT expr {
-        expr* expr_temp = create_bool_expr();
+        Symbol* temp_symbol = create_temp_symbol();
+        expr* expr_temp = create_bool_expr(temp_symbol);
         expr_temp->truelist  = $2->falselist;
         expr_temp->falselist = $2->truelist;
         $$ = expr_temp;
@@ -496,7 +495,7 @@ call:
     | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS LEFT_PARENTHESIS elist RIGHT_PARENTHESIS {
         Symbol* sym = handleAnonymousFuncCall($2);
         if(sym) {
-            $$ = createTempSymbol();
+            $$ = create_temp_symbol();
         } else {
             $$ = NULL;
         }
@@ -607,14 +606,12 @@ const:
         expr* expr_temp = create_constbool_expr(1);
         expr_temp->truelist = makelist(nextquad());
         expr_temp->falselist = NULL;
-        emit(OP_JUMP, NULL, NULL, NULL, 0);
         $$ = expr_temp;
     }
     | FALSE {
         expr* expr_temp = create_constbool_expr(0);
         expr_temp->truelist = NULL;
         expr_temp->falselist = makelist(nextquad());
-        emit(OP_JUMP, NULL, NULL, NULL, 0);
         $$ = expr_temp;
     }
     ;
@@ -633,6 +630,7 @@ idlist_list:
 
 ifstmt:
     IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS M stmt %prec THEN_CONFLICT {
+
         // $3 = expr, $5 = M.quad (target for true), $6 = stmt
         backpatch($3->truelist, $5);
         // The falselist from $3 needs to be patched *after* the if statement.

@@ -85,7 +85,7 @@ unsigned int nextquad(void);
 PatchList* makelist(unsigned int quad_index);
 PatchList* merge(PatchList* list1, PatchList* list2);
 void backpatch(PatchList* list, unsigned int target_quad_index);
-expr* create_bool_expr(void);
+expr* create_bool_expr(Symbol* symbol);
 
 void printQuads(void);
 
