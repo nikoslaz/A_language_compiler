@@ -23,7 +23,8 @@ typedef enum iopcode_e {
     OP_AND, OP_OR, OP_NOT,
     OP_IFEQ, OP_IFNOTEQ, OP_IFLESSEQ, OP_IFGREATEREQ, OP_IFLESS, OP_IFGREATER,
     OP_CALL, OP_PARAM, OP_RET, OP_GETRETVAL, OP_FUNCSTART, OP_FUNCEND,
-    OP_TABLECREATE, OP_TABLEGETELEM, OP_TABLESETELEM
+    OP_TABLECREATE, OP_TABLEGETELEM, OP_TABLESETELEM,
+    OP_JUMP
 } opcode;
 
 typedef enum expr_type_e {
@@ -35,6 +36,11 @@ typedef enum expr_type_e {
     EXP_NIL,
 } expr_type;
 
+typedef struct PatchList {
+    unsigned int quad_index;
+    struct PatchList* next;
+} PatchList;
+
 typedef struct expr_s {
     expr_type type;
     Symbol* symbol;
@@ -43,6 +49,10 @@ typedef struct expr_s {
     char* stringConst;
     unsigned int boolConst;
     struct expr_s* next;    /* For lists */
+
+    // --- Backpatching ---
+    PatchList* truelist;
+    PatchList* falselist;
 } expr;
 
 typedef struct quad_s {
@@ -53,6 +63,7 @@ typedef struct quad_s {
     unsigned int label;
     unsigned int line;
 } quad;
+
 
 extern quad* quads;
 extern unsigned int totalquads;
@@ -68,6 +79,13 @@ expr* create_constnum_expr(double value);
 expr* create_conststring_expr(char* value);
 expr* create_constbool_expr(unsigned int value);
 expr* create_nil_expr(void);
+
+// BackPatching functions
+unsigned int nextquad(void);
+PatchList* makelist(unsigned int quad_index);
+PatchList* merge(PatchList* list1, PatchList* list2);
+void backpatch(PatchList* list, unsigned int target_quad_index);
+expr* create_bool_expr(void);
 
 void printQuads(void);
 

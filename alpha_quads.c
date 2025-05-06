@@ -119,6 +119,72 @@ expr* create_nil_expr(void) {
 }
 
 /*===============================================================================================*/
+/* Backpatch Functions */
+
+unsigned int nextquad(void) {
+    return currquad;
+}
+
+PatchList* makelist(unsigned int quad_index) {
+    PatchList* new_node = (PatchList*)malloc(sizeof(PatchList));
+    if (!new_node) {
+        MemoryFail();
+    }
+    new_node->quad_index = quad_index;
+    new_node->next = NULL;
+    return new_node;
+}
+
+PatchList* merge(PatchList* list1, PatchList* list2) {
+    if (!list1) return list2;
+    if (!list2) return list1;
+
+    PatchList* iter = list1;
+    while (iter->next != NULL) iter = iter->next;
+    iter->next = list2;
+    return list1;
+}
+
+void backpatch(PatchList* list, unsigned int target_quad_index) {
+    PatchList* iter = list;
+    while (iter) {
+        if (iter->quad_index >= currquad) {
+            fprintf(stderr, "Error: invalid index\n");
+        } else {
+            quads[iter->quad_index].label = target_quad_index;
+            printf("Backpatching quad %u to label %u\n", iter->quad_index, target_quad_index);
+        }
+        PatchList* next = iter->next;
+        iter = next;
+    }
+}
+
+expr* create_bool_expr() {
+    expr* temp=(expr*)malloc(sizeof(expr));
+    if(!temp) { MemoryFail(); }
+    temp->type=EXP_BOOL;
+    temp->symbol=NULL;
+    temp->index=NULL;
+    temp->numConst=0;
+    temp->stringConst=NULL;
+    temp->boolConst=0;
+    temp->next=NULL;
+    return temp;
+}
+
+// opcode strToOpcode(int token) {
+//     switch(token) {
+//         case GREATER:         return OP_IFGREATER;
+//         case LESS:            return OP_IFLESS;
+//         case GREATER_EQUAL:   return OP_IFGREATEREQ;
+//         case LESS_EQUAL:      return OP_IFLESSEQ;
+//         case EQUALS_EQUALS:   return OP_IFEQ;
+//         case NOT_EQUALS:      return OP_IFNOTEQ;
+//         default:              return OP_JUMP;
+//     }
+// }
+
+/*===============================================================================================*/
 /* Print */
 
 const char* opcodeToStr(opcode op) {
@@ -148,6 +214,7 @@ const char* opcodeToStr(opcode op) {
         case OP_TABLECREATE: return "TABLECREATE";
         case OP_TABLEGETELEM: return "TABLEGETELEM";
         case OP_TABLESETELEM: return "TABLESETELEM";
+        case OP_JUMP: return "JUMP";
         default: return "ERROR";
     }
 }
@@ -187,7 +254,7 @@ void printQuads(void) {
         quads[i].line, i, opcodeToStr(quads[i].op),
         exprToStr(quads[i].result), exprToStr(quads[i].arg1), exprToStr(quads[i].arg2));
         if(quads[i].op == OP_IFEQ || quads[i].op == OP_IFNOTEQ || quads[i].op == OP_IFLESS ||
-        quads[i].op == OP_IFGREATER || quads[i].op == OP_IFLESSEQ || quads[i].op == OP_IFGREATEREQ)
+        quads[i].op == OP_IFGREATER || quads[i].op == OP_IFLESSEQ || quads[i].op == OP_IFGREATEREQ || quads[i].op == OP_JUMP)
         { printf(" %-5u\n", quads[i].label); }
         else { printf("\n"); }
     }
