@@ -41,6 +41,14 @@ typedef struct PatchList {
     struct PatchList* next;
 } PatchList;
 
+/* STACK FOR BREAK/CONTINUE LISTS */
+typedef struct LoopContext {
+    PatchList* break_list;
+    PatchList* continue_list;
+    struct LoopContext* next;
+} LoopContext;
+
+/* Expression Struct */
 typedef struct expr_s {
     expr_type type;
     Symbol* symbol;
@@ -48,22 +56,13 @@ typedef struct expr_s {
     double numConst;
     char* stringConst;
     unsigned int boolConst;
-    struct expr_s* next;    /* For lists */
-
-    // --- Backpatching ---
+    struct expr_s* next;    /*fFor lists */
+    /* --- Backpatching --- */
     PatchList* truelist;
     PatchList* falselist;
-    // -----
-    unsigned int first_expr_quad;
-    unsigned int after_expr_quad;
+    /* --- For For Loop --- */
+    unsigned int for_expr_begin;
 } expr;
-
-/*STACK FOR BREAK/CONTINUE LISTS*/
-typedef struct LoopContext {
-    PatchList* break_list;
-    PatchList* continue_list;
-    struct LoopContext* next;
-} LoopContext;
 
 typedef struct quad_s {
     opcode op;
@@ -74,7 +73,6 @@ typedef struct quad_s {
     unsigned int line;
 } quad;
 
-
 extern quad* quads;
 extern LoopContext* loop_stack;
 extern unsigned int totalquads;
@@ -84,28 +82,28 @@ extern unsigned int loop_depth_counter;
  
 Symbol* create_temp_symbol(void);
 quad* emit(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label);
+void printQuads(void);
 
+/* Expression Constructors */
 expr* create_arith_expr(void);
+expr* create_bool_expr(void);
 expr* create_var_expr(Symbol* symbol);
 expr* create_constnum_expr(double value);
 expr* create_conststring_expr(char* value);
 expr* create_constbool_expr(unsigned int value);
 expr* create_nil_expr(void);
 
-// BackPatching functions
+/* Backpatch Functions */
 unsigned int nextquad(void);
 PatchList* makelist(unsigned int quad_index);
 PatchList* merge(PatchList* list1, PatchList* list2);
 void backpatch(PatchList* list, unsigned int target_quad_index);
-expr* create_bool_expr(Symbol* symbol);
 
-// Stack
-void push();
-void pop();
+/* Stack Functions */
+void push(void);
+void pop(void);
 void add_to_breakList(unsigned int quad_to_patch);
 void add_to_continueList(unsigned int quad_to_patch);
-
-void printQuads(void);
 
 #endif
 /* end of alpha_quads.h */

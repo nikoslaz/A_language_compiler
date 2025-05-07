@@ -161,11 +161,11 @@ void backpatch(PatchList* list, unsigned int target_quad_index) {
     }
 }
 
-expr* create_bool_expr(Symbol* symbol) {
+expr* create_bool_expr() {
     expr* temp=(expr*)malloc(sizeof(expr));
     if(!temp) { MemoryFail(); }
     temp->type=EXP_BOOL;
-    temp->symbol=symbol;
+    temp->symbol=create_temp_symbol();
     temp->index=NULL;
     temp->numConst=0;
     temp->stringConst=NULL;
@@ -174,27 +174,12 @@ expr* create_bool_expr(Symbol* symbol) {
     return temp;
 }
 
-// opcode strToOpcode(int token) {
-//     switch(token) {
-//         case GREATER:         return OP_IFGREATER;
-//         case LESS:            return OP_IFLESS;
-//         case GREATER_EQUAL:   return OP_IFGREATEREQ;
-//         case LESS_EQUAL:      return OP_IFLESSEQ;
-//         case EQUALS_EQUALS:   return OP_IFEQ;
-//         case NOT_EQUALS:      return OP_IFNOTEQ;
-//         default:              return OP_JUMP;
-//     }
-// }
-
-
 /*===============================================================================================*/
-/* STACK FOR LOOPS*/
+/* STACK FOR BREAK/CONTINUE LISTS */
 
-void push(){
+void push(void) {
     LoopContext* new = (LoopContext*)malloc(sizeof(LoopContext));
-    if(!new){
-        MemoryFail();
-    }
+    if(!new){ MemoryFail(); }
     new->break_list = NULL;
     new->continue_list = NULL;
     new->next = loop_stack;
@@ -202,7 +187,7 @@ void push(){
     loop_depth_counter++;
 }
 
-void pop(){
+void pop(void) {
     if(loop_stack){
         LoopContext* top = loop_stack;
         loop_stack = top->next;
@@ -211,7 +196,7 @@ void pop(){
     }
 }
 
-void add_to_breakList(unsigned int quad_to_patch){
+void add_to_breakList(unsigned int quad_to_patch) {
     if(loop_stack){
         loop_stack->break_list = merge(loop_stack->break_list, makelist(quad_to_patch));
     } else {
@@ -219,14 +204,13 @@ void add_to_breakList(unsigned int quad_to_patch){
     }
 }
 
-void add_to_continueList(unsigned int quad_to_patch){
+void add_to_continueList(unsigned int quad_to_patch) {
     if(loop_stack){
         loop_stack->continue_list = merge(loop_stack->continue_list, makelist(quad_to_patch));
     } else {
         yyerror("CONTINUE statement encountered outside of a loop stack.");
     }
 }
-
 
 /*===============================================================================================*/
 /* Print */
@@ -297,10 +281,11 @@ void printQuads(void) {
         printf(" %-4u|   %-3u %-14s %-15s %-15s %-15s",
         quads[i].line, i, opcodeToStr(quads[i].op),
         exprToStr(quads[i].result), exprToStr(quads[i].arg1), exprToStr(quads[i].arg2));
-        if(quads[i].op == OP_IFEQ || quads[i].op == OP_IFNOTEQ || quads[i].op == OP_IFLESS ||
-        quads[i].op == OP_IFGREATER || quads[i].op == OP_IFLESSEQ || quads[i].op == OP_IFGREATEREQ || quads[i].op == OP_JUMP)
+        if(!quads[i].result ||  quads[i].label!=0)
         { printf(" %-5u\n", quads[i].label); }
-        else { printf("\n"); }
+        else { 
+            printf("\n");
+        }
     }
     printf("-----+----------------------------------------------------------------------------\n\n");
 }
