@@ -215,12 +215,12 @@ const char* opcodeToStr(opcode op) {
         case OP_TABLEGETELEM: return "TABLEGETELEM";
         case OP_TABLESETELEM: return "TABLESETELEM";
         case OP_JUMP: return "JUMP";
-        default: return "ERROR";
+        default: return "PRINT ERROR";
     }
 }
 
 const char* exprToStr(expr* e) {
-    if (!e) return "NULL";
+    if (!e) return "-";
     switch (e->type) {
         case EXP_VARIABLE:
         case EXP_PROGRAMFUNC:
@@ -228,7 +228,7 @@ const char* exprToStr(expr* e) {
         case EXP_ARITH:
         case EXP_BOOL:
         case EXP_ASSIGN:
-            return e->symbol ? e->symbol->name : "unknown_symbol";
+            return e->symbol ? e->symbol->name : "print unknown symbol";
         case EXP_CONSTNUMBER:
             char* buffer = (char*)malloc(1024*sizeof(char));
             snprintf(buffer, sizeof(buffer), "%.2f", e->numConst);
@@ -236,13 +236,13 @@ const char* exprToStr(expr* e) {
         case EXP_CONSTSTRING:
             return e->stringConst ? e->stringConst : (char*)"\"\"";
         case EXP_CONSTBOOL:
-            return e->boolConst ? (char*)"true" : (char*)"false";
+            return e->boolConst ? (char*)"TRUE" : (char*)"FALSE";
         case EXP_NIL:
             return "NIL";
         case EXP_TABLEITEM:
         case EXP_NEWTABLE:
         default:
-            return "ERROR";
+            return "PRINT ERROR";
     }
 }
 

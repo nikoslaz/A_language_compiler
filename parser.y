@@ -81,8 +81,8 @@
 %type <exprZoumi> const
 
 
-%type <quadLabelZoumi> M // (marks target)
-%type <exprZoumi> N      // (emits JUMP)
+/* %type <quadLabelZoumi> M // (marks target)
+%type <exprZoumi> N      // (emits JUMP) */
 
 %type <symbolZoumi> call
 %type <intZoumi> normcall
@@ -152,7 +152,7 @@ stmt_list:
     |
     ;
 
-M: { 
+/* M: { 
     $$ = nextquad(); 
 };
 
@@ -163,7 +163,7 @@ N: {
     expr_temp->falselist = makelist(nextquad());
     emit(OP_JUMP, NULL, NULL, NULL, 0);
     $$ = expr_temp;
-}
+} */
 
 expr:
     assignexpr { $$ = $1; }
@@ -330,7 +330,7 @@ expr:
         // MAYBE GARBAGE COLLECTION HERE ????????
         // Free $1, $3 if they were temp const results
     }
-    | expr OR M expr {
+    /* | expr OR M expr {
         // $1 = E1 (expr*), $3 = M.quad (unsigned int), $4 = E2 (expr*)
         backpatch($1->falselist, $3); // Patch E1 false jumps to start of E2
 
@@ -348,7 +348,7 @@ expr:
         expr_temp->truelist = $4->truelist; // E1's truelist is now patched
         expr_temp->falselist = merge($1->falselist, $4->falselist);
         $$ = expr_temp;
-    }
+    } */
     | NOT expr {
         Symbol* temp_symbol = create_temp_symbol();
         expr* expr_temp = create_bool_expr(temp_symbol);
@@ -635,30 +635,34 @@ idlist_list:
 
 ifstmt:
     ifprefix stmt %prec THEN_CONFLICT {
-        backpatch($1->truelist, nextquad()); // Patch true jumps to stmt
+        /* Make ->ELSE jump to after THEN stmt */
+        backpatch($1->falselist, nextquad());
     }
     | ifprefix stmt elseprefix stmt {
-        backpatch($1->truelist, ($3) + 1); 
-        quads[$3].label = nextquad(); // Patch the jump to the end of the else block
-        // Optional: free $5 if temp result
+        /* Make ->ELSE jump to where ELSE stmt begins */
+        backpatch($1->falselist, ($3) + 1);
+        /* Make THEN-> jump to ELSE-> stmt */
+        quads[$3].label = nextquad();
     }
     ;
 
 ifprefix: IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS {
-    backpatch($3->truelist, nextquad()); // Patch true jumps to next quad
-    
     expr* expr_temp = create_constbool_expr(1);
-
-    emit(OP_IFEQ, NULL, $3, expr_temp, nextquad() + 2); // Emit jump if false
-    $3->truelist  = makelist(nextquad()); // Save the jump target for true
-    emit(OP_JUMP, NULL, NULL, NULL, 0); // Emit jump to next quad
-    
+    /* Jump to ->THEN */
+    emit(OP_IFEQ, NULL, $3, expr_temp, nextquad() + 2);
+    /* Remember Jump quad for ->ELSE */
+    $3->falselist  = makelist(nextquad());
+    /* Jump to ->ELSE */
+    emit(OP_JUMP, NULL, NULL, NULL, 0);
     $$ = $3; 
 }
 
 elseprefix: ELSE {
-    $$ = nextquad(); // Save the jump target for else
-    emit(OP_JUMP, NULL, NULL, NULL, 0); // Emit jump to next quad
+    /* Remember Jump quad for THEN-> */
+    printf("Where THEN will jump at the end: %d\n", nextquad());
+    $$ = nextquad();
+    /* Jump to ->ELSE stmt */
+    emit(OP_JUMP, NULL, NULL, NULL, 0);
 }
 
 whilestmt:
