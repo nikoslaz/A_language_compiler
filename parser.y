@@ -687,27 +687,19 @@ whilecond:
     LEFT_PARENTHESIS expr RIGHT_PARENTHESIS {
         /*maybe check here if the $2 is valid*/
         backpatch($2->truelist, nextquad());
-        $$ = $2;
-    }
-    ;
 
-whilestart:
-    WHILE {
-        $$ = nextquad();
-    }
-    ;
-
-whilecond:
-    LEFT_PARENTHESIS expr RIGHT_PARENTHESIS {
-        /*maybe check here if the $2 is valid*/
-        backpatch($2->truelist, nextquad());
+        expr* expr_tmp = create_constbool_expr(1);
+        emit(OP_IFEQ, NULL, $2, expr_tmp, nextquad() + 2);
+        $2->falselist = makelist(nextquad());
+        emit(OP_JUMP, NULL, NULL, NULL, 0);
+        
         $$ = $2;
     }
     ;
 
 whilestmt:
-    whilestart whilecond { push(); } stmt {
-        emit(OP_JUMP, NULL, NULL, NULL, $1 /* target is whilestart_quad */);
+    whilestart whilecond { push(); }stmt {
+        emit(OP_JUMP, NULL, NULL, NULL, $1);
         unsigned int after_loop_label = nextquad();
 
         if($2){
