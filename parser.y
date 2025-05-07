@@ -83,13 +83,14 @@
 %type <exprZoumi>      whilecond
 
 
-/* %type <quadLabelZoumi> M // (marks target)
-%type <exprZoumi> N      // (emits JUMP) */
+%type <quadLabelZoumi> M 
+%type <quadLabelZoumi> N     
+%type <exprZoumi> forprefix 
 
 %type <symbolZoumi> call
 %type <intZoumi> normcall
-%type <intZoumi> elist
-%type <intZoumi> elist_list
+%type <exprZoumi> elist
+%type <exprZoumi> elist_list
 
 %type <exprZoumi> ifprefix
 %type <quadLabelZoumi> elseprefix
@@ -163,19 +164,6 @@ stmt_list:
     stmt stmt_list
     |
     ;
-
-/* M: { 
-    $$ = nextquad(); 
-};
-
-N: {
-    Symbol* temp_symbol = create_temp_symbol();
-    expr* expr_temp = create_bool_expr(temp_symbol);
-    expr_temp->truelist  = NULL;
-    expr_temp->falselist = makelist(nextquad());
-    emit(OP_JUMP, NULL, NULL, NULL, 0);
-    $$ = expr_temp;
-} */
 
 expr:
     assignexpr { $$ = $1; }
@@ -535,13 +523,28 @@ methodcall:
     ;
 
 elist: 
-    expr elist_list { $$ = 1 + $2; }
-    | { $$ = 0; }
+    expr elist_list { 
+        if ($1) {
+            $1->next = $2;
+            $$ = $1;
+        }
+        else {
+            $$ = NULL;
+        }
+    }
+    | { $$ = NULL; }
     ;
 
 elist_list: 
-    COMMA expr elist_list { $$ = 1 + $3; }
-    | { $$ = 0; }
+    COMMA expr elist_list { 
+        if ($2) {
+            $2->next = $3;
+            $$ = $2;
+        } else {
+            $$ = NULL;
+        } 
+    }
+    | { $$ = NULL; }
     ;
 
 objectdef:
@@ -719,11 +722,39 @@ whilestmt:
     }
     ;
 
+M: { 
+    $$ = nextquad(); 
+};
+
+N: {
+    $$ = nextquad();
+    emit(OP_JUMP, NULL, NULL, NULL, nextquad()); 
+}
+
+forprefix:
+    FOR LEFT_PARENTHESIS elist M SEMICOLON expr SEMICOLON {
+        expr* expr_temp = create_constbool_expr(1);
+        emit(OP_IFEQ, NULL, $6, expr_temp, nextquad() + 2);
+        $6->falselist = makelist(nextquad());
+        emit(OP_JUMP, NULL, NULL, NULL, 0);
+        $6->first_expr_quad = $4;
+        $6->after_expr_quad = nextquad();
+        $$ = $6;
+    }
+
+P: {
+    push();
+}
+
 forstmt:
-    FOR LEFT_PARENTHESIS elist SEMICOLON expr SEMICOLON elist RIGHT_PARENTHESIS {
-        //inLoop++;
-    } stmt {
-        //inLoop--;
+    forprefix N elist RIGHT_PARENTHESIS N P stmt N{
+        backpatch($1->falselist, nextquad());
+        quads[$1->after_expr_quad].label = $5+1;
+        quads[$5].label = $1->first_expr_quad;  
+        quads[$8].label = $2 + 1;
+        backpatch(loop_stack->break_list, nextquad());
+        backpatch(loop_stack->continue_list, $2 + 1);
+        pop();
     }
     ;
 

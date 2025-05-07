@@ -53,6 +53,9 @@ typedef struct expr_s {
     // --- Backpatching ---
     PatchList* truelist;
     PatchList* falselist;
+    // -----
+    unsigned int first_expr_quad;
+    unsigned int after_expr_quad;
 } expr;
 
 /*STACK FOR BREAK/CONTINUE LISTS*/

@@ -17,12 +17,12 @@ DODODODODO
 <!-- - DUAL assign quads (for lists mostly) -->
 
 ---------------------------------------------------------------------------------
-// Require Backpatching, breaklist, continuelist, merge method
+<!-- // Require Backpatching, breaklist, continuelist, merge method -->
 
 - Function start, end, argument
 <!-- - if-else -->
 <!-- - while -->
-- for
+<!-- - for -->
 <!-- - break-continue  -->
 
 ---------------------------------------------------------------------------------
