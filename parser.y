@@ -81,13 +81,16 @@
 %type <exprZoumi> const
 
 
-%type <intZoumi> M // (marks target)
-%type <exprZoumi> N // (emits JUMP)
+%type <quadLabelZoumi> M // (marks target)
+%type <exprZoumi> N      // (emits JUMP)
 
 %type <symbolZoumi> call
 %type <intZoumi> normcall
 %type <intZoumi> elist
 %type <intZoumi> elist_list
+
+%type <exprZoumi> ifprefix
+%type <quadLabelZoumi> elseprefix
 
 /* PROTERAIOTHTES KAI PROSETAIRISTIKOTHTA */
 
@@ -128,6 +131,8 @@ stmt:
     // you might consider freeing it here, but be extremely careful.
     // For now, let's assume memory management is handled elsewhere or ignored.
     | ifstmt
+    | ifprefix
+    | elseprefix
     | whilestmt
     | forstmt
     | returnstmt
@@ -629,27 +634,32 @@ idlist_list:
     ;
 
 ifstmt:
-    IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS M stmt %prec THEN_CONFLICT {
-
-        // $3 = expr, $5 = M.quad (target for true), $6 = stmt
-        backpatch($3->truelist, $5);
-        // The falselist from $3 needs to be patched *after* the if statement.
-        // It should be merged with any outer falselist or handled at function end.
-        // For now, we might just leak it, or add it to a global list.
-        // A better way is to associate patch lists with statement blocks too.
-        // Simple approach: Just backpatch false to the very next quad after stmt.
-        backpatch($3->falselist, nextquad()); // Patch false jumps to instruction after stmt
-        // Optional: free $3 if temp result
+    ifprefix stmt %prec THEN_CONFLICT {
+        backpatch($1->truelist, nextquad()); // Patch true jumps to stmt
     }
-    | IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS M stmt N ELSE M stmt {
-        // $3=expr, $5=M1.quad(true target), $6=stmt1, $7=N(jump), $9=M2.quad(false target), $10=stmt2
-        backpatch($3->truelist, $5);  // True jumps to stmt1
-        backpatch($3->falselist, $9); // False jumps to stmt2
-        // Patch the jump emitted by N (from end of stmt1) to after stmt2
-        backpatch($7->falselist, nextquad());
-         // Optional: free $3, $7 if temp results 
+    | ifprefix stmt elseprefix stmt {
+        backpatch($1->truelist, ($3) + 1); 
+        quads[$3].label = nextquad(); // Patch the jump to the end of the else block
+        // Optional: free $5 if temp result
     }
     ;
+
+ifprefix: IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS {
+    backpatch($3->truelist, nextquad()); // Patch true jumps to next quad
+    
+    expr* expr_temp = create_constbool_expr(1);
+
+    emit(OP_IFEQ, NULL, $3, expr_temp, nextquad() + 2); // Emit jump if false
+    $3->truelist  = makelist(nextquad()); // Save the jump target for true
+    emit(OP_JUMP, NULL, NULL, NULL, 0); // Emit jump to next quad
+    
+    $$ = $3; 
+}
+
+elseprefix: ELSE {
+    $$ = nextquad(); // Save the jump target for else
+    emit(OP_JUMP, NULL, NULL, NULL, 0); // Emit jump to next quad
+}
 
 whilestmt:
     WHILE LEFT_PARENTHESIS expr RIGHT_PARENTHESIS {
