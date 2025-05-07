@@ -5,9 +5,11 @@
 #include "alpha_quads.h"
 
 quad* quads = NULL;
+LoopContext* loop_stack = NULL;
 unsigned int totalquads = 0;
 unsigned int currquad = 0;
 unsigned int temp_counter = 0;
+unsigned int loop_depth_counter = 0;
 
 Symbol* create_temp_symbol(void) {
     if(temp_counter>MAX_TEMPS) {
@@ -183,6 +185,48 @@ expr* create_bool_expr(Symbol* symbol) {
 //         default:              return OP_JUMP;
 //     }
 // }
+
+
+/*===============================================================================================*/
+/* STACK FOR LOOPS*/
+
+void push(){
+    LoopContext* new = (LoopContext*)malloc(sizeof(LoopContext));
+    if(!new){
+        MemoryFail();
+    }
+    new->break_list = NULL;
+    new->continue_list = NULL;
+    new->next = loop_stack;
+    loop_stack = new;
+    loop_depth_counter++;
+}
+
+void pop(){
+    if(loop_stack){
+        LoopContext* top = loop_stack;
+        loop_stack = top->next;
+        free(top);
+        loop_depth_counter--;
+    }
+}
+
+void add_to_breakList(unsigned int quad_to_patch){
+    if(loop_stack){
+        loop_stack->break_list = merge(loop_stack->break_list, makelist(quad_to_patch));
+    } else {
+        yyerror("BREAK statement encountered outside of a loop stack.");
+    }
+}
+
+void add_to_continueList(unsigned int quad_to_patch){
+    if(loop_stack){
+        loop_stack->continue_list = merge(loop_stack->continue_list, makelist(quad_to_patch));
+    } else {
+        yyerror("CONTINUE statement encountered outside of a loop stack.");
+    }
+}
+
 
 /*===============================================================================================*/
 /* Print */

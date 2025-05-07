@@ -55,6 +55,13 @@ typedef struct expr_s {
     PatchList* falselist;
 } expr;
 
+/*STACK FOR BREAK/CONTINUE LISTS*/
+typedef struct LoopContext {
+    PatchList* break_list;
+    PatchList* continue_list;
+    struct LoopContext* next;
+} LoopContext;
+
 typedef struct quad_s {
     opcode op;
     expr* result;
@@ -66,10 +73,12 @@ typedef struct quad_s {
 
 
 extern quad* quads;
+extern LoopContext* loop_stack;
 extern unsigned int totalquads;
 extern unsigned int currquad;
 extern unsigned int temp_counter;
-
+extern unsigned int loop_depth_counter;
+ 
 Symbol* create_temp_symbol(void);
 quad* emit(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label);
 
@@ -86,6 +95,12 @@ PatchList* makelist(unsigned int quad_index);
 PatchList* merge(PatchList* list1, PatchList* list2);
 void backpatch(PatchList* list, unsigned int target_quad_index);
 expr* create_bool_expr(Symbol* symbol);
+
+// Stack
+void push();
+void pop();
+void add_to_breakList(unsigned int quad_to_patch);
+void add_to_continueList(unsigned int quad_to_patch);
 
 void printQuads(void);
 

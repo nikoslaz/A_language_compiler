@@ -8,7 +8,7 @@
     struct Symbol* tmp;
 
     /* Globals */
-    int inLoop = 0;
+    //int inLoop = 0;
     int inFunction = 0;
 %}
 
@@ -79,6 +79,8 @@
 %type <exprZoumi> lvalue 
 %type <exprZoumi> member 
 %type <exprZoumi> const
+%type <quadLabelZoumi> whilestart
+%type <exprZoumi>      whilecond
 
 
 /* %type <quadLabelZoumi> M // (marks target)
@@ -137,10 +139,20 @@ stmt:
     | forstmt
     | returnstmt
     | BREAK SEMICOLON {
-        if(!inLoop) { yyerror("Use of 'break' outside loop"); }
+        if(loop_depth_counter == 0){ 
+            yyerror("Use of 'break' outside loop"); 
+        } else {
+            add_to_breakList(nextquad());
+            emit(OP_JUMP, NULL, NULL, NULL, 0);
+        }
     }
     | CONTINUE SEMICOLON {
-        if(!inLoop) { yyerror("Use of 'continue' outside loop"); }
+        if(loop_depth_counter == 0){
+            yyerror("Use of 'continue' outside loop"); 
+        } else {
+            add_to_continueList(nextquad());
+            emit(OP_JUMP, NULL, NULL, NULL, 0);
+        }
     }
     | block
     | funcdef
@@ -558,10 +570,10 @@ block:
         /* Functions make their own scopes */
         if(!fromFunct) { enter_Next_Scope(fromFunct); }
         fromFunct=0;
-        inLoop++;
+        //inLoop++;
     } stmt_list RIGHT_BRACE {
         exit_Current_Scope();
-        inLoop--;
+        //inLoop--;
     }
     ;
 
@@ -665,19 +677,61 @@ elseprefix: ELSE {
     emit(OP_JUMP, NULL, NULL, NULL, 0);
 }
 
+whilestart:
+    WHILE {
+        $$ = nextquad();
+    }
+    ;
+
+whilecond:
+    LEFT_PARENTHESIS expr RIGHT_PARENTHESIS {
+        /*maybe check here if the $2 is valid*/
+        backpatch($2->truelist, nextquad());
+        $$ = $2;
+    }
+    ;
+
+whilestart:
+    WHILE {
+        $$ = nextquad();
+    }
+    ;
+
+whilecond:
+    LEFT_PARENTHESIS expr RIGHT_PARENTHESIS {
+        /*maybe check here if the $2 is valid*/
+        backpatch($2->truelist, nextquad());
+        $$ = $2;
+    }
+    ;
+
 whilestmt:
-    WHILE LEFT_PARENTHESIS expr RIGHT_PARENTHESIS {
-        inLoop++;
-    } stmt {
-        inLoop--;
+    whilestart whilecond { push(); } stmt {
+        emit(OP_JUMP, NULL, NULL, NULL, $1 /* target is whilestart_quad */);
+        unsigned int after_loop_label = nextquad();
+
+        if($2){
+            backpatch($2->falselist, after_loop_label);
+        }
+
+        if(loop_stack){
+            backpatch(loop_stack->break_list, after_loop_label);
+        }
+
+        if(loop_stack){
+            backpatch(loop_stack->continue_list, $1);
+        }
+
+        pop();
+
     }
     ;
 
 forstmt:
     FOR LEFT_PARENTHESIS elist SEMICOLON expr SEMICOLON elist RIGHT_PARENTHESIS {
-        inLoop++;
+        //inLoop++;
     } stmt {
-        inLoop--;
+        //inLoop--;
     }
     ;
 
