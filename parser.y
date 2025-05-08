@@ -240,10 +240,6 @@ expr:
             $$ = expr_temp;
         }
     }
-
-/*===============================================================================================*/
-/* RELOP */
-
     | expr GREATER expr {
         expr* expr_temp = create_bool_expr();
         expr_temp->truelist  = makelist(nextquad());
@@ -341,7 +337,7 @@ orprefix:
             emit(OP_JUMP, NULL, NULL, NULL, -1);
         }
         $$ = $1; 
-    }
+    };
 
 term:
     LEFT_PARENTHESIS expr RIGHT_PARENTHESIS { $$ = $2; }
@@ -458,14 +454,6 @@ assignexpr:
     }
     ;
 
-primary:
-    lvalue { $$ = $1; }
-    | call
-    | objectdef
-    | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS
-    | const { $$ = $1; }
-    ;
-
 lvalue:
     ID {
         int inaccessible = 0;
@@ -497,6 +485,152 @@ lvalue:
         $$ = expr_temp;
     }
     | member
+    ;
+
+const:
+    INT {
+        expr* expr_temp = create_constnum_expr((double)$1);
+        $$ = expr_temp;
+    }
+    | REAL {
+        expr* expr_temp = create_constnum_expr($1);
+        $$ = expr_temp;
+    }
+    | STRING {
+        expr* expr_temp = create_conststring_expr(strdup($1));
+        $$ = expr_temp;
+    }
+    | NIL {
+        expr* expr_temp = create_nil_expr();
+        $$ = expr_temp;
+    }
+    | TRUE {
+        expr* expr_temp = create_constbool_expr(1);
+        expr_temp->truelist = makelist(nextquad());
+        emit(OP_JUMP, NULL, NULL, NULL, -1);
+        expr_temp->falselist = NULL;
+        $$ = expr_temp;
+    }
+    | FALSE {
+        expr* expr_temp = create_constbool_expr(0);
+        expr_temp->truelist = NULL;
+        emit(OP_JUMP, NULL, NULL, NULL, -1);
+        expr_temp->falselist = makelist(nextquad());
+        $$ = expr_temp;
+    }
+    ;
+
+ifcond:
+    IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS {
+        if ($3->type != EXP_BOOL && $3->type != EXP_CONSTBOOL) {
+            expr* temp_list = create_bool_expr();
+            temp_list->truelist = makelist(nextquad());
+            temp_list->falselist = makelist(nextquad() + 1);
+            emit(OP_IFEQ, NULL, $3, create_constbool_expr(1), -1 /* Placeholder */);
+            emit(OP_JUMP, NULL, NULL, NULL, -1 /* Placeholder */);
+            $$ = temp_list;
+        } else { $$ = $3; }
+
+        /* Create new temp bool expr */
+        expr* mysym = create_bool_expr();
+        /* Truelist assigns TRUE to temp symbol */
+        backpatch($$->truelist, nextquad());
+        emit(OP_ASSIGN, mysym, create_constbool_expr(1), NULL, 0);
+        /* Then skips FALSE symbol */
+        emit(OP_JUMP, NULL, NULL, NULL, nextquad()+2);
+        /* Falselist assigns FALSE to temp symbol */
+        backpatch($$->falselist, nextquad());
+        emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
+
+        /* Then */
+        emit(OP_IFEQ, NULL, mysym, create_constbool_expr(1), nextquad()+2);
+        /* Store ELSE jump quad */
+        $$->cond_expr_begin = nextquad();
+        emit(OP_JUMP, NULL, NULL, NULL, -1);
+    }
+    ;
+
+ifstmt:
+    ifcond stmt %prec THEN_CONFLICT {
+        /* Make ELSE jump to after THEN_stmt */
+        quads[$1->cond_expr_begin].label = nextquad();
+    }
+    | ifcond stmt ELSE MJ stmt {
+        /* Make ELSE jump to where ELSE_stmt begins */
+        quads[$1->cond_expr_begin].label = $4+1;
+        /* Make end of THEN_stmt jump to after ELSE_stmt */
+        quads[$4].label = nextquad();
+    }
+    ;
+
+/*===============================================================================================*/
+/* APO EDW KAI KATW */
+
+whilecond:
+    LEFT_PARENTHESIS expr RIGHT_PARENTHESIS {
+        /* THEN jump */
+        emit(OP_IFEQ, NULL, $2, create_constbool_expr(1), nextquad() + 2);
+        /* Remember quad of ELSE jump */
+        $2->falselist = makelist(nextquad());
+        /* ELSE jump */
+        emit(OP_JUMP, NULL, NULL, NULL, -1);
+        $$ = $2;
+    }
+    ;
+
+whilestmt:
+    WHILE M whilecond { push(); } stmt {
+        /* Jump to cond */
+        emit(OP_JUMP, NULL, NULL, NULL, $2);
+        /* Make ELSE jump to after stmt */
+        if($3) { backpatch($3->falselist, nextquad()); }
+        /* Breaks & Continues */
+        if(loop_stack) {
+            backpatch(loop_stack->break_list, nextquad());
+            backpatch(loop_stack->continue_list, $2);
+        }
+        pop();
+    }
+    ;
+
+forprefix:
+    FOR LEFT_PARENTHESIS elist M SEMICOLON expr SEMICOLON {
+        /* THEN Jump */
+        $6->truelist = makelist(nextquad());
+        emit(OP_IFEQ, NULL, $6, create_constbool_expr(1), -1);
+        /* ELSE jump */
+        $6->falselist = makelist(nextquad());
+        emit(OP_JUMP, NULL, NULL, NULL, -1);
+        /* Store start of expr block */
+        $6->cond_expr_begin = $4;
+        $$ = $6;
+    }
+
+forstmt:
+    forprefix M elist RIGHT_PARENTHESIS MJ P stmt MJ {
+        /* Make THEN jump to start of stmt */
+        backpatch($1->truelist, $5+1);
+        /* Make ELSE jump to after stmt */
+        backpatch($1->falselist, nextquad());
+        /* Jump to begin of expr */
+        quads[$5].label = $1->cond_expr_begin;  
+        /* Jump to start of elist2 */
+        quads[$8].label = $2 + 1;
+        /* Breaks & Continues */
+        if(loop_stack) {
+            backpatch(loop_stack->break_list, nextquad());
+            backpatch(loop_stack->continue_list, $2 + 1);
+        }
+        pop();
+    }
+    ;
+
+primary:
+    lvalue { $$ = $1; }
+    | call
+    | objectdef
+    | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS
+    | const { $$ = $1; }
     ;
 
 /* TODO: Implement TABLEGETELEM/TABLESETELEM logic here */
@@ -622,39 +756,6 @@ funcdef:
     }
     ;
 
-const:
-    INT {
-        expr* expr_temp = create_constnum_expr((double)$1);
-        $$ = expr_temp;
-    }
-    | REAL {
-        expr* expr_temp = create_constnum_expr($1);
-        $$ = expr_temp;
-    }
-    | STRING {
-        expr* expr_temp = create_conststring_expr(strdup($1));
-        $$ = expr_temp;
-    }
-    | NIL {
-        expr* expr_temp = create_nil_expr();
-        $$ = expr_temp;
-    }
-    | TRUE {
-        expr* expr_temp = create_constbool_expr(1);
-        expr_temp->truelist = makelist(nextquad());
-        emit(OP_JUMP, NULL, NULL, NULL, -1);
-        expr_temp->falselist = NULL;
-        $$ = expr_temp;
-    }
-    | FALSE {
-        expr* expr_temp = create_constbool_expr(0);
-        expr_temp->truelist = NULL;
-        emit(OP_JUMP, NULL, NULL, NULL, -1);
-        expr_temp->falselist = makelist(nextquad());
-        $$ = expr_temp;
-    }
-    ;
-
 // EXPR
 idlist:
     ID { resolve_FormalSymbol($1); } idlist_list
@@ -665,108 +766,6 @@ idlist:
 idlist_list:
     COMMA ID { resolve_FormalSymbol($2); } idlist_list
     |
-    ;
-
-ifcond:
-    IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS {
-        if ($3->type != EXP_BOOL && $3->type != EXP_CONSTBOOL) {
-            expr* temp_list = create_bool_expr();
-            temp_list->truelist = makelist(nextquad());
-            temp_list->falselist = makelist(nextquad() + 1);
-            emit(OP_IFEQ, NULL, $3, create_constbool_expr(1), -1 /* Placeholder */);
-            emit(OP_JUMP, NULL, NULL, NULL, -1 /* Placeholder */);
-            $$ = temp_list;
-        } else { $$ = $3; }
-
-        /* Create new temp bool expr */
-        expr* mysym = create_bool_expr();
-        /* Truelist assigns TRUE to temp symbol */
-        backpatch($$->truelist, nextquad());
-        emit(OP_ASSIGN, mysym, create_constbool_expr(1), NULL, 0);
-        /* Then skips FALSE symbol */
-        emit(OP_JUMP, NULL, NULL, NULL, nextquad()+2);
-        /* Falselist assigns FALSE to temp symbol */
-        backpatch($$->falselist, nextquad());
-        emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
-
-        /* Then */
-        emit(OP_IFEQ, NULL, mysym, create_constbool_expr(1), nextquad()+2);
-        /* Store ELSE jump quad */
-        $$->cond_expr_begin = nextquad();
-        emit(OP_JUMP, NULL, NULL, NULL, -1);
-    }
-    ;
-
-ifstmt:
-    ifcond stmt %prec THEN_CONFLICT {
-        /* Make ELSE jump to after THEN_stmt */
-        quads[$1->cond_expr_begin].label = nextquad();
-    }
-    | ifcond stmt ELSE MJ stmt {
-        /* Make ELSE jump to where ELSE_stmt begins */
-        quads[$1->cond_expr_begin].label = $4+1;
-        /* Make end of THEN_stmt jump to after ELSE_stmt */
-        quads[$4].label = nextquad();
-    }
-    ;
-
-whilecond:
-    LEFT_PARENTHESIS expr RIGHT_PARENTHESIS {
-        /* THEN jump */
-        emit(OP_IFEQ, NULL, $2, create_constbool_expr(1), nextquad() + 2);
-        /* Remember quad of ELSE jump */
-        $2->falselist = makelist(nextquad());
-        /* ELSE jump */
-        emit(OP_JUMP, NULL, NULL, NULL, -1);
-        $$ = $2;
-    }
-    ;
-
-whilestmt:
-    WHILE M whilecond { push(); } stmt {
-        /* Jump to cond */
-        emit(OP_JUMP, NULL, NULL, NULL, $2);
-        /* Make ELSE jump to after stmt */
-        if($3) { backpatch($3->falselist, nextquad()); }
-        /* Breaks & Continues */
-        if(loop_stack) {
-            backpatch(loop_stack->break_list, nextquad());
-            backpatch(loop_stack->continue_list, $2);
-        }
-        pop();
-    }
-    ;
-
-forprefix:
-    FOR LEFT_PARENTHESIS elist M SEMICOLON expr SEMICOLON {
-        /* THEN Jump */
-        $6->truelist = makelist(nextquad());
-        emit(OP_IFEQ, NULL, $6, create_constbool_expr(1), -1);
-        /* ELSE jump */
-        $6->falselist = makelist(nextquad());
-        emit(OP_JUMP, NULL, NULL, NULL, -1);
-        /* Store start of expr block */
-        $6->cond_expr_begin = $4;
-        $$ = $6;
-    }
-
-forstmt:
-    forprefix M elist RIGHT_PARENTHESIS MJ P stmt MJ {
-        /* Make THEN jump to start of stmt */
-        backpatch($1->truelist, $5+1);
-        /* Make ELSE jump to after stmt */
-        backpatch($1->falselist, nextquad());
-        /* Jump to begin of expr */
-        quads[$5].label = $1->cond_expr_begin;  
-        /* Jump to start of elist2 */
-        quads[$8].label = $2 + 1;
-        /* Breaks & Continues */
-        if(loop_stack) {
-            backpatch(loop_stack->break_list, nextquad());
-            backpatch(loop_stack->continue_list, $2 + 1);
-        }
-        pop();
-    }
     ;
 
 returnstmt:
