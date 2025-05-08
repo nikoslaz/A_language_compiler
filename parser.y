@@ -351,7 +351,7 @@ term:
             $$ = NULL;
         } else {
             expr* expr_temp = create_arith_expr();
-            emit(OP_UMINUS, expr_temp /*result*/, $2 /*arg1*/, NULL /*arg2*/, 0 /*label*/);
+            emit(OP_UMINUS, expr_temp, $2, NULL, 0);
             $$ = expr_temp;
         }
     }
@@ -369,39 +369,55 @@ term:
         $$ = expr_temp;
      }
     | PLUS_PLUS lvalue {
-        if($2 && ($2->type == USERFUNC_T || $2->type == LIBFUNC_T)) {
+        if($2 && ($2->symbol->type == USERFUNC_T || $2->symbol->type == LIBFUNC_T)) {
             char msg[1024];
             snprintf(msg, sizeof(msg), "Using %s as an lvalue", $2->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
             yyerror(msg);
+            $$ = NULL;
         } else {
-            checkFunctionSymbol($2->symbol, "increment");
+            emit(OP_ADD, $2, $2, create_constnum_expr(1), 0);
+            expr* expr_sym = create_var_expr(create_temp_symbol());
+            emit(OP_ASSIGN, expr_sym, $2, NULL, 0);
+            $$ = expr_sym;
         }
     }
     | lvalue PLUS_PLUS {
-        if($1 && ($1->type == USERFUNC_T || $1->type == LIBFUNC_T)) {
+        if($1 && ($1->symbol->type == USERFUNC_T || $1->symbol->type == LIBFUNC_T)) {
             char msg[1024];
             snprintf(msg, sizeof(msg), "Using %s as an lvalue", $1->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
             yyerror(msg);
+            $$ = NULL;
         } else {
-            checkFunctionSymbol($1->symbol, "increment");
+            expr* expr_sym = create_var_expr(create_temp_symbol());
+            emit(OP_ASSIGN, expr_sym, $1, NULL, 0);
+            emit(OP_ADD, $1, $1, create_constnum_expr(1), 0);
+            $$ = expr_sym;
         }
     }
     | MINUS_MINUS lvalue {
-        if($2 && ($2->type == USERFUNC_T || $2->type == LIBFUNC_T)) {
+        if($2 && ($2->symbol->type == USERFUNC_T || $2->symbol->type == LIBFUNC_T)) {
             char msg[1024];
             snprintf(msg, sizeof(msg), "Using %s as an lvalue", $2->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
             yyerror(msg);
+            $$ = NULL;
         } else {
-            checkFunctionSymbol($2->symbol, "decrement");
+            emit(OP_SUB, $2, $2, create_constnum_expr(1), 0);
+            expr* expr_sym = create_var_expr(create_temp_symbol());
+            emit(OP_ASSIGN, expr_sym, $2, NULL, 0);
+            $$ = expr_sym;
         }
     }
     | lvalue MINUS_MINUS {
-        if($1 && ($1->type == USERFUNC_T || $1->type == LIBFUNC_T)) {
+        if($1 && ($1->symbol->type == USERFUNC_T || $1->symbol->type == LIBFUNC_T)) {
             char msg[1024];
             snprintf(msg, sizeof(msg), "Using %s as an lvalue", $1->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
             yyerror(msg);
+            $$ = NULL;
         } else {
-            checkFunctionSymbol($1->symbol, "decrement");
+            expr* expr_sym = create_var_expr(create_temp_symbol());
+            emit(OP_ASSIGN, expr_sym, $1, NULL, 0);
+            emit(OP_SUB, $1, $1, create_constnum_expr(1), 0);
+            $$ = expr_sym;
         }
     }
     | primary { $$ = $1; }
@@ -409,13 +425,12 @@ term:
 
 assignexpr:
     lvalue EQUALS expr {
-        if($1 && ($1->type == EXP_PROGRAMFUNC || $1->type == EXP_LIBRARYFUNC)) {
-            // MORE CHECKING
-            char msg[34];
+        if($1 && ($1->symbol->type == LIBFUNC_T || $1->symbol->type == LIBFUNC_T)) {
+            char msg[1024];
             snprintf(msg, sizeof(msg), "Using %s as an lvalue", $1->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
             yyerror(msg);
             $$ = NULL;
-        } else if ($1 && $3) { // Check if both sides are valid expr*
+        } else if ($1 && $3) {
             expr* rvalue;
             if($3->type == EXP_BOOL) {
                 /* Create new temp bool expr */
@@ -430,12 +445,11 @@ assignexpr:
                 emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
                 rvalue = mysym;
             } else { rvalue = $3; }
-            
             expr* expr_result = create_var_expr(create_temp_symbol());
             // First assign
-            emit(OP_ASSIGN, $1 /*result(lvalue)*/, $3 /*arg1(rvalue)*/, NULL /*arg2*/, 0 /*label*/);
+            emit(OP_ASSIGN, $1, $3, NULL, 0);
             // Second assign
-            emit(OP_ASSIGN, expr_result /*result(lvalue)*/, $1 /*arg1(rvalue)*/, NULL /*arg2*/, 0 /*label*/);
+            emit(OP_ASSIGN, expr_result, $1, NULL, 0);
             $$ = expr_result;
         } else {
             yyerror("Invalid assignment operation");
@@ -473,12 +487,12 @@ lvalue:
         }
     }
     | LOCAL ID {
-        Symbol* symbol_temp = resolve_RawSymbol($2);
+        Symbol* symbol_temp = resolve_LocalSymbol($2);
         expr* expr_temp = create_var_expr(symbol_temp);
         $$ = expr_temp;
     }
     | COLON_COLON ID {
-        Symbol* symbol_temp = resolve_RawSymbol($2);
+        Symbol* symbol_temp = resolve_GlobalSymbol($2);
         expr* expr_temp = create_var_expr(symbol_temp);
         $$ = expr_temp;
     }
@@ -493,6 +507,7 @@ member:
     | call LEFT_BRACKET expr RIGHT_BRACKET { $$ = $1; }
     ;
 
+/* TODO: functions */
 call:
     call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS { $$ = $1; }
     | lvalue callsuffix {
