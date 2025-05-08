@@ -160,6 +160,19 @@ stmt_list:
     |
     ;
 
+M: { 
+    $$ = nextquad(); 
+};
+
+MJ: {
+    $$ = nextquad();
+    emit(OP_JUMP, NULL, NULL, NULL, nextquad()); 
+};
+
+P: {
+    push();
+};
+
 // MAYBE GARBAGE COLLECTION HERE ????????
 // Free $1, $3 if they were temp const results
 expr:
@@ -280,27 +293,27 @@ expr:
     }
     | expr AND M expr {
         expr* e1 = $1;
+        printf("M is %d\n", $3);
         unsigned int m_quad = $3; 
         expr* e2 = $4;
 
         if (e1->type != EXP_BOOL && e1->type != EXP_CONSTBOOL) {
-
             e1->truelist = makelist(nextquad());
             e1->falselist = makelist(nextquad() + 1);
             emit(OP_IFEQ, NULL, e1, create_constbool_expr(1), -1);
             emit(OP_JUMP, NULL, NULL, NULL, -1);
+            m_quad = nextquad();
         }
 
         if (e2->type != EXP_BOOL && e2->type != EXP_CONSTBOOL) {
-
             e2->truelist = makelist(nextquad());
             e2->falselist = makelist(nextquad() + 1);
             emit(OP_IFEQ, NULL, e2, create_constbool_expr(1), -1);
             emit(OP_JUMP, NULL, NULL, NULL, -1);
         }
 
-
         expr* expr_temp = create_bool_expr();
+        printf("About to patch to %d\n", m_quad);
         backpatch(e1->truelist, m_quad);
         expr_temp->truelist  = e2->truelist;
         expr_temp->falselist = merge(e1->falselist, e2->falselist);
@@ -312,21 +325,19 @@ expr:
         expr* e2 = $4;
 
         if (e1->type != EXP_BOOL && e1->type != EXP_CONSTBOOL) {
-
             e1->truelist = makelist(nextquad());
             e1->falselist = makelist(nextquad() + 1);
             emit(OP_IFEQ, NULL, e1, create_constbool_expr(1), -1);
             emit(OP_JUMP, NULL, NULL, NULL, -1);
+            m_quad = nextquad();
         }
 
         if (e2->type != EXP_BOOL && e2->type != EXP_CONSTBOOL) {
-
             e2->truelist = makelist(nextquad());
             e2->falselist = makelist(nextquad() + 1);
             emit(OP_IFEQ, NULL, e2, create_constbool_expr(1), -1);
             emit(OP_JUMP, NULL, NULL, NULL, -1);
         }
-
 
         expr* expr_temp = create_bool_expr();
         backpatch(e1->falselist, m_quad);
@@ -355,7 +366,7 @@ term:
         expr* e2 = $2;
         if (e2->type != EXP_BOOL && e2->type != EXP_CONSTBOOL){
             e2->truelist = makelist(nextquad());
-            e2->falselist = makelist(nextquad() + 1);
+            e2->falselist = makelist(nextquad()+1);
             emit(OP_IFEQ, NULL, e2, create_constbool_expr(1), -1);
             emit(OP_JUMP, NULL, NULL, NULL, -1);
         }
@@ -650,35 +661,36 @@ ifcond:
         } else {
             $$ = cond_expr;
         }
+        expr* mysym = create_bool_expr();
+        
         backpatch($$->truelist, nextquad());
+        emit(OP_ASSIGN, mysym, create_constbool_expr(1), NULL, 0);
+        
+        emit(OP_JUMP, NULL, NULL, NULL, nextquad()+2);
+        
+        backpatch($$->falselist, nextquad());
+        emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
+
+        emit(OP_IFEQ, NULL, mysym, create_constbool_expr(1), nextquad()+2);
+        /* Else */
+        $$->for_expr_begin = nextquad();
+        emit(OP_JUMP, NULL, NULL, NULL, -1);
+
     }
     ;
 
 ifstmt:
     ifcond stmt %prec THEN_CONFLICT {
         /* Make ELSE jump to after THEN_stmt */
-        backpatch($1->falselist, nextquad());
+        quads[$1->for_expr_begin].label = nextquad();
     }
     | ifcond stmt ELSE MJ stmt {
         /* Make ELSE jump to where ELSE_stmt begins */
-        backpatch($1->falselist, ($4) + 1);
+        quads[$1->for_expr_begin].label = $4+1;
         /* Make end of THEN_stmt jump to after ELSE_stmt */
         quads[$4].label = nextquad();
     }
     ;
-
-M: { 
-    $$ = nextquad(); 
-};
-
-MJ: {
-    $$ = nextquad();
-    emit(OP_JUMP, NULL, NULL, NULL, nextquad()); 
-};
-
-P: {
-    push();
-};
 
 whilecond:
     LEFT_PARENTHESIS expr RIGHT_PARENTHESIS {
