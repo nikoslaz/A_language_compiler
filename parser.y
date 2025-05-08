@@ -526,8 +526,8 @@ ifcond:
             expr* temp_list = create_bool_expr();
             temp_list->truelist = makelist(nextquad());
             temp_list->falselist = makelist(nextquad() + 1);
-            emit(OP_IFEQ, NULL, $3, create_constbool_expr(1), -1 /* Placeholder */);
-            emit(OP_JUMP, NULL, NULL, NULL, -1 /* Placeholder */);
+            emit(OP_IFEQ, NULL, $3, create_constbool_expr(1), -1);
+            emit(OP_JUMP, NULL, NULL, NULL, -1);
             $$ = temp_list;
         } else { $$ = $3; }
 
@@ -569,8 +569,8 @@ whilecond:
             expr* temp_list = create_bool_expr();
             temp_list->truelist = makelist(nextquad());
             temp_list->falselist = makelist(nextquad() + 1);
-            emit(OP_IFEQ, NULL, $2, create_constbool_expr(1), -1 /* Placeholder */);
-            emit(OP_JUMP, NULL, NULL, NULL, -1 /* Placeholder */);
+            emit(OP_IFEQ, NULL, $2, create_constbool_expr(1), -1);
+            emit(OP_JUMP, NULL, NULL, NULL, -1);
             $$ = temp_list;
         } else { $$ = $2; }
 
@@ -615,8 +615,8 @@ forprefix:
             expr* temp_list = create_bool_expr();
             temp_list->truelist = makelist(nextquad());
             temp_list->falselist = makelist(nextquad() + 1);
-            emit(OP_IFEQ, NULL, $6, create_constbool_expr(1), -1 /* Placeholder */);
-            emit(OP_JUMP, NULL, NULL, NULL, -1 /* Placeholder */);
+            emit(OP_IFEQ, NULL, $6, create_constbool_expr(1), -1);
+            emit(OP_JUMP, NULL, NULL, NULL, -1);
             $$ = temp_list;
         } else { $$ = $6; }
 
