@@ -633,6 +633,7 @@ forprefix:
         /* THEN Jump */
         $6->truelist = makelist(nextquad());
         emit(OP_IFEQ, NULL, $6, create_constbool_expr(1), -1);
+        
         /* ELSE jump */
         $6->falselist = makelist(nextquad());
         emit(OP_JUMP, NULL, NULL, NULL, -1);
@@ -650,7 +651,7 @@ forstmt:
         /* Jump to begin of expr */
         quads[$5].label = $1->cond_expr_begin;  
         /* Jump to start of elist2 */
-        quads[$8].label = $2 + 1;
+        quads[$8].label = $2;
         /* Breaks & Continues */
         if(loop_stack) {
             backpatch(loop_stack->break_list, nextquad());
