@@ -225,6 +225,10 @@ expr:
             $$ = expr_temp;
         }
     }
+
+/*===============================================================================================*/
+/* RELOP */
+ 
     | expr GREATER expr {
         expr* expr_temp = create_bool_expr();
         expr_temp->truelist  = makelist(nextquad());
@@ -281,9 +285,6 @@ expr:
         expr_temp->falselist = makelist(nextquad() + 1);
         emit(OP_OR, expr_temp, $1, $3, 0);
         $$ = expr_temp;
-    }
-    | LEFT_PARENTHESIS expr RIGHT_PARENTHESIS { 
-        $$ = $2; 
     }
     | term 
     ;

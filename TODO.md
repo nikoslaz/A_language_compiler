@@ -15,6 +15,7 @@ DODODODODO
 <!-- - Method to create, read, delete temp variables -> CREATE, READ  -->
 - Maybe Garbage collection(at the end)?????
 <!-- - DUAL assign quads (for lists mostly) -->
+- Fix double assignment (oxi arith)
 
 ---------------------------------------------------------------------------------
 <!-- // Require Backpatching, breaklist, continuelist, merge method -->
@@ -29,4 +30,11 @@ DODODODODO
 // Hard
 
 Table variables
-Merikh Apotimhsh
+
+Gia Merikh Apotimhsh:
+- Expr relop Expr
+- not expr
+- const TRUE FALSE
+Gia ola auta: 8eloume na elegxoyme oti ta arguments einai valid:
+se periptwsi string kane not equals "" etc etc.
+apagorevontai functions maybe??
