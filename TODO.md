@@ -27,7 +27,7 @@ DODODODODO
 <!-- - while -->
 <!-- - for -->
 <!-- - break-continue  -->
-- Fix WHILE, FOR to use Merikh Apotimhsh
+<!-- - Fix WHILE, FOR to use Merikh Apotimhsh -->
 
 <!-- Gia Merikh Apotimhsh: -->
 <!-- - Expr relop Expr

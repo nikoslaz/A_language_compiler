@@ -568,6 +568,25 @@ ifstmt:
 
 whilecond:
     LEFT_PARENTHESIS expr RIGHT_PARENTHESIS {
+        if ($2->type != EXP_BOOL && $2->type != EXP_CONSTBOOL) {
+            expr* temp_list = create_bool_expr();
+            temp_list->truelist = makelist(nextquad());
+            temp_list->falselist = makelist(nextquad() + 1);
+            emit(OP_IFEQ, NULL, $2, create_constbool_expr(1), -1 /* Placeholder */);
+            emit(OP_JUMP, NULL, NULL, NULL, -1 /* Placeholder */);
+            $$ = temp_list;
+        } else { $$ = $2; }
+
+        /* Create new temp bool expr */
+        expr* mysym = create_bool_expr();
+        /* Truelist assigns TRUE to temp symbol */
+        backpatch($$->truelist, nextquad());
+        emit(OP_ASSIGN, mysym, create_constbool_expr(1), NULL, 0);
+        /* Then skips FALSE symbol */
+        emit(OP_JUMP, NULL, NULL, NULL, nextquad()+2);
+        /* Falselist assigns FALSE to temp symbol */
+        backpatch($$->falselist, nextquad());
+        emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);  
         /* THEN jump */
         emit(OP_IFEQ, NULL, $2, create_constbool_expr(1), nextquad() + 2);
         /* Remember quad of ELSE jump */
@@ -579,7 +598,7 @@ whilecond:
     ;
 
 whilestmt:
-    WHILE M whilecond { push(); } stmt {
+    WHILE M whilecond P stmt {
         /* Jump to cond */
         emit(OP_JUMP, NULL, NULL, NULL, $2);
         /* Make ELSE jump to after stmt */
@@ -595,6 +614,25 @@ whilestmt:
 
 forprefix:
     FOR LEFT_PARENTHESIS elist M SEMICOLON expr SEMICOLON {
+        if ($6->type != EXP_BOOL && $6->type != EXP_CONSTBOOL) {
+            expr* temp_list = create_bool_expr();
+            temp_list->truelist = makelist(nextquad());
+            temp_list->falselist = makelist(nextquad() + 1);
+            emit(OP_IFEQ, NULL, $6, create_constbool_expr(1), -1 /* Placeholder */);
+            emit(OP_JUMP, NULL, NULL, NULL, -1 /* Placeholder */);
+            $$ = temp_list;
+        } else { $$ = $6; }
+
+        /* Create new temp bool expr */
+        expr* mysym = create_bool_expr();
+        /* Truelist assigns TRUE to temp symbol */
+        backpatch($$->truelist, nextquad());
+        emit(OP_ASSIGN, mysym, create_constbool_expr(1), NULL, 0);
+        /* Then skips FALSE symbol */
+        emit(OP_JUMP, NULL, NULL, NULL, nextquad()+2);
+        /* Falselist assigns FALSE to temp symbol */
+        backpatch($$->falselist, nextquad());
+        emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);  
         /* THEN Jump */
         $6->truelist = makelist(nextquad());
         emit(OP_IFEQ, NULL, $6, create_constbool_expr(1), -1);
