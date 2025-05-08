@@ -37,4 +37,4 @@ Gia Merikh Apotimhsh:
 - const TRUE FALSE
 Gia ola auta: 8eloume na elegxoyme oti ta arguments einai valid:
 se periptwsi string kane not equals "" etc etc.
-apagorevontai functions maybe??
+apagorevontai functions maybe??\

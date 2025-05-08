@@ -228,7 +228,7 @@ expr:
 
 /*===============================================================================================*/
 /* RELOP */
- 
+
     | expr GREATER expr {
         expr* expr_temp = create_bool_expr();
         expr_temp->truelist  = makelist(nextquad());
@@ -359,7 +359,7 @@ assignexpr:
         } else if ($1 && $3) { // Check if both sides are valid expr*
             // First assign
             emit(OP_ASSIGN, $1 /*result(lvalue)*/, $3 /*arg1(rvalue)*/, NULL /*arg2*/, 0 /*label*/);
-            expr* expr_result = create_arith_expr();
+            expr* expr_result = create_var_expr(create_temp_symbol());
             // Second assign
             emit(OP_ASSIGN, expr_result /*result(lvalue)*/, $1 /*arg1(rvalue)*/, NULL /*arg2*/, 0 /*label*/);
             $$ = expr_result;
