@@ -233,14 +233,16 @@ expr:
         expr* expr_temp = create_bool_expr();
         expr_temp->truelist  = makelist(nextquad());
         expr_temp->falselist = makelist(nextquad() + 1);
-        emit(OP_IFGREATER, expr_temp , $1 , $3 , 0);
+        emit(OP_IFGREATER, NULL , $1 , $3 , -1);
+        emit(OP_JUMP, NULL, NULL, NULL, -1);
         $$ = expr_temp;
     }
     | expr LESS expr {
         expr* expr_temp = create_bool_expr();
         expr_temp->truelist  = makelist(nextquad());
         expr_temp->falselist = makelist(nextquad() + 1);
-        emit(OP_IFLESS, expr_temp, $1, $3, 0);
+        emit(OP_IFLESS, NULL, $1, $3, -1);
+        emit(OP_JUMP, NULL, NULL, NULL, -1);
         $$ = expr_temp;
     }
     | expr GREATER_EQUAL expr {
@@ -248,42 +250,88 @@ expr:
         expr_temp->truelist  = makelist(nextquad());
         expr_temp->falselist = makelist(nextquad() + 1);
 
-        emit(OP_IFGREATEREQ, expr_temp, $1, $3, 0);
+        emit(OP_IFGREATEREQ, NULL, $1, $3, -1);
+        emit(OP_JUMP, NULL, NULL, NULL, -1);
         $$ = expr_temp;
     }
     | expr LESS_EQUAL expr {
         expr* expr_temp = create_bool_expr();
         expr_temp->truelist  = makelist(nextquad());
         expr_temp->falselist = makelist(nextquad() + 1);
-        emit(OP_IFLESSEQ, expr_temp, $1, $3, 0);
+        emit(OP_IFLESSEQ, NULL, $1, $3, -1);
+        emit(OP_JUMP, NULL, NULL, NULL, -1);
         $$ = expr_temp;
     }
     | expr EQUALS_EQUALS expr {
         expr* expr_temp = create_bool_expr();
         expr_temp->truelist  = makelist(nextquad());
         expr_temp->falselist = makelist(nextquad() + 1);
-        emit(OP_IFEQ, expr_temp, $1, $3, 0);
+        emit(OP_IFEQ, NULL, $1, $3, -1);
+        emit(OP_JUMP, NULL, NULL, NULL, -1);
         $$ = expr_temp;
     }
     | expr NOT_EQUALS expr {
         expr* expr_temp = create_bool_expr();
         expr_temp->truelist  = makelist(nextquad());
         expr_temp->falselist = makelist(nextquad() + 1);
-        emit(OP_IFNOTEQ, expr_temp, $1, $3, 0);
+        emit(OP_IFNOTEQ, NULL, $1, $3, -1);
+        emit(OP_JUMP, NULL, NULL, NULL, -1);
         $$ = expr_temp;
     }
-    | expr AND expr {
+    | expr AND M expr {
+        expr* e1 = $1;
+        unsigned int m_quad = $3; 
+        expr* e2 = $4;
+
+        if (e1->type != EXP_BOOL && e1->type != EXP_CONSTBOOL) {
+
+            e1->truelist = makelist(nextquad());
+            e1->falselist = makelist(nextquad() + 1);
+            emit(OP_IFEQ, NULL, e1, create_constbool_expr(1), -1);
+            emit(OP_JUMP, NULL, NULL, NULL, -1);
+        }
+
+        if (e2->type != EXP_BOOL && e2->type != EXP_CONSTBOOL) {
+
+            e2->truelist = makelist(nextquad());
+            e2->falselist = makelist(nextquad() + 1);
+            emit(OP_IFEQ, NULL, e2, create_constbool_expr(1), -1);
+            emit(OP_JUMP, NULL, NULL, NULL, -1);
+        }
+
+
         expr* expr_temp = create_bool_expr();
-        expr_temp->truelist  = makelist(nextquad());
-        expr_temp->falselist = makelist(nextquad() + 1);
-        emit(OP_AND, expr_temp, $1, $3, 0);
+        backpatch(e1->truelist, m_quad);
+        expr_temp->truelist  = e2->truelist;
+        expr_temp->falselist = merge(e1->falselist, e2->falselist);
         $$ = expr_temp;
     }
-    | expr OR expr {
+    | expr OR M expr {
+        expr* e1 = $1;
+        unsigned int m_quad = $3; 
+        expr* e2 = $4;
+
+        if (e1->type != EXP_BOOL && e1->type != EXP_CONSTBOOL) {
+
+            e1->truelist = makelist(nextquad());
+            e1->falselist = makelist(nextquad() + 1);
+            emit(OP_IFEQ, NULL, e1, create_constbool_expr(1), -1);
+            emit(OP_JUMP, NULL, NULL, NULL, -1);
+        }
+
+        if (e2->type != EXP_BOOL && e2->type != EXP_CONSTBOOL) {
+
+            e2->truelist = makelist(nextquad());
+            e2->falselist = makelist(nextquad() + 1);
+            emit(OP_IFEQ, NULL, e2, create_constbool_expr(1), -1);
+            emit(OP_JUMP, NULL, NULL, NULL, -1);
+        }
+
+
         expr* expr_temp = create_bool_expr();
-        expr_temp->truelist  = makelist(nextquad());
-        expr_temp->falselist = makelist(nextquad() + 1);
-        emit(OP_OR, expr_temp, $1, $3, 0);
+        backpatch(e1->falselist, m_quad);
+        expr_temp->truelist  = merge(e1->truelist, e2->truelist);
+        expr_temp->falselist = e2->falselist;
         $$ = expr_temp;
     }
     | term 
@@ -304,9 +352,16 @@ term:
     }
     | NOT expr %prec NOT { 
         // MORE CHECKING
+        expr* e2 = $2;
+        if (e2->type != EXP_BOOL && e2->type != EXP_CONSTBOOL){
+            e2->truelist = makelist(nextquad());
+            e2->falselist = makelist(nextquad() + 1);
+            emit(OP_IFEQ, NULL, e2, create_constbool_expr(1), -1);
+            emit(OP_JUMP, NULL, NULL, NULL, -1);
+        }
         expr* expr_temp = create_bool_expr();
-        expr_temp->truelist  = $2->falselist;
-        expr_temp->falselist = $2->truelist;
+        expr_temp->truelist  = e2->falselist;
+        expr_temp->falselist = e2->truelist;
         $$ = expr_temp;
      }
     | PLUS_PLUS lvalue {
@@ -447,7 +502,7 @@ callsuffix:
 
 normcall:
     LEFT_PARENTHESIS elist RIGHT_PARENTHESIS {
-        $$ = $2;
+        //$$ = $2;
     }
     ;
 
@@ -554,12 +609,14 @@ const:
     | TRUE {
         expr* expr_temp = create_constbool_expr(1);
         expr_temp->truelist = makelist(nextquad());
+        emit(OP_JUMP, NULL, NULL, NULL, -1);
         expr_temp->falselist = NULL;
         $$ = expr_temp;
     }
     | FALSE {
         expr* expr_temp = create_constbool_expr(0);
         expr_temp->truelist = NULL;
+        emit(OP_JUMP, NULL, NULL, NULL, -1);
         expr_temp->falselist = makelist(nextquad());
         $$ = expr_temp;
     }
@@ -579,13 +636,21 @@ idlist_list:
 
 ifcond:
     IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS {
-        /* THEN jump */
-        emit(OP_IFEQ, NULL, $3, create_constbool_expr(1), nextquad() + 2);
-        /* Remember quad of ELSE jump */
-        $3->falselist  = makelist(nextquad());
-        /* ELSE jump */
-        emit(OP_JUMP, NULL, NULL, NULL, -1);
-        $$ = $3; 
+        expr* cond_expr = $3;
+
+        if (cond_expr->type != EXP_BOOL && cond_expr->type != EXP_CONSTBOOL) {
+            expr* temp_list = create_bool_expr();
+            temp_list->truelist = makelist(nextquad());
+            temp_list->falselist = makelist(nextquad() + 1);
+
+            emit(OP_IFEQ, NULL, cond_expr, create_constbool_expr(1), -1 /* Placeholder */);
+            emit(OP_JUMP, NULL, NULL, NULL, -1 /* Placeholder */);
+
+            $$ = temp_list;
+        } else {
+            $$ = cond_expr;
+        }
+        backpatch($$->truelist, nextquad());
     }
     ;
 
