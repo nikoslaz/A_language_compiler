@@ -61,6 +61,7 @@ typedef struct expr_s {
     PatchList* truelist;
     PatchList* falselist;
     unsigned int cond_expr_begin;
+    int IAMANAND;
 } expr;
 
 typedef struct quad_s {

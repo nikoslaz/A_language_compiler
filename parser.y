@@ -91,14 +91,12 @@
 %type <exprZoumi> ifcond
 %type <exprZoumi> whilecond
 %type <exprZoumi> forprefix
-%type <exprZoumi> andprefix
-%type <exprZoumi> orprefix
-
+%type <exprZoumi> logicalprefix
 /* PROTERAIOTHTES KAI PROSETAIRISTIKOTHTA */
 
 %right EQUALS
-%left OR
 %left AND
+%left OR
 
 %nonassoc EQUALS_EQUALS NOT_EQUALS
 %nonassoc GREATER GREATER_EQUAL LESS LESS_EQUAL
@@ -126,7 +124,21 @@ program:
     ;
 
 stmt:
-    expr SEMICOLON 
+    expr SEMICOLON {
+        if($1->type == EXP_BOOL) {
+            /* Create new temp bool expr */
+            expr* mysym = create_bool_expr();
+            /* Truelist assigns TRUE to temp symbol */
+            backpatch($1->truelist, nextquad());
+            emit(OP_ASSIGN, mysym, create_constbool_expr(1), NULL, 0);
+            /* Then skips FALSE symbol */
+            emit(OP_JUMP, NULL, NULL, NULL, nextquad()+2);
+            /* Falselist assigns FALSE to temp symbol */
+            backpatch($1->falselist, nextquad());
+            emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
+        }
+    }
+    ;
     // MAYBE GARBAGE COLLECTION HERE ????????
     // The result expr* ($1) is calculated but not used further in this context.
     // If $1 represents a temporary result that's not otherwise used,
@@ -273,6 +285,31 @@ expr:
         $$ = expr_temp;
     }
     | expr EQUALS_EQUALS expr {
+        /* TODO */
+        if($1->type == EXP_BOOL) {
+                /* Create new temp bool expr */
+                expr* mysym = create_bool_expr();
+                /* Truelist assigns TRUE to temp symbol */
+                backpatch($1->truelist, nextquad());
+                emit(OP_ASSIGN, mysym, create_constbool_expr(1), NULL, 0);
+                /* Then skips FALSE symbol */
+                emit(OP_JUMP, NULL, NULL, NULL, nextquad()+2);
+                /* Falselist assigns FALSE to temp symbol */
+                backpatch($1->falselist, nextquad());
+                emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
+        }
+        if($3->type == EXP_BOOL) {
+                /* Create new temp bool expr */
+                expr* mysym = create_bool_expr();
+                /* Truelist assigns TRUE to temp symbol */
+                backpatch($3->truelist, nextquad());
+                emit(OP_ASSIGN, mysym, create_constbool_expr(1), NULL, 0);
+                /* Then skips FALSE symbol */
+                emit(OP_JUMP, NULL, NULL, NULL, nextquad()+2);
+                /* Falselist assigns FALSE to temp symbol */
+                backpatch($3->falselist, nextquad());
+                emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
+        }
         expr* expr_temp = create_bool_expr();
         expr_temp->truelist  = makelist(nextquad());
         expr_temp->falselist = makelist(nextquad() + 1);
@@ -281,6 +318,31 @@ expr:
         $$ = expr_temp;
     }
     | expr NOT_EQUALS expr {
+        /* TODO */
+        if($1->type == EXP_BOOL) {
+            /* Create new temp bool expr */
+            expr* mysym = create_bool_expr();
+            /* Truelist assigns TRUE to temp symbol */
+            backpatch($1->truelist, nextquad());
+            emit(OP_ASSIGN, mysym, create_constbool_expr(1), NULL, 0);
+            /* Then skips FALSE symbol */
+            emit(OP_JUMP, NULL, NULL, NULL, nextquad()+2);
+            /* Falselist assigns FALSE to temp symbol */
+            backpatch($1->falselist, nextquad());
+            emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
+        }
+        if($3->type == EXP_BOOL) {
+            /* Create new temp bool expr */
+            expr* mysym = create_bool_expr();
+            /* Truelist assigns TRUE to temp symbol */
+            backpatch($3->truelist, nextquad());
+            emit(OP_ASSIGN, mysym, create_constbool_expr(1), NULL, 0);
+            /* Then skips FALSE symbol */
+            emit(OP_JUMP, NULL, NULL, NULL, nextquad()+2);
+            /* Falselist assigns FALSE to temp symbol */
+            backpatch($3->falselist, nextquad());
+            emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
+        }
         expr* expr_temp = create_bool_expr();
         expr_temp->truelist  = makelist(nextquad());
         expr_temp->falselist = makelist(nextquad() + 1);
@@ -288,54 +350,47 @@ expr:
         emit(OP_JUMP, NULL, NULL, NULL, -1);
         $$ = expr_temp;
     }
-    | andprefix M expr {
-        if($3->type != EXP_BOOL && $3->type != EXP_CONSTBOOL) {
+    | logicalprefix M expr {
+        if($3->type != EXP_BOOL) {
             $3->truelist = makelist(nextquad());
             $3->falselist = makelist(nextquad() + 1);
             emit(OP_IFEQ, NULL, $3, create_constbool_expr(1), -1);
             emit(OP_JUMP, NULL, NULL, NULL, -1);
         }
         expr* expr_temp = create_bool_expr();
-        backpatch($1->truelist, $2);
-        expr_temp->truelist  = $3->truelist;
-        expr_temp->falselist = merge($1->falselist, $3->falselist);
-        $$ = expr_temp;
-    }
-    | orprefix M expr {
-        if($3->type != EXP_BOOL && $3->type != EXP_CONSTBOOL) {
-            $3->truelist = makelist(nextquad());
-            $3->falselist = makelist(nextquad() + 1);
-            emit(OP_IFEQ, NULL, $3, create_constbool_expr(1), -1);
-            emit(OP_JUMP, NULL, NULL, NULL, -1);
+        if($1->IAMANAND == 1) {
+            backpatch($1->truelist, $2);
+            expr_temp->truelist  = $3->truelist;
+            expr_temp->falselist = merge($1->falselist, $3->falselist);
+        } else {
+            backpatch($1->falselist, $2);
+            expr_temp->truelist  = merge($1->truelist, $3->truelist);
+            expr_temp->falselist = $3->falselist;
         }
-        expr* expr_temp = create_bool_expr();
-        backpatch($1->falselist, $2);
-        expr_temp->truelist  = merge($1->truelist, $3->truelist);
-        expr_temp->falselist = $3->falselist;
         $$ = expr_temp;
     }
     | term 
     ;
 
-andprefix:
+logicalprefix:
     expr AND {
-        if($1->type != EXP_BOOL && $1->type != EXP_CONSTBOOL) {
+        if($1->type != EXP_BOOL) {
             $1->truelist = makelist(nextquad());
             $1->falselist = makelist(nextquad() + 1);
             emit(OP_IFEQ, NULL, $1, create_constbool_expr(1), -1);
             emit(OP_JUMP, NULL, NULL, NULL, -1);
         }
+        $1->IAMANAND = 1;
         $$ = $1;
     };
-
-orprefix: 
-    expr OR {
-        if($1->type != EXP_BOOL && $1->type != EXP_CONSTBOOL) {
+    | expr OR {
+        if($1->type != EXP_BOOL) {
             $1->truelist = makelist(nextquad());
             $1->falselist = makelist(nextquad() + 1);
             emit(OP_IFEQ, NULL, $1, create_constbool_expr(1), -1);
             emit(OP_JUMP, NULL, NULL, NULL, -1);
         }
+        $1->IAMANAND = 0;
         $$ = $1; 
     };
 
@@ -353,7 +408,7 @@ term:
     }
     | NOT expr %prec NOT { 
         expr* e2 = $2;
-        if(e2->type != EXP_BOOL && e2->type != EXP_CONSTBOOL){
+        if(e2->type != EXP_BOOL) {
             e2->truelist = makelist(nextquad());
             e2->falselist = makelist(nextquad()+1);
             emit(OP_IFEQ, NULL, e2, create_constbool_expr(1), -1);
@@ -506,23 +561,23 @@ const:
     }
     | TRUE {
         expr* expr_temp = create_constbool_expr(1);
-        expr_temp->truelist = makelist(nextquad());
-        emit(OP_JUMP, NULL, NULL, NULL, -1);
-        expr_temp->falselist = NULL;
+        // expr_temp->truelist = makelist(nextquad());
+        // emit(OP_JUMP, NULL, NULL, NULL, -1);
+        // expr_temp->falselist = NULL;
         $$ = expr_temp;
     }
     | FALSE {
         expr* expr_temp = create_constbool_expr(0);
-        expr_temp->truelist = NULL;
-        emit(OP_JUMP, NULL, NULL, NULL, -1);
-        expr_temp->falselist = makelist(nextquad());
+        // expr_temp->truelist = NULL;
+        // emit(OP_JUMP, NULL, NULL, NULL, -1);
+        // expr_temp->falselist = makelist(nextquad());
         $$ = expr_temp;
     }
     ;
 
 ifcond:
     IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS {
-        if ($3->type != EXP_BOOL && $3->type != EXP_CONSTBOOL) {
+        if ($3->type != EXP_BOOL) {
             expr* temp_list = create_bool_expr();
             temp_list->truelist = makelist(nextquad());
             temp_list->falselist = makelist(nextquad() + 1);
@@ -565,7 +620,7 @@ ifstmt:
 
 whilecond:
     LEFT_PARENTHESIS expr RIGHT_PARENTHESIS {
-        if ($2->type != EXP_BOOL && $2->type != EXP_CONSTBOOL) {
+        if ($2->type != EXP_BOOL) {
             expr* temp_list = create_bool_expr();
             temp_list->truelist = makelist(nextquad());
             temp_list->falselist = makelist(nextquad() + 1);
@@ -611,7 +666,7 @@ whilestmt:
 
 forprefix:
     FOR LEFT_PARENTHESIS elist M SEMICOLON expr SEMICOLON {
-        if ($6->type != EXP_BOOL && $6->type != EXP_CONSTBOOL) {
+        if ($6->type != EXP_BOOL) {
             expr* temp_list = create_bool_expr();
             temp_list->truelist = makelist(nextquad());
             temp_list->falselist = makelist(nextquad() + 1);
