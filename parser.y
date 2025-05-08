@@ -563,9 +563,6 @@ ifstmt:
     }
     ;
 
-/*===============================================================================================*/
-/* APO EDW KAI KATW */
-
 whilecond:
     LEFT_PARENTHESIS expr RIGHT_PARENTHESIS {
         if ($2->type != EXP_BOOL && $2->type != EXP_CONSTBOOL) {
