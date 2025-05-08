@@ -15,7 +15,9 @@ DODODODODO
 <!-- - Method to create, read, delete temp variables -> CREATE, READ  -->
 - Maybe Garbage collection(at the end)?????
 <!-- - DUAL assign quads (for lists mostly) -->
-- Fix double assignment (oxi arith)
+<!-- - Fix double assignment (oxi arith) -->
+- Fix everywhere we use lvalues (if arith, if const, if function etc etc)
+- Fix plusplus, minusminus, etc etc
 
 ---------------------------------------------------------------------------------
 <!-- // Require Backpatching, breaklist, continuelist, merge method -->

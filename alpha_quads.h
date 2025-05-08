@@ -56,12 +56,11 @@ typedef struct expr_s {
     double numConst;
     char* stringConst;
     unsigned int boolConst;
-    struct expr_s* next;    /*fFor lists */
+    struct expr_s* next;    /* for lists */
     /* --- Backpatching --- */
     PatchList* truelist;
     PatchList* falselist;
-    /* --- For For Loop --- */
-    unsigned int for_expr_begin;
+    unsigned int cond_expr_begin;
 } expr;
 
 typedef struct quad_s {

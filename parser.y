@@ -91,6 +91,8 @@
 %type <exprZoumi> ifcond
 %type <exprZoumi> whilecond
 %type <exprZoumi> forprefix
+%type <exprZoumi> andprefix
+%type <exprZoumi> orprefix
 
 /* PROTERAIOTHTES KAI PROSETAIRISTIKOTHTA */
 
@@ -262,7 +264,6 @@ expr:
         expr* expr_temp = create_bool_expr();
         expr_temp->truelist  = makelist(nextquad());
         expr_temp->falselist = makelist(nextquad() + 1);
-
         emit(OP_IFGREATEREQ, NULL, $1, $3, -1);
         emit(OP_JUMP, NULL, NULL, NULL, -1);
         $$ = expr_temp;
@@ -291,80 +292,72 @@ expr:
         emit(OP_JUMP, NULL, NULL, NULL, -1);
         $$ = expr_temp;
     }
-    | expr AND M expr {
-        expr* e1 = $1;
-        printf("M is %d\n", $3);
-        unsigned int m_quad = $3; 
-        expr* e2 = $4;
-
-        if (e1->type != EXP_BOOL && e1->type != EXP_CONSTBOOL) {
-            e1->truelist = makelist(nextquad());
-            e1->falselist = makelist(nextquad() + 1);
-            emit(OP_IFEQ, NULL, e1, create_constbool_expr(1), -1);
-            emit(OP_JUMP, NULL, NULL, NULL, -1);
-            m_quad = nextquad();
-        }
-
-        if (e2->type != EXP_BOOL && e2->type != EXP_CONSTBOOL) {
-            e2->truelist = makelist(nextquad());
-            e2->falselist = makelist(nextquad() + 1);
-            emit(OP_IFEQ, NULL, e2, create_constbool_expr(1), -1);
+    | andprefix M expr {
+        if($3->type != EXP_BOOL && $3->type != EXP_CONSTBOOL) {
+            $3->truelist = makelist(nextquad());
+            $3->falselist = makelist(nextquad() + 1);
+            emit(OP_IFEQ, NULL, $3, create_constbool_expr(1), -1);
             emit(OP_JUMP, NULL, NULL, NULL, -1);
         }
-
         expr* expr_temp = create_bool_expr();
-        printf("About to patch to %d\n", m_quad);
-        backpatch(e1->truelist, m_quad);
-        expr_temp->truelist  = e2->truelist;
-        expr_temp->falselist = merge(e1->falselist, e2->falselist);
+        backpatch($1->truelist, $2);
+        expr_temp->truelist  = $3->truelist;
+        expr_temp->falselist = merge($1->falselist, $3->falselist);
         $$ = expr_temp;
     }
-    | expr OR M expr {
-        expr* e1 = $1;
-        unsigned int m_quad = $3; 
-        expr* e2 = $4;
-
-        if (e1->type != EXP_BOOL && e1->type != EXP_CONSTBOOL) {
-            e1->truelist = makelist(nextquad());
-            e1->falselist = makelist(nextquad() + 1);
-            emit(OP_IFEQ, NULL, e1, create_constbool_expr(1), -1);
-            emit(OP_JUMP, NULL, NULL, NULL, -1);
-            m_quad = nextquad();
-        }
-
-        if (e2->type != EXP_BOOL && e2->type != EXP_CONSTBOOL) {
-            e2->truelist = makelist(nextquad());
-            e2->falselist = makelist(nextquad() + 1);
-            emit(OP_IFEQ, NULL, e2, create_constbool_expr(1), -1);
+    | orprefix M expr {
+        if($3->type != EXP_BOOL && $3->type != EXP_CONSTBOOL) {
+            $3->truelist = makelist(nextquad());
+            $3->falselist = makelist(nextquad() + 1);
+            emit(OP_IFEQ, NULL, $3, create_constbool_expr(1), -1);
             emit(OP_JUMP, NULL, NULL, NULL, -1);
         }
-
         expr* expr_temp = create_bool_expr();
-        backpatch(e1->falselist, m_quad);
-        expr_temp->truelist  = merge(e1->truelist, e2->truelist);
-        expr_temp->falselist = e2->falselist;
+        backpatch($1->falselist, $2);
+        expr_temp->truelist  = merge($1->truelist, $3->truelist);
+        expr_temp->falselist = $3->falselist;
         $$ = expr_temp;
     }
     | term 
     ;
 
+andprefix:
+    expr AND {
+        if($1->type != EXP_BOOL && $1->type != EXP_CONSTBOOL) {
+            $1->truelist = makelist(nextquad());
+            $1->falselist = makelist(nextquad() + 1);
+            emit(OP_IFEQ, NULL, $1, create_constbool_expr(1), -1);
+            emit(OP_JUMP, NULL, NULL, NULL, -1);
+        }
+        $$ = $1;
+    };
+
+orprefix: 
+    expr OR {
+        if($1->type != EXP_BOOL && $1->type != EXP_CONSTBOOL) {
+            $1->truelist = makelist(nextquad());
+            $1->falselist = makelist(nextquad() + 1);
+            emit(OP_IFEQ, NULL, $1, create_constbool_expr(1), -1);
+            emit(OP_JUMP, NULL, NULL, NULL, -1);
+        }
+        $$ = $1; 
+    }
+
 term:
     LEFT_PARENTHESIS expr RIGHT_PARENTHESIS { $$ = $2; }
     | MINUS expr %prec UMINUS_CONFLICT {
-        if (!$2 || !($2->type == EXP_VARIABLE || $2->type == EXP_ARITH || $2->type == EXP_CONSTNUMBER)) {
+        if(!$2 || !($2->type == EXP_VARIABLE || $2->type == EXP_ARITH || $2->type == EXP_CONSTNUMBER)) {
             yyerror("Error: Invalid arguments(MINUS expr)\n");
             $$ = NULL;
-        }
-        else {
+        } else {
             expr* expr_temp = create_arith_expr();
             emit(OP_UMINUS, expr_temp /*result*/, $2 /*arg1*/, NULL /*arg2*/, 0 /*label*/);
             $$ = expr_temp;
         }
     }
     | NOT expr %prec NOT { 
-        // MORE CHECKING
         expr* e2 = $2;
-        if (e2->type != EXP_BOOL && e2->type != EXP_CONSTBOOL){
+        if(e2->type != EXP_BOOL && e2->type != EXP_CONSTBOOL){
             e2->truelist = makelist(nextquad());
             e2->falselist = makelist(nextquad()+1);
             emit(OP_IFEQ, NULL, e2, create_constbool_expr(1), -1);
@@ -377,7 +370,7 @@ term:
      }
     | PLUS_PLUS lvalue {
         if($2 && ($2->type == USERFUNC_T || $2->type == LIBFUNC_T)) {
-            char msg[34];
+            char msg[1024];
             snprintf(msg, sizeof(msg), "Using %s as an lvalue", $2->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
             yyerror(msg);
         } else {
@@ -386,7 +379,7 @@ term:
     }
     | lvalue PLUS_PLUS {
         if($1 && ($1->type == USERFUNC_T || $1->type == LIBFUNC_T)) {
-            char msg[34];
+            char msg[1024];
             snprintf(msg, sizeof(msg), "Using %s as an lvalue", $1->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
             yyerror(msg);
         } else {
@@ -395,7 +388,7 @@ term:
     }
     | MINUS_MINUS lvalue {
         if($2 && ($2->type == USERFUNC_T || $2->type == LIBFUNC_T)) {
-            char msg[34];
+            char msg[1024];
             snprintf(msg, sizeof(msg), "Using %s as an lvalue", $2->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
             yyerror(msg);
         } else {
@@ -404,7 +397,7 @@ term:
     }
     | lvalue MINUS_MINUS {
         if($1 && ($1->type == USERFUNC_T || $1->type == LIBFUNC_T)) {
-            char msg[34];
+            char msg[1024];
             snprintf(msg, sizeof(msg), "Using %s as an lvalue", $1->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
             yyerror(msg);
         } else {
@@ -423,14 +416,28 @@ assignexpr:
             yyerror(msg);
             $$ = NULL;
         } else if ($1 && $3) { // Check if both sides are valid expr*
+            expr* rvalue;
+            if($3->type == EXP_BOOL) {
+                /* Create new temp bool expr */
+                expr* mysym = create_bool_expr();
+                /* Truelist assigns TRUE to temp symbol */
+                backpatch($3->truelist, nextquad());
+                emit(OP_ASSIGN, mysym, create_constbool_expr(1), NULL, 0);
+                /* Then skips FALSE symbol */
+                emit(OP_JUMP, NULL, NULL, NULL, nextquad()+2);
+                /* Falselist assigns FALSE to temp symbol */
+                backpatch($3->falselist, nextquad());
+                emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
+                rvalue = mysym;
+            } else { rvalue = $3; }
+            
+            expr* expr_result = create_var_expr(create_temp_symbol());
             // First assign
             emit(OP_ASSIGN, $1 /*result(lvalue)*/, $3 /*arg1(rvalue)*/, NULL /*arg2*/, 0 /*label*/);
-            expr* expr_result = create_var_expr(create_temp_symbol());
             // Second assign
             emit(OP_ASSIGN, expr_result /*result(lvalue)*/, $1 /*arg1(rvalue)*/, NULL /*arg2*/, 0 /*label*/);
             $$ = expr_result;
-        } 
-        else {
+        } else {
             yyerror("Invalid assignment operation");
             $$ = NULL;
         }
@@ -647,46 +654,42 @@ idlist_list:
 
 ifcond:
     IF LEFT_PARENTHESIS expr RIGHT_PARENTHESIS {
-        expr* cond_expr = $3;
-
-        if (cond_expr->type != EXP_BOOL && cond_expr->type != EXP_CONSTBOOL) {
+        if ($3->type != EXP_BOOL && $3->type != EXP_CONSTBOOL) {
             expr* temp_list = create_bool_expr();
             temp_list->truelist = makelist(nextquad());
             temp_list->falselist = makelist(nextquad() + 1);
-
-            emit(OP_IFEQ, NULL, cond_expr, create_constbool_expr(1), -1 /* Placeholder */);
+            emit(OP_IFEQ, NULL, $3, create_constbool_expr(1), -1 /* Placeholder */);
             emit(OP_JUMP, NULL, NULL, NULL, -1 /* Placeholder */);
-
             $$ = temp_list;
-        } else {
-            $$ = cond_expr;
-        }
+        } else { $$ = $3; }
+
+        /* Create new temp bool expr */
         expr* mysym = create_bool_expr();
-        
+        /* Truelist assigns TRUE to temp symbol */
         backpatch($$->truelist, nextquad());
         emit(OP_ASSIGN, mysym, create_constbool_expr(1), NULL, 0);
-        
+        /* Then skips FALSE symbol */
         emit(OP_JUMP, NULL, NULL, NULL, nextquad()+2);
-        
+        /* Falselist assigns FALSE to temp symbol */
         backpatch($$->falselist, nextquad());
         emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
 
+        /* Then */
         emit(OP_IFEQ, NULL, mysym, create_constbool_expr(1), nextquad()+2);
-        /* Else */
-        $$->for_expr_begin = nextquad();
+        /* Store ELSE jump quad */
+        $$->cond_expr_begin = nextquad();
         emit(OP_JUMP, NULL, NULL, NULL, -1);
-
     }
     ;
 
 ifstmt:
     ifcond stmt %prec THEN_CONFLICT {
         /* Make ELSE jump to after THEN_stmt */
-        quads[$1->for_expr_begin].label = nextquad();
+        quads[$1->cond_expr_begin].label = nextquad();
     }
     | ifcond stmt ELSE MJ stmt {
         /* Make ELSE jump to where ELSE_stmt begins */
-        quads[$1->for_expr_begin].label = $4+1;
+        quads[$1->cond_expr_begin].label = $4+1;
         /* Make end of THEN_stmt jump to after ELSE_stmt */
         quads[$4].label = nextquad();
     }
@@ -724,12 +727,11 @@ forprefix:
         /* THEN Jump */
         $6->truelist = makelist(nextquad());
         emit(OP_IFEQ, NULL, $6, create_constbool_expr(1), -1);
-        /* Remember quad of ELSE jump */
-        $6->falselist = makelist(nextquad());
         /* ELSE jump */
+        $6->falselist = makelist(nextquad());
         emit(OP_JUMP, NULL, NULL, NULL, -1);
-        /* Store start and end of expr block */
-        $6->for_expr_begin = $4;
+        /* Store start of expr block */
+        $6->cond_expr_begin = $4;
         $$ = $6;
     }
 
@@ -740,7 +742,7 @@ forstmt:
         /* Make ELSE jump to after stmt */
         backpatch($1->falselist, nextquad());
         /* Jump to begin of expr */
-        quads[$5].label = $1->for_expr_begin;  
+        quads[$5].label = $1->cond_expr_begin;  
         /* Jump to start of elist2 */
         quads[$8].label = $2 + 1;
         /* Breaks & Continues */
