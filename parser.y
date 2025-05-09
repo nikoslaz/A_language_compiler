@@ -345,46 +345,49 @@ expr:
         emit(OP_JUMP, NULL, NULL, NULL, -1);
         $$ = expr_temp;
     }
-    | expr AND {printf("hi"); } M expr {
+    | expr AND {
         if($1->type != EXP_BOOL) {
             $1->truelist = makelist(nextquad());
             $1->falselist = makelist(nextquad() + 1);
             emit(OP_IFEQ, NULL, $1, create_constbool_expr(1), -1);
             emit(OP_JUMP, NULL, NULL, NULL, -1);
-            //$3 = nextquad();
-        }
-        if($4->type != EXP_BOOL) {
-            $4->truelist = makelist(nextquad());
-            $4->falselist = makelist(nextquad() + 1);
-            emit(OP_IFEQ, NULL, $4, create_constbool_expr(1), -1);
+            //$4 = nextquad();
+        } } M expr {
+        
+        if($5->type != EXP_BOOL) {
+            $5->truelist = makelist(nextquad());
+            $5->falselist = makelist(nextquad() + 1);
+            emit(OP_IFEQ, NULL, $5, create_constbool_expr(1), -1);
             emit(OP_JUMP, NULL, NULL, NULL, -1);
         }
         expr* expr_temp = create_bool_expr();
-       // backpatch($1->truelist, $3);
-        expr_temp->truelist  = $4->truelist;
-        expr_temp->falselist = merge($1->falselist, $4->falselist);
+        backpatch($1->truelist, $4);
+        expr_temp->truelist  = $5->truelist;
+        expr_temp->falselist = merge($1->falselist, $5->falselist);
         
         $$ = expr_temp;
     }
-    | expr OR M expr {
+    | expr OR {
         if($1->type != EXP_BOOL) {
             $1->truelist = makelist(nextquad());
             $1->falselist = makelist(nextquad() + 1);
             emit(OP_IFEQ, NULL, $1, create_constbool_expr(1), -1);
             emit(OP_JUMP, NULL, NULL, NULL, -1);
-            $3 = nextquad();
+            //$4 = nextquad();
         }
-        if($4->type != EXP_BOOL) {
-            $4->truelist = makelist(nextquad());
-            $4->falselist = makelist(nextquad() + 1);
-            emit(OP_IFEQ, NULL, $4, create_constbool_expr(1), -1);
+    } M expr {
+
+        if($5->type != EXP_BOOL) {
+            $5->truelist = makelist(nextquad());
+            $5->falselist = makelist(nextquad() + 1);
+            emit(OP_IFEQ, NULL, $5, create_constbool_expr(1), -1);
             emit(OP_JUMP, NULL, NULL, NULL, -1);
         }
 
         expr* expr_temp = create_bool_expr();
-        backpatch($1->falselist, $3);
-        expr_temp->truelist  = merge($1->truelist, $4->truelist);
-        expr_temp->falselist = $4->falselist;
+        backpatch($1->falselist, $4);
+        expr_temp->truelist  = merge($1->truelist, $5->truelist);
+        expr_temp->falselist = $5->falselist;
 
         $$ = expr_temp;
     }
