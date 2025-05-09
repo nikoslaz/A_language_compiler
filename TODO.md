@@ -17,7 +17,7 @@ DODODODODO
 <!-- - DUAL assign quads (for lists mostly) -->
 <!-- - Fix double assignment (oxi arith) -->
 <!-- - Fix plusplus, minusminus, etc etc -->
-- Fix priority of AND and OR
+<!-- - Fix priority of AND and OR -->
 <!-- - Fix relational (look p3t_relational) == and !=  -->
 
 ---------------------------------------------------------------------------------
