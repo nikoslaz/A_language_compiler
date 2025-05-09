@@ -173,15 +173,6 @@ stmt_list:
     |
     ;
 
-MJ: {
-    $$ = nextquad();
-    emit(OP_JUMP, NULL, NULL, NULL, nextquad()); 
-};
-
-P: {
-    push();
-};
-
 // MAYBE GARBAGE COLLECTION HERE ????????
 // Free $1, $3 if they were temp const results
 expr:
@@ -280,7 +271,6 @@ expr:
         $$ = expr_temp;
     }
     | expr EQUALS_EQUALS expr {
-        /* TODO */
         if($1->type == EXP_BOOL) {
                 /* Create new temp bool expr */
                 expr* mysym = create_bool_expr();
@@ -313,7 +303,6 @@ expr:
         $$ = expr_temp;
     }
     | expr NOT_EQUALS expr {
-        /* TODO */
         if($1->type == EXP_BOOL) {
             /* Create new temp bool expr */
             expr* mysym = create_bool_expr();
@@ -351,7 +340,6 @@ expr:
             $1->falselist = makelist(nextquad() + 1);
             emit(OP_IFEQ, NULL, $1, create_constbool_expr(1), -1);
             emit(OP_JUMP, NULL, NULL, NULL, -1);
-            //$4 = nextquad();
         } } M expr {
         
         if($5->type != EXP_BOOL) {
@@ -373,7 +361,6 @@ expr:
             $1->falselist = makelist(nextquad() + 1);
             emit(OP_IFEQ, NULL, $1, create_constbool_expr(1), -1);
             emit(OP_JUMP, NULL, NULL, NULL, -1);
-            //$4 = nextquad();
         }
     } M expr {
 
@@ -393,12 +380,6 @@ expr:
     }
     | term 
     ;
-
-
-M: { 
-    $$ = nextquad(); 
-};
-
 
 term:
     LEFT_PARENTHESIS expr RIGHT_PARENTHESIS { $$ = $2; }
@@ -877,6 +858,19 @@ returnstmt:
         }
     }
     ;
+
+M: { 
+    $$ = nextquad(); 
+};
+
+MJ: {
+    $$ = nextquad();
+    emit(OP_JUMP, NULL, NULL, NULL, nextquad()); 
+};
+
+P: {
+    push();
+};
 
 %%
 
