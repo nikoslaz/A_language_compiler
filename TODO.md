@@ -7,9 +7,6 @@ DODODODODO
 
 <!-- - Check operations between constants in compile time -->
 <!-- - Create quad structs, dynamic array -->
-<!-- - Create opcode enum -->
-<!-- - Create vartype enum (program, local, formal etc) -->
-<!-- - Create Variable enum (FunctionAddress, Table, etc) -->
 <!-- - Implement Scope Spaces, scope stack, offset inside space, etc (MIXADRILL) GOAT  -->
 <!-- - OFFSET MUST NOT RESET WHEN NOT IN FUNCTION (LOOK FAQ) (MIXADRILL) GOAT  -->
 <!-- - Method to create, read, delete temp variables -> CREATE, READ  -->
@@ -17,14 +14,12 @@ DODODODODO
 <!-- - DUAL assign quads (for lists mostly) -->
 <!-- - Fix double assignment (oxi arith) -->
 <!-- - Fix plusplus, minusminus, etc etc -->
-<!-- - Fix priority of AND and OR -->
-<!-- - Fix relational (look p3t_relational) == and !=  -->
+- Function start, end, argument
+- Tables
 
 ---------------------------------------------------------------------------------
 <!-- // Require Backpatching, breaklist, continuelist, merge method -->
 
-- Function start, end, argument
-- Tables
 <!-- - if-else -->
 <!-- - while -->
 <!-- - for -->
@@ -33,9 +28,10 @@ DODODODODO
 <!-- Optimize while, for if -->
 
 <!-- Gia Merikh Apotimhsh: -->
+<!-- - Fix relational == and !=  -->
 <!-- - Expr relop Expr -->
 <!-- - not expr -->
 <!-- - const TRUE FALSE -->
+<!-- - Fix priority of AND and OR -->
 <!-- Gia ola auta: 8eloume na elegxoyme oti ta arguments einai valid:
-se periptwsi string kane not equals "" etc etc.
-apagorevontai functions maybe??\ -->
+se periptwsi string kane not equals "" etc etc.-->
