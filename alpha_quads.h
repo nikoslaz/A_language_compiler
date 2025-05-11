@@ -60,7 +60,6 @@ typedef struct expr_s {
     /* --- Backpatching --- */
     PatchList* truelist;
     PatchList* falselist;
-    unsigned int cond_expr_begin;
 } expr;
 
 typedef struct quad_s {
@@ -86,6 +85,7 @@ void printQuads(void);
 /* Expression Constructors */
 expr* create_arith_expr(void);
 expr* create_bool_expr(void);
+expr* create_empty_bool_expr(void);
 expr* create_var_expr(Symbol* symbol);
 expr* create_constnum_expr(double value);
 expr* create_conststring_expr(char* value);
@@ -97,6 +97,7 @@ unsigned int nextquad(void);
 PatchList* makelist(unsigned int quad_index);
 PatchList* merge(PatchList* list1, PatchList* list2);
 void backpatch(PatchList* list, unsigned int target_quad_index);
+void simplepatch(unsigned int quad, unsigned int index);
 
 /* Stack Functions */
 void push(void);

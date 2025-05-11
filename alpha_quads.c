@@ -54,7 +54,6 @@ expr* create_arith_expr(void) {
     temp->next=NULL;
     temp->truelist=NULL;
     temp->falselist=NULL;
-    temp->cond_expr_begin=-1;
     return temp;
 }
 
@@ -70,7 +69,21 @@ expr* create_bool_expr(void) {
     temp->next=NULL;
     temp->truelist=NULL;
     temp->falselist=NULL;
-    temp->cond_expr_begin=-1;
+    return temp;
+}
+
+expr* create_empty_bool_expr(void) {
+    expr* temp=(expr*)malloc(sizeof(expr));
+    if(!temp) { MemoryFail(); }
+    temp->type=EXP_BOOL;
+    temp->symbol=NULL;
+    temp->index=NULL;
+    temp->numConst=0;
+    temp->stringConst=NULL;
+    temp->boolConst=0;
+    temp->next=NULL;
+    temp->truelist=NULL;
+    temp->falselist=NULL;
     return temp;
 }
 
@@ -86,7 +99,6 @@ expr* create_var_expr(Symbol* symbol) {
     temp->next=NULL;
     temp->truelist=NULL;
     temp->falselist=NULL;
-    temp->cond_expr_begin=-1;
     return temp;
 }
 
@@ -102,7 +114,6 @@ expr* create_constnum_expr(double value) {
     temp->next=NULL;
     temp->truelist=NULL;
     temp->falselist=NULL;
-    temp->cond_expr_begin=-1;
     return temp;
 }
 
@@ -118,7 +129,6 @@ expr* create_conststring_expr(char* value) {
     temp->next=NULL;
     temp->truelist=NULL;
     temp->falselist=NULL;
-    temp->cond_expr_begin=-1;
     return temp;
 }
 
@@ -134,7 +144,6 @@ expr* create_constbool_expr(unsigned int value) {
     temp->next=NULL;
     temp->truelist=NULL;
     temp->falselist=NULL;
-    temp->cond_expr_begin=-1;
     return temp;
 }
 
@@ -150,7 +159,6 @@ expr* create_nil_expr(void) {
     temp->next=NULL;
     temp->truelist=NULL;
     temp->falselist=NULL;
-    temp->cond_expr_begin=-1;
     return temp;
 }
 
@@ -187,9 +195,18 @@ void backpatch(PatchList* list, unsigned int target_quad_index) {
             fprintf(stderr, "Error: invalid index\n");
         } else {
             quads[iter->quad_index].label = target_quad_index;
-            printf("Backpatching quad %u to label %u\n", iter->quad_index+1, target_quad_index+1);
+            // printf("Backpatching quad %u to label %u\n", iter->quad_index+1, target_quad_index+1);
         }
         iter = iter->next;
+    }
+}
+
+void simplepatch(unsigned int quad, unsigned int index) {
+    if(quad >= currquad) {
+        fprintf(stderr, "Error: invalid index\n");
+    } else {
+        // printf("Simplepatching quad %u to label %u\n", quad+1, index+1);
+        quads[quad].label = index;
     }
 }
 
