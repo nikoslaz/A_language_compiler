@@ -30,11 +30,12 @@ DODODODODO
 <!-- - for -->
 <!-- - break-continue  -->
 <!-- - Fix WHILE, FOR to use Merikh Apotimhsh -->
+<!-- Optimize while, for if -->
 
 <!-- Gia Merikh Apotimhsh: -->
-<!-- - Expr relop Expr
-- not expr
-- const TRUE FALSE -->
+<!-- - Expr relop Expr -->
+<!-- - not expr -->
+<!-- - const TRUE FALSE -->
 <!-- Gia ola auta: 8eloume na elegxoyme oti ta arguments einai valid:
 se periptwsi string kane not equals "" etc etc.
 apagorevontai functions maybe??\ -->
