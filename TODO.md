@@ -15,7 +15,8 @@ DODODODODO
 <!-- - Fix double assignment (oxi arith) -->
 <!-- - Fix plusplus, minusminus, etc etc -->
 - Function start, end, argument
-- Tables
+- Add expr boolean logic to elist, indexed and membe
+- Tables (REMEMBER:: ELIST CAN BE NULL)
 
 ---------------------------------------------------------------------------------
 <!-- // Require Backpatching, breaklist, continuelist, merge method -->
