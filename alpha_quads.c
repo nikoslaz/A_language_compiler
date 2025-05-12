@@ -102,6 +102,21 @@ expr* create_var_expr(Symbol* symbol) {
     return temp;
 }
 
+expr* create_prog_func_expr(Symbol* symbol) {
+    expr* temp=(expr*)malloc(sizeof(expr));
+    if(!temp) { MemoryFail(); }
+    temp->type=EXP_PROGRAMFUNC;
+    temp->symbol=symbol;
+    temp->index=0;
+    temp->numConst=0;
+    temp->stringConst=0;
+    temp->boolConst=0;
+    temp->next=NULL;
+    temp->truelist=NULL;
+    temp->falselist=NULL;
+    return temp;
+}
+
 expr* create_constnum_expr(double value) {
     expr* temp=(expr*)malloc(sizeof(expr));
     if(!temp) { MemoryFail(); }
@@ -271,7 +286,7 @@ const char* opcodeToStr(opcode op) {
         case OP_IFGREATER: return "IFGREATER";
         case OP_CALL: return "CALL";
         case OP_PARAM: return "PARAM";
-        case OP_RET: return "RET";
+        case OP_RETURN: return "RETURN";
         case OP_GETRETVAL: return "GETRETVAL";
         case OP_FUNCSTART: return "FUNCSTART";
         case OP_FUNCEND: return "FUNCEND";

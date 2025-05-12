@@ -22,7 +22,7 @@ typedef enum iopcode_e {
     OP_UMINUS,
     OP_AND, OP_OR, OP_NOT,
     OP_IFEQ, OP_IFNOTEQ, OP_IFLESSEQ, OP_IFGREATEREQ, OP_IFLESS, OP_IFGREATER,
-    OP_CALL, OP_PARAM, OP_RET, OP_GETRETVAL, OP_FUNCSTART, OP_FUNCEND,
+    OP_CALL, OP_PARAM, OP_RETURN, OP_GETRETVAL, OP_FUNCSTART, OP_FUNCEND,
     OP_TABLECREATE, OP_TABLEGETELEM, OP_TABLESETELEM,
     OP_JUMP
 } opcode;
@@ -87,6 +87,7 @@ expr* create_arith_expr(void);
 expr* create_bool_expr(void);
 expr* create_empty_bool_expr(void);
 expr* create_var_expr(Symbol* symbol);
+expr* create_prog_func_expr(Symbol* symbol);
 expr* create_constnum_expr(double value);
 expr* create_conststring_expr(char* value);
 expr* create_constbool_expr(unsigned int value);

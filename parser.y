@@ -70,7 +70,7 @@
 %token PERIOD
 %token PERIOD_PERIOD
 
-%type <symbolZoumi> funcdef
+%type <exprZoumi> funcdef
 
 %type <exprZoumi> expr       
 %type <exprZoumi> term       
@@ -706,9 +706,9 @@ forstmt:
 
 primary:
     lvalue { $$ = $1; }
-    | call
-    | objectdef
-    | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS
+    | call { $$ = $1; }
+    | objectdef 
+    | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS { $$ = $2; }
     | const { $$ = $1; }
     ;
 
@@ -732,7 +732,7 @@ call:
         $$ = NULL;
     }
     | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS LEFT_PARENTHESIS elist RIGHT_PARENTHESIS {
-        Symbol* sym = handleAnonymousFuncCall($2);
+        Symbol* sym = handleAnonymousFuncCall($2->symbol);
         if(sym) {
             $$ = create_temp_symbol();
         } else {
@@ -803,35 +803,37 @@ block:
         /* Functions make their own scopes */
         if(!fromFunct) { enter_Next_Scope(fromFunct); }
         fromFunct=0;
-        //inLoop++;
     } stmt_list RIGHT_BRACE {
         exit_Current_Scope();
-        //inLoop--;
     }
     ;
 
 funcdef:
     FUNCTION ID LEFT_PARENTHESIS {
         Symbol* sym = resolve_FuncSymbol($2);
+        emit(OP_FUNCSTART, create_prog_func_expr(sym), NULL, NULL, 0);
         tmp = sym;
         fromFunct = 1;
         inFunction++;
         enter_Next_Scope(fromFunct);
     } idlist RIGHT_PARENTHESIS block {
+        emit(OP_FUNCEND, create_prog_func_expr(tmp), NULL, NULL, 0);
         fromFunct = 0;
         inFunction--;
-        $$ = tmp;
+        $$ = create_prog_func_expr(tmp);
     }
     | FUNCTION LEFT_PARENTHESIS {
         Symbol* sym = resolve_AnonymousFunc();
+        emit(OP_FUNCSTART, create_prog_func_expr(sym), NULL, NULL, 0);
         tmp = sym;
         fromFunct = 1;
         inFunction++;
         enter_Next_Scope(fromFunct);
     } idlist RIGHT_PARENTHESIS block {
+        emit(OP_FUNCEND, create_prog_func_expr(tmp), NULL, NULL, 0);
         fromFunct = 0;
         inFunction--;
-        $$ = tmp;
+        $$ = create_prog_func_expr(tmp);
     }
     ;
 
@@ -852,10 +854,30 @@ returnstmt:
         if(!inFunction) {
             yyerror("Use of 'return' outside a function");
         }
+        else {
+            emit(OP_RETURN, NULL, NULL, NULL, 0);
+        }
     }
     | RETURN expr SEMICOLON {
         if (!inFunction) {
             yyerror("Use of 'return' outside a function");
+        } else {
+            if($2->type == EXP_BOOL) {
+                /* Create new temp bool expr */
+                expr* mysym = create_bool_expr();
+                /* Truelist assigns TRUE to temp symbol */
+                backpatch($2->truelist, nextquad());
+                emit(OP_ASSIGN, mysym, create_constbool_expr(1), NULL, 0);
+                /* Then skips FALSE symbol */
+                emit(OP_JUMP, NULL, NULL, NULL, nextquad()+2);
+                /* Falselist assigns FALSE to temp symbol */
+                backpatch($2->falselist, nextquad());
+                emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
+                emit(OP_RETURN, mysym, NULL, NULL, 0);
+            }
+            else {
+                emit(OP_RETURN, $2, NULL, NULL, 0);
+            }
         }
     }
     ;
