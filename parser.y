@@ -5,10 +5,8 @@
      */
     #include "table.h"
     #include "alpha_quads.h"
-    struct Symbol* tmp;
 
     /* Globals */
-    //int inLoop = 0;
     int inFunction = 0;
 %}
 
@@ -87,6 +85,7 @@
 
 %type <quadLabelZoumi> M  /* Mark */
 %type <quadLabelZoumi> MJ /* Mark and Jump */
+%type <exprZoumi> FM /* Function Name */
 
 %type <exprZoumi> ifcond
 %type <exprZoumi> whilecond
@@ -809,31 +808,31 @@ block:
     ;
 
 funcdef:
-    FUNCTION ID LEFT_PARENTHESIS {
-        Symbol* sym = resolve_FuncSymbol($2);
-        emit(OP_FUNCSTART, create_prog_func_expr(sym), NULL, NULL, 0);
-        tmp = sym;
+    FUNCTION ID FM LEFT_PARENTHESIS {
+        expr* sym = create_prog_func_expr(resolve_FuncSymbol($2));
+        emit(OP_FUNCSTART, sym, NULL, NULL, 0);
+        $3->symbol = sym->symbol;
         fromFunct = 1;
         inFunction++;
         enter_Next_Scope(fromFunct);
     } idlist RIGHT_PARENTHESIS block {
-        emit(OP_FUNCEND, create_prog_func_expr(tmp), NULL, NULL, 0);
+        emit(OP_FUNCEND, $3, NULL, NULL, 0);
         fromFunct = 0;
         inFunction--;
-        $$ = create_prog_func_expr(tmp);
+        $$ = $3;
     }
-    | FUNCTION LEFT_PARENTHESIS {
-        Symbol* sym = resolve_AnonymousFunc();
-        emit(OP_FUNCSTART, create_prog_func_expr(sym), NULL, NULL, 0);
-        tmp = sym;
+    | FUNCTION FM LEFT_PARENTHESIS {
+        expr* sym = create_prog_func_expr(resolve_AnonymousFunc());
+        emit(OP_FUNCSTART, sym, NULL, NULL, 0);
+        $2->symbol = sym->symbol;
         fromFunct = 1;
         inFunction++;
         enter_Next_Scope(fromFunct);
     } idlist RIGHT_PARENTHESIS block {
-        emit(OP_FUNCEND, create_prog_func_expr(tmp), NULL, NULL, 0);
+        emit(OP_FUNCEND, $2, NULL, NULL, 0);
         fromFunct = 0;
         inFunction--;
-        $$ = create_prog_func_expr(tmp);
+        $$ = $2;
     }
     ;
 
@@ -894,6 +893,10 @@ MJ: {
 P: {
     push();
 };
+
+FM: {
+    $$ = create_prog_func_expr(NULL);
+}
 
 %%
 
