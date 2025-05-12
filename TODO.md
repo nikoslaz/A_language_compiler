@@ -14,8 +14,10 @@ DODODODODO
 <!-- - DUAL assign quads (for lists mostly) -->
 <!-- - Fix double assignment (oxi arith) -->
 <!-- - Fix plusplus, minusminus, etc etc -->
+
 - Function start, end, argument
 - Add expr boolean logic to elist, indexed and membe
+
 - Tables (REMEMBER:: ELIST CAN BE NULL)
 
 ---------------------------------------------------------------------------------
