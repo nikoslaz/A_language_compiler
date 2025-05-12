@@ -80,7 +80,7 @@
 %type <exprZoumi> elist
 %type <exprZoumi> elist_list
 
-%type <symbolZoumi> call
+%type <exprZoumi> call
 %type <intZoumi> normcall
 
 %type <quadLabelZoumi> M  /* Mark */
@@ -711,32 +711,48 @@ primary:
     | const { $$ = $1; }
     ;
 
-/* TODO: Implement TABLEGETELEM/TABLESETELEM logic here */
-member: 
-    lvalue PERIOD ID { $$ = $1; }
-    | lvalue LEFT_BRACKET expr RIGHT_BRACKET { $$ = $1; }
-    | call PERIOD ID { $$ = $1; }
-    | call LEFT_BRACKET expr RIGHT_BRACKET { $$ = $1; }
-    ;
-
 /* TODO: functions */
 call:
-    call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS { $$ = $1; }
+    call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS { 
+        expr* result = create_var_expr(create_temp_symbol());
+        if($1) {
+            if($1->type == EXP_PROGRAMFUNC ||  $1->type == EXP_LIBRARYFUNC || $1->type == EXP_VARIABLE) {
+                handle_arguments($3);
+                emit(OP_CALL, NULL, $1, NULL, 0);
+                emit(OP_GETRETVAL, result, NULL, NULL, 0);
+            } else {
+                yyerror("Error. Symbol is NOT a function");
+                result = NULL;
+            }
+        }
+        $$ = result;
+    }
     | lvalue callsuffix {
-        int inaccessible = 0;
-        Symbol* sym;
-        if(!$1) {
-            sym = NULL;
-        } else { sym = lookUp_All($1->symbol->name, &inaccessible); }
-        $$ = NULL;
+        expr* result = create_var_expr(create_temp_symbol());
+        if($1) {
+            if($1->type == EXP_PROGRAMFUNC ||  $1->type == EXP_LIBRARYFUNC || $1->type == EXP_VARIABLE) {
+                emit(OP_CALL, NULL, $1, NULL, 0);
+                emit(OP_GETRETVAL, result, NULL, NULL, 0);
+            } else {
+                yyerror("Error. Symbol is NOT a function");
+                result = NULL;
+            }
+        }
+        $$ = result;
     }
     | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS LEFT_PARENTHESIS elist RIGHT_PARENTHESIS {
-        Symbol* sym = handleAnonymousFuncCall($2->symbol);
-        if(sym) {
-            $$ = create_temp_symbol();
-        } else {
-            $$ = NULL;
+        expr* result = create_var_expr(create_temp_symbol());
+        if($2) {
+            if($2->type == EXP_PROGRAMFUNC ||  $2->type == EXP_LIBRARYFUNC || $2->type == EXP_VARIABLE) {
+                handle_arguments($5);
+                emit(OP_CALL, NULL, $2, NULL, 0);
+                emit(OP_GETRETVAL, result, NULL, NULL, 0);
+            } else {
+                yyerror("Error. Symbol is NOT a function");
+                result = NULL;
+            }
         }
+        $$ = result;
     }
     ;
 
@@ -747,12 +763,8 @@ callsuffix:
 
 normcall:
     LEFT_PARENTHESIS elist RIGHT_PARENTHESIS {
-        //$$ = $2;
+        handle_arguments($2);
     }
-    ;
-
-methodcall:
-    PERIOD_PERIOD ID LEFT_PARENTHESIS elist RIGHT_PARENTHESIS
     ;
 
 elist: 
@@ -774,37 +786,6 @@ elist_list:
         } else { $$ = NULL; } 
     }
     | { $$ = NULL; }
-    ;
-
-objectdef:
-    LEFT_BRACKET elist RIGHT_BRACKET
-    | LEFT_BRACKET indexed RIGHT_BRACKET %prec ELIST_INDEXED_CONFLICT
-    ;
-
-indexedelem:
-    LEFT_BRACE expr COLON expr RIGHT_BRACE
-    ;
-
-indexed:
-    indexedelem indexed_list
-    { /* Indexed is only used inside objectdef, and its empty rule is already
-    covered by the elist empty rule, thus we are able to remove it from here,
-    which also removes the warning message Bison generates :D */ }
-    ;
-
-indexed_list:
-    COMMA indexedelem indexed_list
-    |
-    ;
-
-block:
-     LEFT_BRACE {
-        /* Functions make their own scopes */
-        if(!fromFunct) { enter_Next_Scope(fromFunct); }
-        fromFunct=0;
-    } stmt_list RIGHT_BRACE {
-        exit_Current_Scope();
-    }
     ;
 
 funcdef:
@@ -834,18 +815,6 @@ funcdef:
         inFunction--;
         $$ = $2;
     }
-    ;
-
-// EXPR
-idlist:
-    ID { resolve_FormalSymbol($1); } idlist_list
-    |
-    ;
-
-// EXPR
-idlist_list:
-    COMMA ID { resolve_FormalSymbol($2); } idlist_list
-    |
     ;
 
 returnstmt:
@@ -879,6 +848,66 @@ returnstmt:
             }
         }
     }
+    ;
+
+block:
+     LEFT_BRACE {
+        /* Functions make their own scopes */
+        if(!fromFunct) { enter_Next_Scope(fromFunct); }
+        fromFunct=0;
+    } stmt_list RIGHT_BRACE {
+        exit_Current_Scope();
+    }
+    ;
+
+/* TODO FOR TABLES */
+objectdef:
+    LEFT_BRACKET elist RIGHT_BRACKET
+    | LEFT_BRACKET indexed RIGHT_BRACKET %prec ELIST_INDEXED_CONFLICT
+    ;
+
+/* TODO FOR TABLES */
+indexedelem:
+    LEFT_BRACE expr COLON expr RIGHT_BRACE
+    ;
+
+/* TODO FOR TABLES */
+indexed:
+    indexedelem indexed_list
+    { /* Indexed is only used inside objectdef, and its empty rule is already
+    covered by the elist empty rule, thus we are able to remove it from here,
+    which also removes the warning message Bison generates :D */ }
+    ;
+
+/* TODO FOR TABLES */
+indexed_list:
+    COMMA indexedelem indexed_list
+    |
+    ;
+
+/* TODO FOR TABLES */
+methodcall:
+    PERIOD_PERIOD ID LEFT_PARENTHESIS elist RIGHT_PARENTHESIS
+    ;
+
+/* TODO: Implement TABLEGETELEM/TABLESETELEM logic here */
+member: 
+    lvalue PERIOD ID { $$ = $1; }
+    | lvalue LEFT_BRACKET expr RIGHT_BRACKET { $$ = $1; }
+    | call PERIOD ID { $$ = $1; }
+    | call LEFT_BRACKET expr RIGHT_BRACKET { $$ = $1; }
+    ;
+
+// EXPR
+idlist:
+    ID { resolve_FormalSymbol($1); } idlist_list
+    |
+    ;
+
+// EXPR
+idlist_list:
+    COMMA ID { resolve_FormalSymbol($2); } idlist_list
+    |
     ;
 
 M: { 

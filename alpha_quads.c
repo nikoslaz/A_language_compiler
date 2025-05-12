@@ -226,6 +226,16 @@ void simplepatch(unsigned int quad, unsigned int index) {
 }
 
 /*===============================================================================================*/
+/* Function Functions */
+void handle_arguments(expr* arg) {
+    if(arg) {
+        handle_arguments(arg->next);
+        emit(OP_PARAM, NULL, arg, NULL, 0);
+    }
+}
+
+
+/*===============================================================================================*/
 /* STACK FOR BREAK/CONTINUE LISTS */
 
 void push(void) {
@@ -332,7 +342,8 @@ void printQuads(void) {
         printf(" %-4u|   %-3u %-14s %-15s %-15s %-15s",
         quads[i].line, i+1, opcodeToStr(quads[i].op),
         exprToStr(quads[i].result), exprToStr(quads[i].arg1), exprToStr(quads[i].arg2));
-        if(!quads[i].result ||  quads[i].label!=0)
+        if((!quads[i].result && !(quads[i].op == OP_CALL || quads[i].op == OP_PARAM))
+        ||  quads[i].label!=0)
         { printf(" %-5u\n", quads[i].label+1); }
         else { 
             printf("\n");

@@ -100,6 +100,9 @@ PatchList* merge(PatchList* list1, PatchList* list2);
 void backpatch(PatchList* list, unsigned int target_quad_index);
 void simplepatch(unsigned int quad, unsigned int index);
 
+/* Function Functions */
+void handle_arguments(expr* arg);
+
 /* Stack Functions */
 void push(void);
 void pop(void);

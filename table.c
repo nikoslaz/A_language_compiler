@@ -394,7 +394,7 @@ Symbol* checkFunctionCall(Symbol* sym, const char* errorPrefix) {
 }
 
 Symbol* handleAnonymousFuncCall(Symbol* funcdef) {
-    if (funcdef == NULL) {
+    if(funcdef == NULL) {
         yyerror("Invalid anonymous function call: funcdef is NULL");
         return NULL;
     }
