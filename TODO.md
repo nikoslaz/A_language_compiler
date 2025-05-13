@@ -37,29 +37,29 @@ DODODODODO
 <!-- - const TRUE FALSE -->
 <!-- - Fix priority of AND and OR -->
 <!-- Gia ola auta: 8eloume na elegxoyme oti ta arguments einai valid:
-se periptwsi string kane not equals "" etc etc.-->
+kanoume truecheck etc etc.-->
 
 -----------------------------------------------------------------------
 // HARD
 
 - Maybe Temporary variables Garbage collection ?????
 - Return must jump to funcend (returnlist, name it WHOO IMPORTANT!!!)
-- Jump before funcdef to after funcend but CHAINED (only one per funcdefs in series)
+- Jump before funcdef to after funcend, support chained (only one per funcdefs in series)
 
 ------------------------------------------------------------------------
 
 TESTS:
 <!-- BACKPATCH DONE -->
 <!-- ASSIGNMENTS COMPLEX DONE -->
-ASSIGNMENTS OBJECTS TODO
+ASSIGNMENTS OBJECTS
 <!-- ASSIGNMENTS SIMPLE DONE -->
-BASIC EXPR TODO
-CALL (OBJECT) TODO
+BASIC EXPR
+CALLS
 <!-- CONST MATHS DONE  -->
 <!-- FLOW CONTROL DONE -->
 <!-- FLOW CONTROL ERROR DONE -->
 <!-- FUNCDECL DONE WITH CHANGES ON JUMP DONE -->
 <!-- IF ELSE DONE  -->
-OBJECT CREATION EXPR TODO
+OBJECT CREATION EXPR
 <!-- RELATIONAL DONE -->
 <!-- VAR MATHS DONE -->
