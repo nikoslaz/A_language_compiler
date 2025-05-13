@@ -10,16 +10,15 @@ DODODODODO
 <!-- - Implement Scope Spaces, scope stack, offset inside space, etc (MIXADRILL) GOAT  -->
 <!-- - OFFSET MUST NOT RESET WHEN NOT IN FUNCTION (LOOK FAQ) (MIXADRILL) GOAT  -->
 <!-- - Method to create, read, delete temp variables -> CREATE, READ  -->
-- Maybe Garbage collection(at the end)?????
 <!-- - DUAL assign quads (for lists mostly) -->
 <!-- - Fix double assignment (oxi arith) -->
 <!-- - Fix plusplus, minusminus, etc etc -->
 
-- Function start, end, argument
+<!-- - Function start, end, argument -->
+<!-- - Add expr boolean logic to elist -->
 - Reset in loop in functions see FLOW CONTROL ERROR test
-- Add expr boolean logic to elist, indexed and membe
-
 - Tables (REMEMBER:: ELIST CAN BE NULL)
+- REMEMBER INDEXED AND MEMBER MUST HAVE EXPR BOOLEAN LOGIC
 
 ---------------------------------------------------------------------------------
 <!-- // Require Backpatching, breaklist, continuelist, merge method -->
@@ -40,6 +39,12 @@ DODODODODO
 <!-- Gia ola auta: 8eloume na elegxoyme oti ta arguments einai valid:
 se periptwsi string kane not equals "" etc etc.-->
 
+-----------------------------------------------------------------------
+// HARD
+
+- Maybe Temporary variables Garbage collection(at the end)?????
+- Return must jump to funcend (returnlist, name it WHOO IMPORTANT!!!)
+
 ------------------------------------------------------------------------
 
 TESTS:
@@ -52,8 +57,8 @@ CALL (OBJECT) TODO
 <!-- CONST MATHS DONE  -->
 <!-- FLOW CONTROL DONE -->
 FLOW CONTROL ERROR TODO
-<!-- FUNCDECL DONE WITH CHANGES ON JUMP  -->
+<!-- FUNCDECL DONE WITH CHANGES ON JUMP DONE -->
 <!-- IF ELSE DONE  -->
 OBJECT CREATION EXPR TODO
-<!-- RELATIONAL -->
+<!-- RELATIONAL DONE -->
 <!-- VAR MATHS DONE -->
