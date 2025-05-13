@@ -508,7 +508,7 @@ assignexpr:
             } else { rvalue = $3; }
             expr* expr_result = create_var_expr(create_temp_symbol());
             // First assign
-            emit(OP_ASSIGN, $1, $3, NULL, 0);
+            emit(OP_ASSIGN, $1, rvalue, NULL, 0);
             // Second assign
             emit(OP_ASSIGN, expr_result, $1, NULL, 0);
             $$ = expr_result;
@@ -770,8 +770,24 @@ normcall:
 elist: 
     expr elist_list { 
         if($1) {
-            $1->next = $2;
-            $$ = $1;
+            if ($1->type == EXP_BOOL) {
+                /* Create new temp bool expr */
+                expr* mysym = create_bool_expr();
+                /* Truelist assigns TRUE to temp symbol */
+                backpatch($1->truelist, nextquad());
+                emit(OP_ASSIGN, mysym, create_constbool_expr(1), NULL, 0);
+                /* Then skips FALSE symbol */
+                emit(OP_JUMP, NULL, NULL, NULL, nextquad()+2);
+                /* Falselist assigns FALSE to temp symbol */
+                backpatch($1->falselist, nextquad());
+                emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
+                mysym->next = $2;
+                $$ = mysym;
+            }
+            else {
+                $1->next = $2;
+                $$ = $1;
+            }
         }
         else { $$ = NULL; }
     }
@@ -781,15 +797,30 @@ elist:
 elist_list: 
     COMMA expr elist_list { 
         if($2) {
-            $2->next = $3;
-            $$ = $2;
+            if ($2->type == EXP_BOOL) {
+                /* Create new temp bool expr */
+                expr* mysym = create_bool_expr();
+                /* Truelist assigns TRUE to temp symbol */
+                backpatch($2->truelist, nextquad());
+                emit(OP_ASSIGN, mysym, create_constbool_expr(1), NULL, 0);
+                /* Then skips FALSE symbol */
+                emit(OP_JUMP, NULL, NULL, NULL, nextquad()+2);
+                /* Falselist assigns FALSE to temp symbol */
+                backpatch($2->falselist, nextquad());
+                emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
+                mysym->next = $2;
+                $$ = mysym;
+            } else {
+                $2->next = $3;
+                $$ = $2;
+            }
         } else { $$ = NULL; } 
     }
     | { $$ = NULL; }
     ;
 
 funcdef:
-    FUNCTION ID FM LEFT_PARENTHESIS {
+    FUNCTION ID FM MJ LEFT_PARENTHESIS {
         expr* sym = create_prog_func_expr(resolve_FuncSymbol($2));
         emit(OP_FUNCSTART, sym, NULL, NULL, 0);
         $3->symbol = sym->symbol;
@@ -798,11 +829,12 @@ funcdef:
         enter_Next_Scope(fromFunct);
     } idlist RIGHT_PARENTHESIS block {
         emit(OP_FUNCEND, $3, NULL, NULL, 0);
+        simplepatch($4, nextquad());
         fromFunct = 0;
         inFunction--;
         $$ = $3;
     }
-    | FUNCTION FM LEFT_PARENTHESIS {
+    | FUNCTION FM MJ LEFT_PARENTHESIS {
         expr* sym = create_prog_func_expr(resolve_AnonymousFunc());
         emit(OP_FUNCSTART, sym, NULL, NULL, 0);
         $2->symbol = sym->symbol;
@@ -811,6 +843,7 @@ funcdef:
         enter_Next_Scope(fromFunct);
     } idlist RIGHT_PARENTHESIS block {
         emit(OP_FUNCEND, $2, NULL, NULL, 0);
+        simplepatch($3, nextquad());
         fromFunct = 0;
         inFunction--;
         $$ = $2;

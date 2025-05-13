@@ -16,6 +16,7 @@ DODODODODO
 <!-- - Fix plusplus, minusminus, etc etc -->
 
 - Function start, end, argument
+- Reset in loop in functions see FLOW CONTROL ERROR test
 - Add expr boolean logic to elist, indexed and membe
 
 - Tables (REMEMBER:: ELIST CAN BE NULL)
@@ -38,3 +39,21 @@ DODODODODO
 <!-- - Fix priority of AND and OR -->
 <!-- Gia ola auta: 8eloume na elegxoyme oti ta arguments einai valid:
 se periptwsi string kane not equals "" etc etc.-->
+
+------------------------------------------------------------------------
+
+TESTS:
+<!-- BACKPATCH DONE -->
+<!-- ASSIGNMENTS COMPLEX DONE -->
+ASSIGNMENTS OBJECTS TODO
+<!-- ASSIGNMENTS SIMPLE DONE -->
+BASIC EXPR TODO
+CALL (OBJECT) TODO
+<!-- CONST MATHS DONE  -->
+<!-- FLOW CONTROL DONE -->
+FLOW CONTROL ERROR TODO
+<!-- FUNCDECL DONE WITH CHANGES ON JUMP  -->
+<!-- IF ELSE DONE  -->
+OBJECT CREATION EXPR TODO
+<!-- RELATIONAL -->
+<!-- VAR MATHS DONE -->
