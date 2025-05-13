@@ -76,7 +76,6 @@ extern LoopContext* loop_stack;
 extern unsigned int totalquads;
 extern unsigned int currquad;
 extern unsigned int temp_counter;
-extern unsigned int loop_depth_counter;
  
 Symbol* create_temp_symbol(void);
 quad* emit(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label);

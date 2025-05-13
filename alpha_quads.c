@@ -9,7 +9,6 @@ LoopContext* loop_stack = NULL;
 unsigned int totalquads = 0;
 unsigned int currquad = 0;
 unsigned int temp_counter = 0;
-unsigned int loop_depth_counter = 0;
 
 Symbol* create_temp_symbol(void) {
     if(temp_counter>MAX_TEMPS) {
@@ -22,10 +21,10 @@ Symbol* create_temp_symbol(void) {
 }
 
 quad* emit(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label) {
-    if (currquad == totalquads) {
+    if(currquad == totalquads) {
         totalquads += EXPAND_SIZE;
         quads = realloc(quads, totalquads * sizeof(quad));
-        if (!quads) { MemoryFail(); }
+        if(!quads) { MemoryFail(); }
     }
     quad* new = (quad*)malloc(sizeof(quad));
     if(!new) { MemoryFail(); }
@@ -180,15 +179,11 @@ expr* create_nil_expr(void) {
 /*===============================================================================================*/
 /* Backpatch Functions */
 
-unsigned int nextquad(void) {
-    return currquad;
-}
+unsigned int nextquad(void) { return currquad; }
 
 PatchList* makelist(unsigned int quad_index) {
     PatchList* new_node = (PatchList*)malloc(sizeof(PatchList));
-    if (!new_node) {
-        MemoryFail();
-    }
+    if(!new_node) { MemoryFail(); }
     new_node->quad_index = quad_index;
     new_node->next = NULL;
     return new_node;
@@ -198,19 +193,19 @@ PatchList* merge(PatchList* list1, PatchList* list2) {
     if(!list1) return list2;
     if(!list2) return list1;
     PatchList* iter = list1;
-    while (iter->next != NULL) iter = iter->next;
+    while(iter->next != NULL) iter = iter->next;
     iter->next = list2;
     return list1;
 }
 
 void backpatch(PatchList* list, unsigned int target_quad_index) {
     PatchList* iter = list;
-    while (iter) {
-        if (iter->quad_index >= currquad) {
+    while(iter) {
+        if(iter->quad_index >= currquad) {
             fprintf(stderr, "Error: invalid index\n");
         } else {
-            quads[iter->quad_index].label = target_quad_index;
             // printf("Backpatching quad %u to label %u\n", iter->quad_index+1, target_quad_index+1);
+            quads[iter->quad_index].label = target_quad_index;
         }
         iter = iter->next;
     }
@@ -240,25 +235,23 @@ void handle_arguments(expr* arg) {
 
 void push(void) {
     LoopContext* new = (LoopContext*)malloc(sizeof(LoopContext));
-    if(!new){ MemoryFail(); }
+    if(!new) { MemoryFail(); }
     new->break_list = NULL;
     new->continue_list = NULL;
     new->next = loop_stack;
     loop_stack = new;
-    loop_depth_counter++;
 }
 
 void pop(void) {
-    if(loop_stack){
+    if(loop_stack) {
         LoopContext* top = loop_stack;
         loop_stack = top->next;
         free(top);
-        loop_depth_counter--;
     }
 }
 
 void add_to_breakList(unsigned int quad_to_patch) {
-    if(loop_stack){
+    if(loop_stack) {
         loop_stack->break_list = merge(loop_stack->break_list, makelist(quad_to_patch));
     } else {
         yyerror("BREAK statement encountered outside of a loop stack.");
@@ -266,7 +259,7 @@ void add_to_breakList(unsigned int quad_to_patch) {
 }
 
 void add_to_continueList(unsigned int quad_to_patch) {
-    if(loop_stack){
+    if(loop_stack) {
         loop_stack->continue_list = merge(loop_stack->continue_list, makelist(quad_to_patch));
     } else {
         yyerror("CONTINUE statement encountered outside of a loop stack.");
@@ -339,15 +332,14 @@ void printQuads(void) {
     printf("\n%-5s|   %-3s %-14s %-15s %-15s %-15s %-5s\n", "LINE", "#", "OP", "RESULT", "ARG1", "ARG2", "LABEL");
     printf("-----+----------------------------------------------------------------------------\n");
     for (unsigned int i = 0; i < currquad; ++i) {
+        if(quads[i].op == OP_FUNCSTART) { printf("     |\n"); }
         printf(" %-4u|   %-3u %-14s %-15s %-15s %-15s",
         quads[i].line, i+1, opcodeToStr(quads[i].op),
         exprToStr(quads[i].result), exprToStr(quads[i].arg1), exprToStr(quads[i].arg2));
-        if((!quads[i].result && !(quads[i].op == OP_CALL || quads[i].op == OP_PARAM))
-        ||  quads[i].label!=0)
-        { printf(" %-5u\n", quads[i].label+1); }
-        else { 
-            printf("\n");
-        }
+        if((!quads[i].result && !(quads[i].op == OP_CALL || quads[i].op == OP_PARAM || quads[i].op == OP_RETURN))
+        ||  quads[i].label!=0) { printf(" %-5u\n", quads[i].label+1); }
+        else {  printf("\n"); }
+        if(quads[i].op == OP_FUNCEND) { printf("     |\n"); }
     }
     printf("-----+----------------------------------------------------------------------------\n\n");
 }

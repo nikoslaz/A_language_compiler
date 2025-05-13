@@ -16,7 +16,7 @@ DODODODODO
 
 <!-- - Function start, end, argument -->
 <!-- - Add expr boolean logic to elist -->
-- Reset in loop in functions see FLOW CONTROL ERROR test
+<!-- - Reset in loop in functions see FLOW CONTROL ERROR test -->
 - Tables (REMEMBER:: ELIST CAN BE NULL)
 - REMEMBER INDEXED AND MEMBER MUST HAVE EXPR BOOLEAN LOGIC
 
@@ -42,8 +42,9 @@ se periptwsi string kane not equals "" etc etc.-->
 -----------------------------------------------------------------------
 // HARD
 
-- Maybe Temporary variables Garbage collection(at the end)?????
+- Maybe Temporary variables Garbage collection ?????
 - Return must jump to funcend (returnlist, name it WHOO IMPORTANT!!!)
+- Jump before funcdef to after funcend but CHAINED (only one per funcdefs in series)
 
 ------------------------------------------------------------------------
 
@@ -56,7 +57,7 @@ BASIC EXPR TODO
 CALL (OBJECT) TODO
 <!-- CONST MATHS DONE  -->
 <!-- FLOW CONTROL DONE -->
-FLOW CONTROL ERROR TODO
+<!-- FLOW CONTROL ERROR DONE -->
 <!-- FUNCDECL DONE WITH CHANGES ON JUMP DONE -->
 <!-- IF ELSE DONE  -->
 OBJECT CREATION EXPR TODO
