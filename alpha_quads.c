@@ -176,6 +176,36 @@ expr* create_nil_expr(void) {
     return temp;
 }
 
+expr* create_table_expr(void) {
+    expr* temp=(expr*)malloc(sizeof(expr));
+    if(!temp) { MemoryFail(); }
+    temp->type=EXP_NEWTABLE;
+    temp->symbol=create_temp_symbol();
+    temp->index=0;
+    temp->numConst=0;
+    temp->stringConst=0;
+    temp->boolConst=0;
+    temp->next=NULL;
+    temp->truelist=NULL;
+    temp->falselist=NULL;
+    return temp;
+}
+
+expr* create_table_elem(Symbol* symbol, expr* index) {
+    expr* temp=(expr*)malloc(sizeof(expr));
+    if(!temp) { MemoryFail(); }
+    temp->type=EXP_TABLEITEM;
+    temp->symbol=symbol;
+    temp->index=index;
+    temp->numConst=0;
+    temp->stringConst=0;
+    temp->boolConst=0;
+    temp->next=NULL;
+    temp->truelist=NULL;
+    temp->falselist=NULL;
+    return temp;
+}
+
 /*===============================================================================================*/
 /* Backpatch Functions */
 
@@ -310,6 +340,8 @@ const char* exprToStr(expr* e) {
         case EXP_ARITH:
         case EXP_BOOL:
         case EXP_ASSIGN:
+        case EXP_TABLEITEM:
+        case EXP_NEWTABLE:
             return e->symbol ? e->symbol->name : "print unknown symbol";
         case EXP_CONSTNUMBER:
             char* buffer = (char*)malloc(1024*sizeof(char));
@@ -321,8 +353,6 @@ const char* exprToStr(expr* e) {
             return e->boolConst ? (char*)"TRUE" : (char*)"FALSE";
         case EXP_NIL:
             return "NIL";
-        case EXP_TABLEITEM:
-        case EXP_NEWTABLE:
         default:
             return "PRINT ERROR";
     }

@@ -88,9 +88,11 @@ expr* create_empty_bool_expr(void);
 expr* create_var_expr(Symbol* symbol);
 expr* create_prog_func_expr(Symbol* symbol);
 expr* create_constnum_expr(double value);
+expr* create_table_elem(Symbol* symbol, expr* index);
 expr* create_conststring_expr(char* value);
 expr* create_constbool_expr(unsigned int value);
 expr* create_nil_expr(void);
+expr* create_table_expr(void);
 
 /* Backpatch Functions */
 unsigned int nextquad(void);

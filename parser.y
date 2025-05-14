@@ -77,6 +77,10 @@
 %type <exprZoumi> primary    
 %type <exprZoumi> lvalue 
 %type <exprZoumi> member 
+%type <exprZoumi> objectdef
+%type <exprZoumi> indexed
+%type <exprZoumi> indexed_list
+%type <exprZoumi> indexedelem
 %type <exprZoumi> const
 %type <exprZoumi> elist
 %type <exprZoumi> elist_list
@@ -708,7 +712,7 @@ forstmt:
 primary:
     lvalue { $$ = $1; }
     | call { $$ = $1; }
-    | objectdef 
+    | objectdef { $$ = $1; }
     | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS { $$ = $2; }
     | const { $$ = $1; }
     ;
@@ -890,29 +894,88 @@ block:
     }
     ;
 
-/* TODO FOR TABLES */
 objectdef:
-    LEFT_BRACKET elist RIGHT_BRACKET
-    | LEFT_BRACKET indexed RIGHT_BRACKET %prec ELIST_INDEXED_CONFLICT
+    LEFT_BRACKET elist RIGHT_BRACKET {
+        expr* new_table = create_table_expr();
+        emit(OP_TABLECREATE, new_table, NULL, NULL, 0);
+        expr* elist_temp = $2;
+        unsigned int i = 0;
+        while(elist_temp) {
+            emit(OP_TABLESETELEM, new_table, create_constnum_expr((double)i++), elist_temp, 0);
+            elist_temp = elist_temp->next;
+        }
+        $$ = new_table;
+    }
+    | LEFT_BRACKET indexed RIGHT_BRACKET %prec ELIST_INDEXED_CONFLICT {
+        expr* new_table = create_table_expr();
+        emit(OP_TABLECREATE, new_table, NULL, NULL, 0);
+        expr* elist_temp = $2;
+        while(elist_temp) {
+            emit(OP_TABLESETELEM, new_table, elist_temp->index, elist_temp, 0);
+            elist_temp = elist_temp->next;
+        }
+        $$ = new_table;
+    }
     ;
 
-/* TODO FOR TABLES */
 indexedelem:
-    LEFT_BRACE expr COLON expr RIGHT_BRACE
+    LEFT_BRACE expr COLON expr RIGHT_BRACE {
+        if ($2 && $2->type == EXP_BOOL) {
+            /* Create new temp bool expr */
+            expr* mysym = create_bool_expr();
+            /* Truelist assigns TRUE to temp symbol */
+            backpatch($2->truelist, nextquad());
+            emit(OP_ASSIGN, mysym, create_constbool_expr(1), NULL, 0);
+            /* Then skips FALSE symbol */
+            emit(OP_JUMP, NULL, NULL, NULL, nextquad()+2);
+            /* Falselist assigns FALSE to temp symbol */
+            backpatch($2->falselist, nextquad());
+            emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
+            $2 = mysym;
+        }
+
+        if ($4 && $4->type == EXP_BOOL) {
+            /* Create new temp bool expr */
+            expr* mysym = create_bool_expr();
+            /* Truelist assigns TRUE to temp symbol */
+            backpatch($4->truelist, nextquad());
+            emit(OP_ASSIGN, mysym, create_constbool_expr(1), NULL, 0);
+            /* Then skips FALSE symbol */
+            emit(OP_JUMP, NULL, NULL, NULL, nextquad()+2);
+            /* Falselist assigns FALSE to temp symbol */
+            backpatch($4->falselist, nextquad());
+            emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
+            $4 = mysym;
+        }
+
+        $$ = $4;
+        if ($$) {
+            $$->index = $2;
+            $$->next = NULL;
+        }
+    }
     ;
 
-/* TODO FOR TABLES */
 indexed:
     indexedelem indexed_list
     { /* Indexed is only used inside objectdef, and its empty rule is already
     covered by the elist empty rule, thus we are able to remove it from here,
-    which also removes the warning message Bison generates :D */ }
+    which also removes the warning message Bison generates :D */
+        $$ = $1;
+        if ($$) {
+            $$->next = $2;
+        }
+    }
     ;
 
-/* TODO FOR TABLES */
 indexed_list:
-    COMMA indexedelem indexed_list
-    |
+    COMMA indexedelem indexed_list {
+        $$ = $2;
+        if ($$) {
+            $$->next = $3;
+        }
+    }
+    | { $$ = NULL; }
     ;
 
 /* TODO FOR TABLES */
