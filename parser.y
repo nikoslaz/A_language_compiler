@@ -86,7 +86,9 @@
 %type <exprZoumi> elist_list
 
 %type <exprZoumi> call
-%type <intZoumi> normcall
+%type <exprZoumi> callsuffix
+%type <exprZoumi> normcall
+%type <exprZoumi> methodcall
 
 %type <quadLabelZoumi> M  /* Mark */
 %type <quadLabelZoumi> MJ /* Mark and Jump */
@@ -447,6 +449,9 @@ term:
             yyerror(msg);
             $$ = NULL;
         } else {
+            if ($2) {
+                $2 = emit_if_table_item_get($2);
+            }
             emit(OP_ADD, $2, $2, create_constnum_expr(1), 0);
             expr* expr_sym = create_var_expr(create_temp_symbol());
             emit(OP_ASSIGN, expr_sym, $2, NULL, 0);
@@ -460,6 +465,9 @@ term:
             yyerror(msg);
             $$ = NULL;
         } else {
+            if ($1) {
+                $1 = emit_if_table_item_get($1);
+            }
             expr* expr_sym = create_var_expr(create_temp_symbol());
             emit(OP_ASSIGN, expr_sym, $1, NULL, 0);
             emit(OP_ADD, $1, $1, create_constnum_expr(1), 0);
@@ -473,6 +481,9 @@ term:
             yyerror(msg);
             $$ = NULL;
         } else {
+            if ($2) {
+                $2 = emit_if_table_item_get($2);
+            }
             emit(OP_SUB, $2, $2, create_constnum_expr(1), 0);
             expr* expr_sym = create_var_expr(create_temp_symbol());
             emit(OP_ASSIGN, expr_sym, $2, NULL, 0);
@@ -486,6 +497,9 @@ term:
             yyerror(msg);
             $$ = NULL;
         } else {
+            if ($1) {
+                $1 = emit_if_table_item_get($1);
+            }
             expr* expr_sym = create_var_expr(create_temp_symbol());
             emit(OP_ASSIGN, expr_sym, $1, NULL, 0);
             emit(OP_SUB, $1, $1, create_constnum_expr(1), 0);
@@ -517,6 +531,7 @@ assignexpr:
                 emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
                 rvalue = mysym;
             } else { rvalue = $3; }
+            $1 = emit_if_table_item_set($1, rvalue);
             expr* expr_result = create_var_expr(create_temp_symbol());
             // First assign
             emit(OP_ASSIGN, $1, rvalue, NULL, 0);
@@ -710,7 +725,7 @@ forstmt:
     ;
 
 primary:
-    lvalue { $$ = $1; }
+    lvalue { $$ = emit_if_table_item_get($1); }
     | call { $$ = $1; }
     | objectdef { $$ = $1; }
     | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS { $$ = $2; }
@@ -722,7 +737,7 @@ call:
     call LEFT_PARENTHESIS elist RIGHT_PARENTHESIS { 
         expr* result = create_var_expr(create_temp_symbol());
         if($1) {
-            if($1->type == EXP_PROGRAMFUNC ||  $1->type == EXP_LIBRARYFUNC || $1->type == EXP_VARIABLE) {
+            if($1->type == EXP_PROGRAMFUNC ||  $1->type == EXP_LIBRARYFUNC || $1->type == EXP_VARIABLE || $1->type == EXP_TABLEITEM) {
                 handle_arguments($3);
                 emit(OP_CALL, NULL, $1, NULL, 0);
                 emit(OP_GETRETVAL, result, NULL, NULL, 0);
@@ -734,10 +749,23 @@ call:
         $$ = result;
     }
     | lvalue callsuffix {
-        expr* result = create_var_expr(create_temp_symbol());
+        expr* result;
         if($1) {
-            if($1->type == EXP_PROGRAMFUNC ||  $1->type == EXP_LIBRARYFUNC || $1->type == EXP_VARIABLE) {
-                emit(OP_CALL, NULL, $1, NULL, 0);
+            $1 = emit_if_table_item_get($1);
+            if($1->type == EXP_PROGRAMFUNC ||  $1->type == EXP_LIBRARYFUNC || $1->type == EXP_VARIABLE || $1->type == EXP_TABLEITEM) {
+                expr* table = create_table_expr();
+                if (from_method == 1) {
+                    char msg[1024];
+                    snprintf(msg, sizeof(msg), "\"%s\"", $2->stringConst);
+                    $2->stringConst = msg;
+                    emit(OP_TABLEGETELEM, table, $1, $2, 0);
+                    if ($2) {
+                        handle_arguments($2->next);
+                        emit(OP_PARAM, NULL, $1, NULL, 0);
+                    }
+                }
+                emit(OP_CALL, NULL, table, NULL, 0);
+                result = create_var_expr(create_temp_symbol());
                 emit(OP_GETRETVAL, result, NULL, NULL, 0);
             } else {
                 yyerror("Error. Symbol is NOT a function");
@@ -749,7 +777,7 @@ call:
     | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS LEFT_PARENTHESIS elist RIGHT_PARENTHESIS {
         expr* result = create_var_expr(create_temp_symbol());
         if($2) {
-            if($2->type == EXP_PROGRAMFUNC ||  $2->type == EXP_LIBRARYFUNC || $2->type == EXP_VARIABLE) {
+            if($2->type == EXP_PROGRAMFUNC ||  $2->type == EXP_LIBRARYFUNC || $2->type == EXP_VARIABLE || $2->type == EXP_TABLEITEM) {
                 handle_arguments($5);
                 emit(OP_CALL, NULL, $2, NULL, 0);
                 emit(OP_GETRETVAL, result, NULL, NULL, 0);
@@ -763,8 +791,8 @@ call:
     ;
 
 callsuffix:
-    normcall
-    | methodcall
+    normcall { from_method = 0; $$ = $1; }
+    | methodcall { from_method = 1; $$ = $1; }
     ;
 
 normcall:
@@ -850,6 +878,16 @@ funcdef:
         inFunction--;
         $$ = $2;
     }
+    ;
+
+idlist:
+    ID { resolve_FormalSymbol($1); } idlist_list
+    |
+    ;
+
+idlist_list:
+    COMMA ID { resolve_FormalSymbol($2); } idlist_list
+    |
     ;
 
 returnstmt:
@@ -978,29 +1016,26 @@ indexed_list:
     | { $$ = NULL; }
     ;
 
-/* TODO FOR TABLES */
 methodcall:
-    PERIOD_PERIOD ID LEFT_PARENTHESIS elist RIGHT_PARENTHESIS
+    PERIOD_PERIOD ID LEFT_PARENTHESIS elist RIGHT_PARENTHESIS {
+        $$ = create_conststring_expr($2);
+        if ($$) {
+            $$->next = $4;
+        }
+    }
     ;
 
 /* TODO: Implement TABLEGETELEM/TABLESETELEM logic here */
 member: 
     lvalue PERIOD ID { $$ = $1; }
-    | lvalue LEFT_BRACKET expr RIGHT_BRACKET { $$ = $1; }
+    | lvalue LEFT_BRACKET expr RIGHT_BRACKET { 
+        $1->index = $3;
+        $1 = emit_if_table_item_get($1);
+        $1->type = EXP_TABLEITEM;
+        $$ = $1;
+    }
     | call PERIOD ID { $$ = $1; }
-    | call LEFT_BRACKET expr RIGHT_BRACKET { $$ = $1; }
-    ;
-
-// EXPR
-idlist:
-    ID { resolve_FormalSymbol($1); } idlist_list
-    |
-    ;
-
-// EXPR
-idlist_list:
-    COMMA ID { resolve_FormalSymbol($2); } idlist_list
-    |
+    | call LEFT_BRACKET expr RIGHT_BRACKET { $$ = emit_if_table_item_get($1); }
     ;
 
 M: { 

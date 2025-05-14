@@ -9,6 +9,7 @@ LoopContext* loop_stack = NULL;
 unsigned int totalquads = 0;
 unsigned int currquad = 0;
 unsigned int temp_counter = 0;
+unsigned int from_method = 0;
 
 Symbol* create_temp_symbol(void) {
     if(temp_counter>MAX_TEMPS) {
@@ -36,6 +37,25 @@ quad* emit(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label) 
     new->line = yylineno;
     quads[currquad++] = *new;
     return new;
+}
+
+expr* emit_if_table_item_get(expr* e) {
+    if(e->type != EXP_TABLEITEM) {
+        return e;
+    }
+    else {
+        expr* result = create_var_expr(create_temp_symbol());
+        result->type = EXP_TABLEITEM;
+        emit(OP_TABLEGETELEM, result, e, e->index, 0);
+        return result; 
+    }
+}
+
+expr* emit_if_table_item_set(expr* table, expr* arg2) {
+    if(table->type == EXP_TABLEITEM) {
+        emit(OP_TABLESETELEM, table, table->index, arg2, 0);
+    }
+    return table;
 }
 
 /*===============================================================================================*/
