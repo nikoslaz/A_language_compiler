@@ -80,7 +80,7 @@ extern unsigned int from_method;
  
 Symbol* create_temp_symbol(void);
 quad* emit(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label);
-expr* emit_if_table_item_get(expr* e);
+expr* emit_if_table_item_get(expr* e, expr* result);
 expr* emit_if_table_item_set(expr* table, expr* arg2);
 void printQuads(void);
 

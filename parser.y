@@ -449,12 +449,20 @@ term:
             yyerror(msg);
             $$ = NULL;
         } else {
-            if ($2) {
-                $2 = emit_if_table_item_get($2);
+            expr* prevlval = $2;
+            if($2) {
+                $2 = emit_if_table_item_get($2, NULL);
             }
             emit(OP_ADD, $2, $2, create_constnum_expr(1), 0);
-            expr* expr_sym = create_var_expr(create_temp_symbol());
-            emit(OP_ASSIGN, expr_sym, $2, NULL, 0);
+            expr* expr_sym;
+            if($2->boolConst == 1) {
+                emit_if_table_item_set(prevlval, $2);
+                $2->boolConst = 0;
+                expr_sym = $2;
+            } else {
+                expr_sym = create_var_expr(create_temp_symbol());
+                emit(OP_ASSIGN, expr_sym, $2, NULL, 0);
+            }
             $$ = expr_sym;
         }
     }
@@ -466,7 +474,7 @@ term:
             $$ = NULL;
         } else {
             if ($1) {
-                $1 = emit_if_table_item_get($1);
+                $1 = emit_if_table_item_get($1, NULL);
             }
             expr* expr_sym = create_var_expr(create_temp_symbol());
             emit(OP_ASSIGN, expr_sym, $1, NULL, 0);
@@ -482,7 +490,7 @@ term:
             $$ = NULL;
         } else {
             if ($2) {
-                $2 = emit_if_table_item_get($2);
+                $2 = emit_if_table_item_get($2, NULL);
             }
             emit(OP_SUB, $2, $2, create_constnum_expr(1), 0);
             expr* expr_sym = create_var_expr(create_temp_symbol());
@@ -498,7 +506,7 @@ term:
             $$ = NULL;
         } else {
             if ($1) {
-                $1 = emit_if_table_item_get($1);
+                $1 = emit_if_table_item_get($1, NULL);
             }
             expr* expr_sym = create_var_expr(create_temp_symbol());
             emit(OP_ASSIGN, expr_sym, $1, NULL, 0);
@@ -533,10 +541,16 @@ assignexpr:
             } else { rvalue = $3; }
             $1 = emit_if_table_item_set($1, rvalue);
             expr* expr_result = create_var_expr(create_temp_symbol());
-            // First assign
-            emit(OP_ASSIGN, $1, rvalue, NULL, 0);
-            // Second assign
-            emit(OP_ASSIGN, expr_result, $1, NULL, 0);
+            printf("After expr_result count is %d\n", temp_counter);
+            if($1->boolConst == 1) {
+                emit_if_table_item_get($1, expr_result);
+                $1->boolConst = 0;
+            } else {
+                // First assign
+                emit(OP_ASSIGN, $1, rvalue, NULL, 0);
+                // Second assign
+                emit(OP_ASSIGN, expr_result, $1, NULL, 0);
+            }
             $$ = expr_result;
         } else {
             yyerror("Invalid assignment operation");
@@ -725,7 +739,7 @@ forstmt:
     ;
 
 primary:
-    lvalue { $$ = emit_if_table_item_get($1); }
+    lvalue { $$ = emit_if_table_item_get($1, NULL); }
     | call { $$ = $1; }
     | objectdef { $$ = $1; }
     | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS { $$ = $2; }
@@ -751,7 +765,7 @@ call:
     | lvalue callsuffix {
         expr* result;
         if($1) {
-            $1 = emit_if_table_item_get($1);
+            $1 = emit_if_table_item_get($1, NULL);
             if($1->type == EXP_PROGRAMFUNC ||  $1->type == EXP_LIBRARYFUNC || $1->type == EXP_VARIABLE || $1->type == EXP_TABLEITEM) {
                 expr* table = create_table_expr();
                 if (from_method == 1) {
@@ -1030,12 +1044,12 @@ member:
     lvalue PERIOD ID { $$ = $1; }
     | lvalue LEFT_BRACKET expr RIGHT_BRACKET { 
         $1->index = $3;
-        $1 = emit_if_table_item_get($1);
+        $1 = emit_if_table_item_get($1, NULL);
         $1->type = EXP_TABLEITEM;
         $$ = $1;
     }
     | call PERIOD ID { $$ = $1; }
-    | call LEFT_BRACKET expr RIGHT_BRACKET { $$ = emit_if_table_item_get($1); }
+    | call LEFT_BRACKET expr RIGHT_BRACKET { $$ = emit_if_table_item_get($1, NULL); }
     ;
 
 M: { 

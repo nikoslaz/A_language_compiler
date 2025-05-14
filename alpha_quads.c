@@ -39,14 +39,15 @@ quad* emit(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label) 
     return new;
 }
 
-expr* emit_if_table_item_get(expr* e) {
+expr* emit_if_table_item_get(expr* e, expr* result) {
     if(e->type != EXP_TABLEITEM) {
+        e->boolConst = 0;
         return e;
-    }
-    else {
-        expr* result = create_var_expr(create_temp_symbol());
+    } else {
+        if(!result) { result = create_var_expr(create_temp_symbol()); }
         result->type = EXP_TABLEITEM;
         emit(OP_TABLEGETELEM, result, e, e->index, 0);
+        result->boolConst = 1;
         return result; 
     }
 }
@@ -54,6 +55,9 @@ expr* emit_if_table_item_get(expr* e) {
 expr* emit_if_table_item_set(expr* table, expr* arg2) {
     if(table->type == EXP_TABLEITEM) {
         emit(OP_TABLESETELEM, table, table->index, arg2, 0);
+        table->boolConst = 1;
+    } else {
+        table->boolConst = 0;
     }
     return table;
 }
