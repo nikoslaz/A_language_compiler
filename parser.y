@@ -1062,10 +1062,8 @@ member:
         $1 = emit_if_table_item_get($1, NULL);
         $1->index = create_conststring_expr($3);
         $1->type = EXP_TABLEITEM;
-        printf("ID %s:\n", $3);
-        printf("INDEX %s:\n", $1->index->stringConst);
-        char msg[1024];
-        snprintf(msg, sizeof(msg), "\"%s\"", $1->index->stringConst);
+        char* msg = (char*)malloc(128);
+        sprintf(msg, "\"%s\"", $1->index->stringConst);
         $1->index->stringConst = msg;
         $$ = $1;
     }
