@@ -6,6 +6,7 @@
 
 quad* quads = NULL;
 LoopContext* loop_stack = NULL;
+ReturnContext* return_stack = NULL;
 unsigned int totalquads = 0;
 unsigned int currquad = 0;
 unsigned int temp_counter = 0;
@@ -40,24 +41,26 @@ quad* emit(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label) 
 }
 
 expr* emit_if_table_item_get(expr* e, expr* result) {
-    if(e->type != EXP_TABLEITEM) {
+    if(e && e->type != EXP_TABLEITEM) {
         e->boolConst = 0;
         return e;
     } else {
         if(!result) { result = create_var_expr(create_temp_symbol()); }
         result->type = EXP_TABLEITEM;
-        emit(OP_TABLEGETELEM, result, e, e->index, 0);
+        if(e) { emit(OP_TABLEGETELEM, result, e, e->index, 0); }
+        else { printf("Error in emit if GET. NULL e given\n"); }
         result->boolConst = 1;
         return result; 
     }
 }
 
 expr* emit_if_table_item_set(expr* table, expr* arg2) {
-    if(table->type == EXP_TABLEITEM) {
+    if(table && table->type == EXP_TABLEITEM) {
         emit(OP_TABLESETELEM, table, table->index, arg2, 0);
         table->boolConst = 1;
     } else {
-        table->boolConst = 0;
+        if(table) table->boolConst = 0;
+        else { printf("Error in emit if SET. NULL table given\n"); }
     }
     return table;
 }
@@ -266,7 +269,7 @@ void backpatch(PatchList* list, unsigned int target_quad_index) {
 }
 
 void simplepatch(unsigned int quad, unsigned int index) {
-    if(quad >= currquad) {
+    if(quad >= currquad || index > currquad) {
         fprintf(stderr, "Error: invalid index\n");
     } else {
         // printf("Simplepatching quad %u to label %u\n", quad+1, index+1);
@@ -275,7 +278,8 @@ void simplepatch(unsigned int quad, unsigned int index) {
 }
 
 /*===============================================================================================*/
-/* Function Functions */
+/* Elist Functions */
+
 void handle_arguments(expr* arg) {
     if(arg) {
         handle_arguments(arg->next);
@@ -283,11 +287,34 @@ void handle_arguments(expr* arg) {
     }
 }
 
+void push_return(void) {
+    ReturnContext* new = (ReturnContext*)malloc(sizeof(ReturnContext));
+    if(!new) { MemoryFail(); }
+    new->return_list = NULL;
+    new->next = return_stack;
+    return_stack = new;
+}
+
+void pop_return(void) {
+    if(return_stack) {
+        ReturnContext* top = return_stack;
+        return_stack = top->next;
+        free(top);
+    }
+}
+
+void add_to_return_list(unsigned int quad_to_patch) {
+    if(return_stack) {
+        return_stack->return_list = merge(return_stack->return_list, makelist(quad_to_patch));
+    } else {
+        yyerror("RETURN statement encountered outside of a function.");
+    }
+}
 
 /*===============================================================================================*/
 /* STACK FOR BREAK/CONTINUE LISTS */
 
-void push(void) {
+void push_loop(void) {
     LoopContext* new = (LoopContext*)malloc(sizeof(LoopContext));
     if(!new) { MemoryFail(); }
     new->break_list = NULL;
@@ -296,7 +323,7 @@ void push(void) {
     loop_stack = new;
 }
 
-void pop(void) {
+void pop_loop(void) {
     if(loop_stack) {
         LoopContext* top = loop_stack;
         loop_stack = top->next;

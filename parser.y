@@ -130,6 +130,8 @@ program:
     ;
 
 stmt:
+    // MAYBE GARBAGE COLLECTION HERE ????????
+    // The result expr* ($1) is calculated but not used further in this context.
     expr SEMICOLON {
         if($1 && $1->type == EXP_BOOL) {
             /* Create new temp bool expr */
@@ -145,11 +147,6 @@ stmt:
         }
     }
     ;
-    // MAYBE GARBAGE COLLECTION HERE ????????
-    // The result expr* ($1) is calculated but not used further in this context.
-    // If $1 represents a temporary result that's not otherwise used,
-    // you might consider freeing it here, but be extremely careful.
-    // For now, let's assume memory management is handled elsewhere or ignored.
     | ifstmt
     | whilestmt
     | forstmt
@@ -185,10 +182,10 @@ stmt_list:
 expr:
     assignexpr { $$ = $1; }
     | expr PLUS expr {
-        if (!$1 || !$3 
-            || !($1->type == EXP_VARIABLE || $1->type == EXP_ARITH || $1->type == EXP_CONSTNUMBER)
-            || !($3->type == EXP_VARIABLE || $3->type == EXP_ARITH || $3->type == EXP_CONSTNUMBER)) {
-            yyerror("Error: Invalid arguments(expr PLUS expr)\n");
+        if(!$1 || !$3 
+            || !($1->type == EXP_VARIABLE || $1->type == EXP_ARITH || $1->type == EXP_CONSTNUMBER || $1->type == EXP_TABLEITEM)
+            || !($3->type == EXP_VARIABLE || $3->type == EXP_ARITH || $3->type == EXP_CONSTNUMBER || $3->type == EXP_TABLEITEM)) {
+            yyerror("Error: Invalid arguments(expr PLUS expr)");
             $$ = NULL;
         } else {
             expr* expr_temp = create_arith_expr();
@@ -197,10 +194,10 @@ expr:
         }
     }
     | expr MINUS expr {
-        if (!$1 || !$3 
-            || !($1->type == EXP_VARIABLE || $1->type == EXP_ARITH || $1->type == EXP_CONSTNUMBER)
-            || !($3->type == EXP_VARIABLE || $3->type == EXP_ARITH || $3->type == EXP_CONSTNUMBER)) {
-            yyerror("Error: Invalid arguments(expr MINUS expr)\n");
+        if(!$1 || !$3 
+            || !($1->type == EXP_VARIABLE || $1->type == EXP_ARITH || $1->type == EXP_CONSTNUMBER || $1->type == EXP_TABLEITEM)
+            || !($3->type == EXP_VARIABLE || $3->type == EXP_ARITH || $3->type == EXP_CONSTNUMBER || $3->type == EXP_TABLEITEM)) {
+            yyerror("Error: Invalid arguments(expr MINUS expr)");
             $$ = NULL;
         } else {
             expr* expr_temp = create_arith_expr();
@@ -209,10 +206,10 @@ expr:
         }
     }
     | expr MULT expr {
-        if (!$1 || !$3 
-            || !($1->type == EXP_VARIABLE || $1->type == EXP_ARITH || $1->type == EXP_CONSTNUMBER)
-            || !($3->type == EXP_VARIABLE || $3->type == EXP_ARITH || $3->type == EXP_CONSTNUMBER)) {
-            yyerror("Error: Invalid arguments(expr MULT expr)\n");
+        if(!$1 || !$3 
+            || !($1->type == EXP_VARIABLE || $1->type == EXP_ARITH || $1->type == EXP_CONSTNUMBER || $1->type == EXP_TABLEITEM)
+            || !($3->type == EXP_VARIABLE || $3->type == EXP_ARITH || $3->type == EXP_CONSTNUMBER || $3->type == EXP_TABLEITEM)) {
+            yyerror("Error: Invalid arguments(expr MULT expr)");
             $$ = NULL;
         } else {
             expr* expr_temp = create_arith_expr();
@@ -221,10 +218,10 @@ expr:
         }
     }
     | expr DIV expr {
-        if (!$1 || !$3 
-            || !($1->type == EXP_VARIABLE || $1->type == EXP_ARITH || $1->type == EXP_CONSTNUMBER)
-            || !($3->type == EXP_VARIABLE || $3->type == EXP_ARITH || $3->type == EXP_CONSTNUMBER)) {
-            yyerror("Error: Invalid arguments(expr DIV expr)\n");
+        if(!$1 || !$3 
+            || !($1->type == EXP_VARIABLE || $1->type == EXP_ARITH || $1->type == EXP_CONSTNUMBER || $1->type == EXP_TABLEITEM)
+            || !($3->type == EXP_VARIABLE || $3->type == EXP_ARITH || $3->type == EXP_CONSTNUMBER || $3->type == EXP_TABLEITEM)) {
+            yyerror("Error: Invalid arguments(expr DIV expr)");
             $$ = NULL;
         } else {
             expr* expr_temp = create_arith_expr();
@@ -234,10 +231,10 @@ expr:
 
     }
     | expr MOD expr {
-        if (!$1 || !$3 
-            || !($1->type == EXP_VARIABLE || $1->type == EXP_ARITH || $1->type == EXP_CONSTNUMBER)
-            || !($3->type == EXP_VARIABLE || $3->type == EXP_ARITH || $3->type == EXP_CONSTNUMBER)) {
-            yyerror("Error: Invalid arguments(expr MOD expr)\n");
+        if(!$1 || !$3 
+            || !($1->type == EXP_VARIABLE || $1->type == EXP_ARITH || $1->type == EXP_CONSTNUMBER || $1->type == EXP_TABLEITEM)
+            || !($3->type == EXP_VARIABLE || $3->type == EXP_ARITH || $3->type == EXP_CONSTNUMBER || $3->type == EXP_TABLEITEM)) {
+            yyerror("Error: Invalid arguments(expr MOD expr)");
             $$ = NULL;
         } else {
             expr* expr_temp = create_arith_expr();
@@ -246,10 +243,10 @@ expr:
         }
     }
     | expr GREATER expr {
-        if (!$1 || !$3 
-            || !($1->type == EXP_VARIABLE || $1->type == EXP_ARITH || $1->type == EXP_CONSTNUMBER)
-            || !($3->type == EXP_VARIABLE || $3->type == EXP_ARITH || $3->type == EXP_CONSTNUMBER)) {
-            yyerror("Error: Invalid arguments(expr GREATER expr)\n");
+        if(!$1 || !$3 
+            || !($1->type == EXP_VARIABLE || $1->type == EXP_ARITH || $1->type == EXP_CONSTNUMBER || $1->type == EXP_TABLEITEM)
+            || !($3->type == EXP_VARIABLE || $3->type == EXP_ARITH || $3->type == EXP_CONSTNUMBER || $3->type == EXP_TABLEITEM)) {
+            yyerror("Error: Invalid arguments(expr GREATER expr)");
             $$ = NULL;
         } else {
             expr* expr_temp = create_empty_bool_expr();
@@ -261,10 +258,10 @@ expr:
         }
     }
     | expr LESS expr {
-        if (!$1 || !$3 
-            || !($1->type == EXP_VARIABLE || $1->type == EXP_ARITH || $1->type == EXP_CONSTNUMBER)
-            || !($3->type == EXP_VARIABLE || $3->type == EXP_ARITH || $3->type == EXP_CONSTNUMBER)) {
-            yyerror("Error: Invalid arguments(expr LESS expr)\n");
+        if(!$1 || !$3 
+            || !($1->type == EXP_VARIABLE || $1->type == EXP_ARITH || $1->type == EXP_CONSTNUMBER || $1->type == EXP_TABLEITEM)
+            || !($3->type == EXP_VARIABLE || $3->type == EXP_ARITH || $3->type == EXP_CONSTNUMBER || $3->type == EXP_TABLEITEM)) {
+            yyerror("Error: Invalid arguments(expr LESS expr)");
             $$ = NULL;
         } else {
             expr* expr_temp = create_empty_bool_expr();
@@ -276,10 +273,10 @@ expr:
         }
     }
     | expr GREATER_EQUAL expr {
-        if (!$1 || !$3 
-            || !($1->type == EXP_VARIABLE || $1->type == EXP_ARITH || $1->type == EXP_CONSTNUMBER)
-            || !($3->type == EXP_VARIABLE || $3->type == EXP_ARITH || $3->type == EXP_CONSTNUMBER)) {
-            yyerror("Error: Invalid arguments(expr GREATER_EQUAL expr)\n");
+        if(!$1 || !$3 
+            || !($1->type == EXP_VARIABLE || $1->type == EXP_ARITH || $1->type == EXP_CONSTNUMBER || $1->type == EXP_TABLEITEM)
+            || !($3->type == EXP_VARIABLE || $3->type == EXP_ARITH || $3->type == EXP_CONSTNUMBER || $3->type == EXP_TABLEITEM)) {
+            yyerror("Error: Invalid arguments(expr GREATER_EQUAL expr)");
             $$ = NULL;
         } else {
             expr* expr_temp = create_empty_bool_expr();
@@ -291,10 +288,10 @@ expr:
         }
     }
     | expr LESS_EQUAL expr {
-        if (!$1 || !$3 
-            || !($1->type == EXP_VARIABLE || $1->type == EXP_ARITH || $1->type == EXP_CONSTNUMBER)
-            || !($3->type == EXP_VARIABLE || $3->type == EXP_ARITH || $3->type == EXP_CONSTNUMBER)) {
-            yyerror("Error: Invalid arguments(expr LESS_EQUAL expr)\n");
+        if(!$1 || !$3 
+            || !($1->type == EXP_VARIABLE || $1->type == EXP_ARITH || $1->type == EXP_CONSTNUMBER || $1->type == EXP_TABLEITEM)
+            || !($3->type == EXP_VARIABLE || $3->type == EXP_ARITH || $3->type == EXP_CONSTNUMBER || $3->type == EXP_TABLEITEM)) {
+            yyerror("Error: Invalid arguments(expr LESS_EQUAL expr)");
             $$ = NULL;
         } else {
             expr* expr_temp = create_empty_bool_expr();
@@ -420,7 +417,7 @@ term:
     LEFT_PARENTHESIS expr RIGHT_PARENTHESIS { $$ = $2; }
     | MINUS expr %prec UMINUS_CONFLICT {
         if(!$2 || !($2->type == EXP_VARIABLE || $2->type == EXP_ARITH || $2->type == EXP_CONSTNUMBER)) {
-            yyerror("Error: Invalid arguments(MINUS expr)\n");
+            yyerror("Error: Invalid arguments(MINUS expr)");
             $$ = NULL;
         } else {
             expr* expr_temp = create_arith_expr();
@@ -439,6 +436,8 @@ term:
         if($2) {
             expr_temp->truelist  = $2->falselist;
             expr_temp->falselist = $2->truelist;
+        } else {
+            yyerror("Error. NULL expr in NOT");
         }
         $$ = expr_temp;
      }
@@ -452,10 +451,12 @@ term:
             expr* prevlval = $2;
             if($2) {
                 $2 = emit_if_table_item_get($2, NULL);
+            } else {
+                yyerror("Error. NULL lvalue in PLUS_PLUS");
             }
             emit(OP_ADD, $2, $2, create_constnum_expr(1), 0);
             expr* expr_sym;
-            if($2->boolConst == 1) {
+            if($2 && $2->boolConst == 1) {
                 emit_if_table_item_set(prevlval, $2);
                 $2->boolConst = 0;
                 expr_sym = $2;
@@ -475,12 +476,14 @@ term:
         } else {
             expr* prevlval = $1;
             expr* expr_sym = create_var_expr(create_temp_symbol());
-            if ($1) {
+            if($1) {
                 $1 = emit_if_table_item_get($1, NULL);
+            } else {
+                yyerror("Error. NULL lvalue in PLUS_PLUS");
             }
             emit(OP_ASSIGN, expr_sym, $1, NULL, 0);
             emit(OP_ADD, $1, $1, create_constnum_expr(1), 0);
-            if ($1->boolConst == 1) {
+            if($1 && $1->boolConst == 1) {
                 emit_if_table_item_set(prevlval, $1);
                 $1->boolConst = 0;
                 expr_sym = $1;
@@ -496,15 +499,20 @@ term:
             $$ = NULL;
         } else {
             expr* prevlval = $2;
-            if ($2) {
+            if($2) {
                 $2 = emit_if_table_item_get($2, NULL);
+            } else { 
+                yyerror("Error. NULL lvalue in MINUS_MINUS");
             }
             emit(OP_SUB, $2, $2, create_constnum_expr(1), 0);
             expr* expr_sym;
-            if ($2->boolConst == 1) {
+            if($2 && $2->boolConst == 1) {
                 emit_if_table_item_set(prevlval, $2);
                 $2->boolConst = 0;
                 expr_sym = $2;
+            } else {
+                expr_sym = create_var_expr(create_temp_symbol());
+                emit(OP_ASSIGN, expr_sym, $2, NULL, 0);
             }
             $$ = expr_sym;
         }
@@ -518,12 +526,14 @@ term:
         } else {
             expr* prevlval = $1;
             expr* expr_sym = create_var_expr(create_temp_symbol());
-            if ($1) {
+            if($1) {
                 $1 = emit_if_table_item_get($1, NULL);
+            } else {
+                yyerror("Error. NULL lvalue in MINUS_MINUS");
             }
             emit(OP_ASSIGN, expr_sym, $1, NULL, 0);
             emit(OP_SUB, $1, $1, create_constnum_expr(1), 0);
-            if ($1->boolConst == 1) {
+            if($1 && $1->boolConst == 1) {
                 emit_if_table_item_set(prevlval, $1);
                 $1->boolConst = 0;
                 expr_sym = $1;
@@ -593,34 +603,18 @@ lvalue:
             $$ = create_var_expr(sym);
         }
     }
-    | LOCAL ID {
-        $$ = create_var_expr(resolve_LocalSymbol($2));
-    }
-    | COLON_COLON ID {
-        $$ = create_var_expr(resolve_GlobalSymbol($2));
-    }
-    | member
+    | LOCAL ID { $$ = create_var_expr(resolve_LocalSymbol($2)); }
+    | COLON_COLON ID { $$ = create_var_expr(resolve_GlobalSymbol($2)); }
+    | member { $$ = $1; }
     ;
 
 const:
-    INT {
-        $$ = create_constnum_expr((double)$1);
-    }
-    | REAL {
-        $$ = create_constnum_expr($1);
-    }
-    | STRING {
-        $$ = create_conststring_expr(strdup($1));
-    }
-    | NIL {
-        $$ = create_nil_expr();
-    }
-    | TRUE {
-        $$ = create_constbool_expr(1);
-    }
-    | FALSE {
-        $$ = create_constbool_expr(0);
-    }
+    INT { $$ = create_constnum_expr((double)$1); }
+    | REAL { $$ = create_constnum_expr($1); }
+    | STRING { $$ = create_conststring_expr(strdup($1)); }
+    | NIL { $$ = create_nil_expr(); }
+    | TRUE { $$ = create_constbool_expr(1); }
+    | FALSE { $$ = create_constbool_expr(0); }
     ;
 
 ifcond:
@@ -701,7 +695,7 @@ whilestmt:
             backpatch(loop_stack->break_list, nextquad());
             backpatch(loop_stack->continue_list, $2);
         }
-        pop();
+        pop_loop();
     }
     ;
 
@@ -751,7 +745,7 @@ forstmt:
             backpatch(loop_stack->break_list, nextquad());
             backpatch(loop_stack->continue_list, $2);
         }
-        pop();
+        pop_loop();
     }
     ;
 
@@ -784,17 +778,18 @@ call:
         if($1) {
             $1 = emit_if_table_item_get($1, NULL);
             if($1->type == EXP_PROGRAMFUNC ||  $1->type == EXP_LIBRARYFUNC || $1->type == EXP_VARIABLE || $1->type == EXP_TABLEITEM) {
-                expr* table = create_table_expr();
-                if (from_method == 1) {
+                expr* table;
+                if($2 && from_method == 1) {
+                    table = create_var_expr(create_temp_symbol());
                     char msg[1024];
                     snprintf(msg, sizeof(msg), "\"%s\"", $2->stringConst);
                     $2->stringConst = msg;
                     emit(OP_TABLEGETELEM, table, $1, $2, 0);
-                    if ($2) {
+                    if($2) {
                         handle_arguments($2->next);
                         emit(OP_PARAM, NULL, $1, NULL, 0);
                     }
-                }
+                } else { table = $1; }
                 emit(OP_CALL, NULL, table, NULL, 0);
                 result = create_var_expr(create_temp_symbol());
                 emit(OP_GETRETVAL, result, NULL, NULL, 0);
@@ -883,30 +878,38 @@ elist_list:
     ;
 
 funcdef:
-    FUNCTION ID F LEFT_PARENTHESIS {
-        expr* sym = create_prog_func_expr(resolve_FuncSymbol($2));
-        emit(OP_FUNCSTART, sym, NULL, NULL, 0);
-        if($3) { $3->symbol = sym->symbol; }
+    FUNCTION ID F MJ LEFT_PARENTHESIS {
+        expr* res = create_prog_func_expr(resolve_FuncSymbol($2));
+        emit(OP_FUNCSTART, res, NULL, NULL, 0);
+        if($3) { $3->symbol = res->symbol; }
         fromFunct = 1;
         inFunction++;
+        push_return();
         enter_Next_Scope(1);
     } idlist RIGHT_PARENTHESIS block {
+        backpatch(return_stack->return_list, nextquad());
         emit(OP_FUNCEND, $3, NULL, NULL, 0);
         fromFunct = 0;
         inFunction--;
+        simplepatch($4, nextquad());
+        pop_return();
         $$ = $3;
     }
-    | FUNCTION F LEFT_PARENTHESIS {
+    | FUNCTION F MJ LEFT_PARENTHESIS {
         expr* sym = create_prog_func_expr(resolve_AnonymousFunc());
         emit(OP_FUNCSTART, sym, NULL, NULL, 0);
         if($2) { $2->symbol = sym->symbol; }
         fromFunct = 1;
         inFunction++;
+        push_return();
         enter_Next_Scope(1);
     } idlist RIGHT_PARENTHESIS block {
+        backpatch(return_stack->return_list, nextquad());
         emit(OP_FUNCEND, $2, NULL, NULL, 0);
         fromFunct = 0;
         inFunction--;
+        simplepatch($3, nextquad());
+        pop_return();
         $$ = $2;
     }
     ;
@@ -924,10 +927,14 @@ idlist_list:
 returnstmt:
     RETURN SEMICOLON {
         if(!inFunction) { yyerror("Use of 'return' outside a function"); }
-        else { emit(OP_RETURN, NULL, NULL, NULL, 0); }
+        else { 
+            emit(OP_RETURN, NULL, NULL, NULL, 0);
+            add_to_return_list(nextquad());
+            emit(OP_JUMP, NULL, NULL, NULL, -1);
+        }
     }
     | RETURN expr SEMICOLON {
-        if (!inFunction) {
+        if(!inFunction) {
             yyerror("Use of 'return' outside a function");
         } else {
             if($2 && $2->type == EXP_BOOL) {
@@ -942,8 +949,14 @@ returnstmt:
                 backpatch($2->falselist, nextquad());
                 emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
                 emit(OP_RETURN, mysym, NULL, NULL, 0);
+                /* Return Jump */
+                add_to_return_list(nextquad());
+                emit(OP_JUMP, NULL, NULL, NULL, -1);
             } else {
                 emit(OP_RETURN, $2, NULL, NULL, 0);
+                /* Return Jump */
+                add_to_return_list(nextquad());
+                emit(OP_JUMP, NULL, NULL, NULL, -1);
             }
         }
     }
@@ -989,7 +1002,7 @@ objectdef:
 
 indexedelem:
     LEFT_BRACE expr COLON expr RIGHT_BRACE {
-        if ($2 && $2->type == EXP_BOOL) {
+        if($2 && $2->type == EXP_BOOL) {
             /* Create new temp bool expr */
             expr* mysym = create_bool_expr();
             /* Truelist assigns TRUE to temp symbol */
@@ -1002,8 +1015,7 @@ indexedelem:
             emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
             $2 = mysym;
         }
-
-        if ($4 && $4->type == EXP_BOOL) {
+        if($4 && $4->type == EXP_BOOL) {
             /* Create new temp bool expr */
             expr* mysym = create_bool_expr();
             /* Truelist assigns TRUE to temp symbol */
@@ -1016,9 +1028,8 @@ indexedelem:
             emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
             $4 = mysym;
         }
-
         $$ = $4;
-        if ($$) {
+        if($$) {
             $$->index = $2;
             $$->next = NULL;
         }
@@ -1031,18 +1042,14 @@ indexed:
     covered by the elist empty rule, thus we are able to remove it from here,
     which also removes the warning message Bison generates :D */
         $$ = $1;
-        if ($$) {
-            $$->next = $2;
-        }
+        if($$) { $$->next = $2; }
     }
     ;
 
 indexed_list:
     COMMA indexedelem indexed_list {
         $$ = $2;
-        if ($$) {
-            $$->next = $3;
-        }
+        if($$) { $$->next = $3; }
     }
     | { $$ = NULL; }
     ;
@@ -1050,27 +1057,32 @@ indexed_list:
 methodcall:
     PERIOD_PERIOD ID LEFT_PARENTHESIS elist RIGHT_PARENTHESIS {
         $$ = create_conststring_expr($2);
-        if ($$) {
-            $$->next = $4;
-        }
+        if($$) { $$->next = $4; }
     }
     ;
-
 
 member: 
     lvalue PERIOD ID { 
         $1 = emit_if_table_item_get($1, NULL);
-        $1->index = create_conststring_expr($3);
-        $1->type = EXP_TABLEITEM;
-        char* msg = (char*)malloc(128);
-        sprintf(msg, "\"%s\"", $1->index->stringConst);
-        $1->index->stringConst = msg;
+        if($1) {
+            $1->index = create_conststring_expr($3);
+            $1->type = EXP_TABLEITEM;
+            char* msg = (char*)malloc(128);
+            sprintf(msg, "\"%s\"", $1->index->stringConst);
+            $1->index->stringConst = msg;  
+        } else {
+            yyerror("Error. NULL lvalue in MEMBER");
+        }
         $$ = $1;
     }
     | lvalue LEFT_BRACKET expr RIGHT_BRACKET { 
         $1 = emit_if_table_item_get($1, NULL);
-        $1->type = EXP_TABLEITEM;
-        $1->index = $3;
+        if($1) {
+            $1->type = EXP_TABLEITEM;
+            $1->index = $3;
+        } else {
+            yyerror("Error. NULL lvalue in MEMBER");
+        }
         $$ = $1;
     }
     | call PERIOD ID { $$ = $1; }
@@ -1087,7 +1099,7 @@ MJ: {
 };
 
 P: {
-    push();
+    push_loop();
 };
 
 F: {

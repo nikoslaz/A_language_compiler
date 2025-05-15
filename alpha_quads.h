@@ -41,6 +41,12 @@ typedef struct PatchList {
     struct PatchList* next;
 } PatchList;
 
+/* STACK FOR RETURN LIST */
+typedef struct ReturnContext {
+    PatchList* return_list;
+    struct ReturnContext* next;
+} ReturnContext;
+
 /* STACK FOR BREAK/CONTINUE LISTS */
 typedef struct LoopContext {
     PatchList* break_list;
@@ -73,6 +79,7 @@ typedef struct quad_s {
 
 extern quad* quads;
 extern LoopContext* loop_stack;
+extern ReturnContext* return_stack;
 extern unsigned int totalquads;
 extern unsigned int currquad;
 extern unsigned int temp_counter;
@@ -104,12 +111,15 @@ PatchList* merge(PatchList* list1, PatchList* list2);
 void backpatch(PatchList* list, unsigned int target_quad_index);
 void simplepatch(unsigned int quad, unsigned int index);
 
-/* Function Functions */
+/* Elist Functions */
 void handle_arguments(expr* arg);
+void push_return(void);
+void pop_return(void);
+void add_to_return_list(unsigned int quad_to_patch);
 
 /* Stack Functions */
-void push(void);
-void pop(void);
+void push_loop(void);
+void pop_loop(void);
 void add_to_breakList(unsigned int quad_to_patch);
 void add_to_continueList(unsigned int quad_to_patch);
 
