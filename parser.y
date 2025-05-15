@@ -473,12 +473,18 @@ term:
             yyerror(msg);
             $$ = NULL;
         } else {
+            expr* prevlval = $1;
+            expr* expr_sym = create_var_expr(create_temp_symbol());
             if ($1) {
                 $1 = emit_if_table_item_get($1, NULL);
             }
-            expr* expr_sym = create_var_expr(create_temp_symbol());
             emit(OP_ASSIGN, expr_sym, $1, NULL, 0);
             emit(OP_ADD, $1, $1, create_constnum_expr(1), 0);
+            if ($1->boolConst == 1) {
+                emit_if_table_item_set(prevlval, $1);
+                $1->boolConst = 0;
+                expr_sym = $1;
+            }
             $$ = expr_sym;
         }
     }
@@ -489,12 +495,17 @@ term:
             yyerror(msg);
             $$ = NULL;
         } else {
+            expr* prevlval = $2;
             if ($2) {
                 $2 = emit_if_table_item_get($2, NULL);
             }
             emit(OP_SUB, $2, $2, create_constnum_expr(1), 0);
-            expr* expr_sym = create_var_expr(create_temp_symbol());
-            emit(OP_ASSIGN, expr_sym, $2, NULL, 0);
+            expr* expr_sym;
+            if ($2->boolConst == 1) {
+                emit_if_table_item_set(prevlval, $2);
+                $2->boolConst = 0;
+                expr_sym = $2;
+            }
             $$ = expr_sym;
         }
     }
@@ -505,12 +516,18 @@ term:
             yyerror(msg);
             $$ = NULL;
         } else {
+            expr* prevlval = $1;
+            expr* expr_sym = create_var_expr(create_temp_symbol());
             if ($1) {
                 $1 = emit_if_table_item_get($1, NULL);
             }
-            expr* expr_sym = create_var_expr(create_temp_symbol());
             emit(OP_ASSIGN, expr_sym, $1, NULL, 0);
             emit(OP_SUB, $1, $1, create_constnum_expr(1), 0);
+            if ($1->boolConst == 1) {
+                emit_if_table_item_set(prevlval, $1);
+                $1->boolConst = 0;
+                expr_sym = $1;
+            }
             $$ = expr_sym;
         }
     }
