@@ -18,8 +18,8 @@ DODODODODO
 <!-- - Add expr boolean logic to elist -->
 <!-- - Reset in loop in functions see FLOW CONTROL ERROR test -->
 <!-- - Tables (REMEMBER:: ELIST CAN BE NULL) -->
-- REMEMBER INDEXED AND MEMBER MUST HAVE EXPR BOOLEAN LOGIC
-- PLUS_PLUS lvalue is CORRECT! TODO lvalue plus_plus, minus_minus etc etc
+<!-- - REMEMBER INDEXED AND MEMBER MUST HAVE EXPR BOOLEAN LOGIC -->
+<!-- - PLUS_PLUS lvalue is CORRECT! TODO lvalue plus_plus, minus_minus etc etc -->
 
 ---------------------------------------------------------------------------------
 <!-- // Require Backpatching, breaklist, continuelist, merge method -->

@@ -1056,13 +1056,23 @@ methodcall:
     }
     ;
 
-/* TODO: Implement TABLEGETELEM/TABLESETELEM logic here */
+
 member: 
-    lvalue PERIOD ID { $$ = $1; }
+    lvalue PERIOD ID { 
+        $1 = emit_if_table_item_get($1, NULL);
+        $1->index = create_conststring_expr($3);
+        $1->type = EXP_TABLEITEM;
+        printf("ID %s:\n", $3);
+        printf("INDEX %s:\n", $1->index->stringConst);
+        char msg[1024];
+        snprintf(msg, sizeof(msg), "\"%s\"", $1->index->stringConst);
+        $1->index->stringConst = msg;
+        $$ = $1;
+    }
     | lvalue LEFT_BRACKET expr RIGHT_BRACKET { 
-        $1->index = $3;
         $1 = emit_if_table_item_get($1, NULL);
         $1->type = EXP_TABLEITEM;
+        $1->index = $3;
         $$ = $1;
     }
     | call PERIOD ID { $$ = $1; }
