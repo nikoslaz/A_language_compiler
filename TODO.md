@@ -20,6 +20,8 @@ DODODODODO
 <!-- - Tables (REMEMBER:: ELIST CAN BE NULL) -->
 <!-- - REMEMBER INDEXED AND MEMBER MUST HAVE EXPR BOOLEAN LOGIC -->
 <!-- - PLUS_PLUS lvalue is CORRECT! TODO lvalue plus_plus, minus_minus etc etc -->
+<!-- - Return must jump to funcend -->
+<!-- - Jump before funcdef to after funcend -->
 
 ---------------------------------------------------------------------------------
 <!-- // Require Backpatching, breaklist, continuelist, merge method -->
@@ -44,8 +46,6 @@ kanoume truecheck etc etc.-->
 // HARD
 
 - Maybe Temporary variables Garbage collection ?????
-- Return must jump to funcend (returnlist, name it WHOO IMPORTANT!!!)
-- Jump before funcdef to after funcend, support chained (only one per funcdefs in series)
 
 ------------------------------------------------------------------------
 
@@ -54,13 +54,13 @@ TESTS:
 <!-- ASSIGNMENTS COMPLEX DONE -->
 <!-- ASSIGNMENTS OBJECTS DONE -->
 <!-- ASSIGNMENTS SIMPLE DONE -->
-BASIC EXPR WE NEED TO CHECK PLUS PLUS WE GET SEGM!!!!
-CALLS (NEEDS JUMPS FROM HARD ELSE DONE)
+<!-- BASIC EXPR WE NEED TO CHECK PLUS PLUS WE GET SEGM!!!! -->
+<!-- CALLS (NEEDS JUMPS FROM HARD ELSE DONE) -->
 <!-- CONST MATHS DONE  -->
 <!-- FLOW CONTROL DONE -->
 <!-- FLOW CONTROL ERROR DONE -->
 <!-- FUNCDECL DONE WITH CHANGES ON JUMP DONE -->
 <!-- IF ELSE DONE  -->
-OBJECT CREATION EXPR (NEEDS JUMPS FROM HARD ELSE DONE)
+<!-- OBJECT CREATION EXPR (NEEDS JUMPS FROM HARD ELSE DONE) -->
 <!-- RELATIONAL DONE -->
 <!-- VAR MATHS DONE -->
