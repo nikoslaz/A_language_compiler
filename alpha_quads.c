@@ -118,7 +118,7 @@ expr* create_var_expr(Symbol* symbol) {
     if(!temp) { MemoryFail(); }
     temp->type=EXP_VARIABLE;
     temp->symbol=symbol;
-    temp->index=0;
+    temp->index=NULL;
     temp->numConst=0;
     temp->stringConst=0;
     temp->boolConst=0;
@@ -133,7 +133,7 @@ expr* create_prog_func_expr(Symbol* symbol) {
     if(!temp) { MemoryFail(); }
     temp->type=EXP_PROGRAMFUNC;
     temp->symbol=symbol;
-    temp->index=0;
+    temp->index=NULL;
     temp->numConst=0;
     temp->stringConst=0;
     temp->boolConst=0;
@@ -208,7 +208,7 @@ expr* create_table_expr(void) {
     if(!temp) { MemoryFail(); }
     temp->type=EXP_NEWTABLE;
     temp->symbol=create_temp_symbol();
-    temp->index=0;
+    temp->index=NULL;
     temp->numConst=0;
     temp->stringConst=0;
     temp->boolConst=0;
@@ -261,7 +261,6 @@ void backpatch(PatchList* list, unsigned int target_quad_index) {
         if(iter->quad_index >= currquad) {
             fprintf(stderr, "Error: invalid index\n");
         } else {
-            // printf("Backpatching quad %u to label %u\n", iter->quad_index+1, target_quad_index+1);
             quads[iter->quad_index].label = target_quad_index;
         }
         iter = iter->next;
@@ -272,7 +271,6 @@ void simplepatch(unsigned int quad, unsigned int index) {
     if(quad >= currquad || index > currquad) {
         fprintf(stderr, "Error: invalid index\n");
     } else {
-        // printf("Simplepatching quad %u to label %u\n", quad+1, index+1);
         quads[quad].label = index;
     }
 }
@@ -417,9 +415,8 @@ void printQuads(void) {
         printf(" %-4u|   %-3u %-14s %-15s %-15s %-15s",
         quads[i].line, i+1, opcodeToStr(quads[i].op),
         exprToStr(quads[i].result), exprToStr(quads[i].arg1), exprToStr(quads[i].arg2));
-        if((!quads[i].result && !(quads[i].op == OP_CALL || quads[i].op == OP_PARAM || quads[i].op == OP_RETURN))
-        ||  quads[i].label!=0) { printf(" %-5u\n", quads[i].label+1); }
-        else {  printf("\n"); }
+        if(quads[i].label!=0) { printf(" %-5u\n", quads[i].label+1); }
+        else { printf("\n"); }
         if(quads[i].op == OP_FUNCEND) { printf("     |\n"); }
     }
     printf("-----+----------------------------------------------------------------------------\n\n");
