@@ -569,7 +569,6 @@ assignexpr:
             } else { rvalue = $3; }
             $1 = emit_if_table_item_set($1, rvalue);
             expr* expr_result = create_var_expr(create_temp_symbol());
-            printf("After expr_result count is %d\n", temp_counter);
             /* boolConst is 1 if previous emit_if_table was true */
             if($1->boolConst == 1) {
                 emit_if_table_item_get($1, expr_result);

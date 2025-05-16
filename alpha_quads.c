@@ -381,7 +381,8 @@ const char* opcodeToStr(opcode op) {
 }
 
 const char* exprToStr(expr* e) {
-    if (!e) return "-";
+    if(!e) return "-";
+    char* buffer = (char*)malloc(1024*sizeof(char));
     switch (e->type) {
         case EXP_VARIABLE:
         case EXP_PROGRAMFUNC:
@@ -393,7 +394,6 @@ const char* exprToStr(expr* e) {
         case EXP_NEWTABLE:
             return e->symbol ? e->symbol->name : "print unknown symbol";
         case EXP_CONSTNUMBER:
-            char* buffer = (char*)malloc(1024*sizeof(char));
             snprintf(buffer, sizeof(buffer), "%.2f", e->numConst);
             return buffer;
         case EXP_CONSTSTRING:
@@ -415,7 +415,9 @@ void printQuads(void) {
         printf(" %-4u|   %-3u %-14s %-15s %-15s %-15s",
         quads[i].line, i+1, opcodeToStr(quads[i].op),
         exprToStr(quads[i].result), exprToStr(quads[i].arg1), exprToStr(quads[i].arg2));
-        if(quads[i].label!=0) { printf(" %-5u\n", quads[i].label+1); }
+        if(quads[i].op==OP_JUMP || quads[i].op==OP_IFEQ || quads[i].op==OP_IFNOTEQ ||
+        quads[i].op==OP_IFGREATER || quads[i].op==OP_IFGREATEREQ || quads[i].op==OP_IFLESS || quads[i].op==OP_IFLESSEQ)
+        { printf(" %-5u\n", quads[i].label+1); }
         else { printf("\n"); }
         if(quads[i].op == OP_FUNCEND) { printf("     |\n"); }
     }
