@@ -1,8 +1,26 @@
-Lexical & Syntax Analyzer for language Alpha
+# Alpha Language Compiler - Phase 3
 
-This program is a lexical and syntax analyzer for a custom programming language named Alpha.
+This program is a lexical analyzer, syntax analyzer, and **intermediate code generator** for a custom programming language named Alpha. It now produces quadruples as an intermediate representation.
 
-Components: list.h, list.c, table.h, table.c, scanner.l, parser.y
+## Components:
+
+*   `scanner.l` (Lexer)
+*   `parser.y` (Parser & Intermediate Code Generator)
+*   `table.h`, `table.c` (Symbol Table Management)
+*   `alpha_quads.h`, `alpha_quads.c` (Quadruple Generation & Management)
+*   `list.h`, `list.c` (Utility Lists)
+
+## Core Functionality:
+
+*   Tokenization of Alpha source code.
+*   Parsing according to Alpha's defined grammar.
+*   Symbol table management for scopes and identifiers.
+*   **Generation of intermediate code (quadruples)** for:
+    *   Expressions (arithmetic, relational, logical with short-circuiting).
+    *   Control flow statements (`if`, `while`, `for`, `break`, `continue`).
+    *   Function definitions and calls.
+    *   Table (object) operations.
+    *   Assignments.
 
 Usage: After compiling using the supplied Makefile, run the following command:
 
