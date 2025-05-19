@@ -9,18 +9,7 @@ LoopContext* loop_stack = NULL;
 ReturnContext* return_stack = NULL;
 unsigned int totalquads = 0;
 unsigned int currquad = 0;
-unsigned int temp_counter = 0;
 unsigned int from_method = 0;
-
-Symbol* create_temp_symbol(void) {
-    if(temp_counter>MAX_TEMPS) {
-        printf("Error. Maximum number of temporary variables reached. Sorry.\n");
-        return NULL;
-    }
-    char temp_name[12];
-    snprintf(temp_name, sizeof(temp_name), "_t%d", temp_counter++);
-    return insert_Symbol(temp_name, TEMPORARY_T);
-}
 
 quad* emit(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label) {
     if(currquad == totalquads) {
@@ -45,7 +34,7 @@ expr* emit_if_table_item_get(expr* e, expr* result) {
         e->boolConst = 0;
         return e;
     } else {
-        if(!result) { result = create_var_expr(create_temp_symbol()); }
+        if(!result) { result = create_var_expr(get_temp_symbol()); }
         result->type = EXP_TABLEITEM;
         if(e) { emit(OP_TABLEGETELEM, result, e, e->index, 0); }
         else { printf("Error in emit if GET. NULL e given\n"); }
@@ -68,11 +57,11 @@ expr* emit_if_table_item_set(expr* table, expr* arg2) {
 /*===============================================================================================*/
 /* Expression Constructors */
 
-expr* create_arith_expr(void) {
+expr* create_arith_expr(Symbol* sym) {
     expr* temp=(expr*)malloc(sizeof(expr));
     if(!temp) { MemoryFail(); }
     temp->type=EXP_ARITH;
-    temp->symbol=create_temp_symbol();
+    temp->symbol=sym;
     temp->index=NULL;
     temp->numConst=0;
     temp->stringConst=NULL;
@@ -83,11 +72,11 @@ expr* create_arith_expr(void) {
     return temp;
 }
 
-expr* create_bool_expr(void) {
+expr* create_bool_expr(Symbol* sym) {
     expr* temp=(expr*)malloc(sizeof(expr));
     if(!temp) { MemoryFail(); }
     temp->type=EXP_BOOL;
-    temp->symbol=create_temp_symbol();
+    temp->symbol=sym;
     temp->index=NULL;
     temp->numConst=0;
     temp->stringConst=NULL;
@@ -203,27 +192,12 @@ expr* create_nil_expr(void) {
     return temp;
 }
 
-expr* create_table_expr(void) {
+expr* create_table_expr(Symbol* sym) {
     expr* temp=(expr*)malloc(sizeof(expr));
     if(!temp) { MemoryFail(); }
     temp->type=EXP_NEWTABLE;
-    temp->symbol=create_temp_symbol();
+    temp->symbol=sym;
     temp->index=NULL;
-    temp->numConst=0;
-    temp->stringConst=0;
-    temp->boolConst=0;
-    temp->next=NULL;
-    temp->truelist=NULL;
-    temp->falselist=NULL;
-    return temp;
-}
-
-expr* create_table_elem(Symbol* symbol, expr* index) {
-    expr* temp=(expr*)malloc(sizeof(expr));
-    if(!temp) { MemoryFail(); }
-    temp->type=EXP_TABLEITEM;
-    temp->symbol=symbol;
-    temp->index=index;
     temp->numConst=0;
     temp->stringConst=0;
     temp->boolConst=0;
@@ -343,6 +317,85 @@ void add_to_continueList(unsigned int quad_to_patch) {
     } else {
         yyerror("CONTINUE statement encountered outside of a loop stack.");
     }
+}
+
+/*===============================================================================================*/
+/* Temporary Symbols */
+
+unsigned int temp_counter = 0;
+ScopeList* int_to_Scope(int index);
+Symbol* temp_array[MAX_TEMPS];
+
+Symbol* get_temp_symbol(void) {
+    for(int index=0; index<MAX_TEMPS; index++) {
+        if(temp_array[index]) {
+            if(temp_array[index]->isActive) continue;
+            else {
+                temp_array[index]->isActive = 1;
+                return temp_array[index];
+            }
+        } else {
+            temp_array[index] = insert_Global_Temp_Symbol();
+            return temp_array[index];
+        }
+    }
+    printf("Outside of temp array!\n");
+    return insert_Global_Temp_Symbol();
+}
+
+unsigned int hasTempSymbol(expr* ex) {
+    if(ex && ex->symbol && ex->symbol->type == TEMPORARY_T) {
+        return 1;
+    } else { return 0; }
+}
+
+void freeIfTemp(expr* ex) {
+    if(ex && ex->symbol && ex->symbol->type == TEMPORARY_T) {
+        if(ex->symbol->isActive) ex->symbol->isActive = 0;
+        else printf("Trying to free freed temp symbol [%s] :(\n", ex->symbol->name);
+    }
+}
+
+void reset_temp_array(void) {
+    for(int i=0; i<MAX_TEMPS; i++) temp_array[i] = NULL;
+}
+
+Symbol* insert_Global_Temp_Symbol(void) {
+    /* Create new Node */
+    Symbol* new = (Symbol*)malloc(sizeof(Symbol));
+    if(!new) { MemoryFail(); }
+    /* Create new Name */
+    if(temp_counter>MAX_TEMPS) {
+        printf("Error. Maximum number of temporary variables reached. Sorry:(\n");
+        exit(-1);
+    }
+    char temp_name[5];
+    snprintf(temp_name, sizeof(temp_name), "_t%d", temp_counter++);
+    /* Fields */
+    ScopeList* scope_list = int_to_Scope(0);
+    new->isActive = 1;
+    new->line = yylineno;
+    new->name = strdup(temp_name);
+    new->type = TEMPORARY_T;
+    new->scope = 0;
+    new->offset = scope_list->scopeOffset++;
+    new->args = NULL;
+    new->next_in_scope = NULL;
+    /* Link with HashTable */
+    int index = hash(temp_name);
+    new->next_in_bucket = ht->buckets[index];
+    ht->buckets[index] = new;
+    /* Link with ScopeList */
+    /* If im First */
+    if(!scope_list->head) { scope_list->head = new; }
+    /* Insert at the end */
+    else {
+        Symbol* prev = scope_list->head;
+        while(prev->next_in_scope) { prev = prev->next_in_scope; }
+        prev->next_in_scope = new;
+    }
+    /* Return */
+    return new;
 }
 
 /*===============================================================================================*/

@@ -14,7 +14,7 @@
 #define EXPAND_SIZE 1024
 #define CURR_SIZE (totalquads*sizeof(quad))
 #define NEW_SIZE (CURR_SIZE+EXPAND_SIZE*sizeof(quad))
-#define MAX_TEMPS 9999999999
+#define MAX_TEMPS 100
 
 typedef enum iopcode_e {
     OP_ASSIGN,
@@ -82,27 +82,31 @@ extern LoopContext* loop_stack;
 extern ReturnContext* return_stack;
 extern unsigned int totalquads;
 extern unsigned int currquad;
-extern unsigned int temp_counter;
 extern unsigned int from_method;
- 
-Symbol* create_temp_symbol(void);
+
+/* Emits */
 quad* emit(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label);
 expr* emit_if_table_item_get(expr* e, expr* result);
 expr* emit_if_table_item_set(expr* table, expr* arg2);
-void printQuads(void);
+
+/* Temporary Symbols */
+Symbol* get_temp_symbol(void);
+unsigned int hasTempSymbol(expr* ex);
+void freeIfTemp(expr* ex);
+void reset_temp_array(void);
+Symbol* insert_Global_Temp_Symbol(void);
 
 /* Expression Constructors */
-expr* create_arith_expr(void);
-expr* create_bool_expr(void);
+expr* create_arith_expr(Symbol* sym);
+expr* create_bool_expr(Symbol* sym);
 expr* create_empty_bool_expr(void);
 expr* create_var_expr(Symbol* symbol);
 expr* create_prog_func_expr(Symbol* symbol);
 expr* create_constnum_expr(double value);
-expr* create_table_elem(Symbol* symbol, expr* index);
 expr* create_conststring_expr(char* value);
 expr* create_constbool_expr(unsigned int value);
 expr* create_nil_expr(void);
-expr* create_table_expr(void);
+expr* create_table_expr(Symbol* sym);
 
 /* Backpatch Functions */
 unsigned int nextquad(void);
@@ -122,6 +126,9 @@ void push_loop(void);
 void pop_loop(void);
 void add_to_breakList(unsigned int quad_to_patch);
 void add_to_continueList(unsigned int quad_to_patch);
+
+/* Final Print */
+void printQuads(void);
 
 #endif
 /* end of alpha_quads.h */
