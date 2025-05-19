@@ -46,6 +46,7 @@ kanoume truecheck etc etc.-->
 // HARD
 
 - Maybe Temporary variables Garbage collection ?????
+- Almost done!! Needs testing!!
 
 ------------------------------------------------------------------------
 

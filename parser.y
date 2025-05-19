@@ -173,6 +173,8 @@ stmt:
     | SEMICOLON
     ;
 
+// Simple Garbage Collection
+// Reset all temporary vars after each complete statement
 stmt_list:
     stmt { reset_temps(); } stmt_list
     |
