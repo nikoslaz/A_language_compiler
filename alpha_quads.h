@@ -87,13 +87,14 @@ extern unsigned int from_method;
 /* Emits */
 quad* emit(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label);
 expr* emit_if_table_item_get(expr* e, expr* result);
-expr* emit_if_table_item_set(expr* table, expr* arg2);
+void emit_if_table_item_set(expr* table, expr* arg2);
 
 /* Temporary Symbols */
 Symbol* get_temp_symbol(void);
 unsigned int hasTempSymbol(expr* ex);
 void freeIfTemp(expr* ex);
-void reset_temp_array(void);
+void reset_temps(void);
+void initialize_temp_array(void);
 Symbol* insert_Global_Temp_Symbol(void);
 
 /* Expression Constructors */

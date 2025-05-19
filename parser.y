@@ -130,7 +130,7 @@ program:
     ;
 
 stmt:
-    // GARBAGE COLLECTION
+    // Simple Garbage Collection
     // The result expr*($1) is calculated but not used further in this context.
     expr SEMICOLON {
         if($1 && $1->type == EXP_BOOL) {
@@ -174,12 +174,12 @@ stmt:
     ;
 
 stmt_list:
-    stmt stmt_list
+    stmt { reset_temps(); } stmt_list
     |
     ;
 
-// MAYBE GARBAGE COLLECTION HERE ????????
-// Free $1, $3 if they were temp results
+// Simple Garbage Collection
+// Use $1 or $3 if already temp, free $3 if not needed
 expr:
     assignexpr { $$ = $1; }
     | expr PLUS expr {
@@ -189,7 +189,16 @@ expr:
             yyerror("Error: Invalid arguments(expr PLUS expr)");
             $$ = NULL;
         } else {
-            expr* expr_temp = create_arith_expr(get_temp_symbol());
+            Symbol* res_sym;
+            if(hasTempSymbol($1)) {
+                res_sym = $1->symbol;
+                freeIfTemp($3);
+            } else if(hasTempSymbol($3)) {
+                res_sym = $3->symbol;
+            } else {
+                res_sym = get_temp_symbol();
+            }
+            expr* expr_temp = create_arith_expr(res_sym);
             emit(OP_ADD, expr_temp, $1, $3, 0);
             $$ = expr_temp;
         }
@@ -201,7 +210,16 @@ expr:
             yyerror("Error: Invalid arguments(expr MINUS expr)");
             $$ = NULL;
         } else {
-            expr* expr_temp = create_arith_expr(get_temp_symbol());
+            Symbol* res_sym;
+            if(hasTempSymbol($1)) {
+                res_sym = $1->symbol;
+                freeIfTemp($3);
+            } else if(hasTempSymbol($3)) {
+                res_sym = $3->symbol;
+            } else {
+                res_sym = get_temp_symbol();
+            }
+            expr* expr_temp = create_arith_expr(res_sym);
             emit(OP_SUB, expr_temp, $1, $3, 0);
             $$ = expr_temp;
         }
@@ -213,7 +231,16 @@ expr:
             yyerror("Error: Invalid arguments(expr MULT expr)");
             $$ = NULL;
         } else {
-            expr* expr_temp = create_arith_expr(get_temp_symbol());
+            Symbol* res_sym;
+            if(hasTempSymbol($1)) {
+                res_sym = $1->symbol;
+                freeIfTemp($3);
+            } else if(hasTempSymbol($3)) {
+                res_sym = $3->symbol;
+            } else {
+                res_sym = get_temp_symbol();
+            }
+            expr* expr_temp = create_arith_expr(res_sym);
             emit(OP_MUL, expr_temp, $1, $3, 0);
             $$ = expr_temp;
         }
@@ -225,7 +252,16 @@ expr:
             yyerror("Error: Invalid arguments(expr DIV expr)");
             $$ = NULL;
         } else {
-            expr* expr_temp = create_arith_expr(get_temp_symbol());
+            Symbol* res_sym;
+            if(hasTempSymbol($1)) {
+                res_sym = $1->symbol;
+                freeIfTemp($3);
+            } else if(hasTempSymbol($3)) {
+                res_sym = $3->symbol;
+            } else {
+                res_sym = get_temp_symbol();
+            }
+            expr* expr_temp = create_arith_expr(res_sym);
             emit(OP_DIV, expr_temp, $1, $3, 0);
             $$ = expr_temp;
         }
@@ -238,7 +274,16 @@ expr:
             yyerror("Error: Invalid arguments(expr MOD expr)");
             $$ = NULL;
         } else {
-            expr* expr_temp = create_arith_expr(get_temp_symbol());
+            Symbol* res_sym;
+            if(hasTempSymbol($1)) {
+                res_sym = $1->symbol;
+                freeIfTemp($3);
+            } else if(hasTempSymbol($3)) {
+                res_sym = $3->symbol;
+            } else {
+                res_sym = get_temp_symbol();
+            }
+            expr* expr_temp = create_arith_expr(res_sym);
             emit(OP_MOD, expr_temp, $1, $3, 0);
             $$ = expr_temp;
         }
@@ -256,6 +301,8 @@ expr:
             expr_temp->falselist = makelist(nextquad() + 1);
             emit(OP_IFGREATER, NULL , $1 , $3 , -1);
             emit(OP_JUMP, NULL, NULL, NULL, -1);
+            freeIfTemp($1);
+            freeIfTemp($3);
             $$ = expr_temp;
         }
     }
@@ -272,6 +319,8 @@ expr:
             expr_temp->falselist = makelist(nextquad() + 1);
             emit(OP_IFLESS, NULL , $1 , $3 , -1);
             emit(OP_JUMP, NULL, NULL, NULL, -1);
+            freeIfTemp($1);
+            freeIfTemp($3);
             $$ = expr_temp;
         }
     }
@@ -288,6 +337,8 @@ expr:
             expr_temp->falselist = makelist(nextquad() + 1);
             emit(OP_IFGREATEREQ, NULL , $1 , $3 , -1);
             emit(OP_JUMP, NULL, NULL, NULL, -1);
+            freeIfTemp($1);
+            freeIfTemp($3);
             $$ = expr_temp;
         }
     }
@@ -304,6 +355,8 @@ expr:
             expr_temp->falselist = makelist(nextquad() + 1);
             emit(OP_IFLESSEQ, NULL , $1 , $3 , -1);
             emit(OP_JUMP, NULL, NULL, NULL, -1);
+            freeIfTemp($1);
+            freeIfTemp($3);
             $$ = expr_temp;
         }
     }
@@ -319,6 +372,7 @@ expr:
             /* Falselist assigns FALSE to temp symbol */
             backpatch($1->falselist, nextquad());
             emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
+            $1 = mysym;
         }
         if($3 && $3->type == EXP_BOOL) {
             /* Create new temp bool expr */
@@ -331,6 +385,7 @@ expr:
             /* Falselist assigns FALSE to temp symbol */
             backpatch($3->falselist, nextquad());
             emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
+            $3 = mysym;
         }
         /* Return an empty bool expr with appropriate true/false lists */
         expr* expr_temp = create_empty_bool_expr();
@@ -338,6 +393,8 @@ expr:
         expr_temp->falselist = makelist(nextquad() + 1);
         emit(OP_IFEQ, NULL, $1, $3, -1);
         emit(OP_JUMP, NULL, NULL, NULL, -1);
+        freeIfTemp($1);
+        freeIfTemp($3);
         $$ = expr_temp;
     }
     | expr NOT_EQUALS expr {
@@ -352,6 +409,7 @@ expr:
             /* Falselist assigns FALSE to temp symbol */
             backpatch($1->falselist, nextquad());
             emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
+            $1 = mysym;
         }
         if($3 && $3->type == EXP_BOOL) {
             /* Create new temp bool expr */
@@ -364,6 +422,7 @@ expr:
             /* Falselist assigns FALSE to temp symbol */
             backpatch($3->falselist, nextquad());
             emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
+            $3 = mysym;
         }
         /* Return an empty bool expr with appropriate true/false lists */
         expr* expr_temp = create_empty_bool_expr();
@@ -371,6 +430,8 @@ expr:
         expr_temp->falselist = makelist(nextquad() + 1);
         emit(OP_IFNOTEQ, NULL, $1, $3, -1);
         emit(OP_JUMP, NULL, NULL, NULL, -1);
+        freeIfTemp($1);
+        freeIfTemp($3);
         $$ = expr_temp;
     }
     | expr AND {
@@ -430,6 +491,8 @@ expr:
     | term 
     ;
 
+// Simple Garbage Collection
+// If already temp, use the same symbol
 term:
     LEFT_PARENTHESIS expr RIGHT_PARENTHESIS { $$ = $2; }
     | MINUS expr %prec UMINUS_CONFLICT {
@@ -437,7 +500,10 @@ term:
             yyerror("Error: Invalid arguments(MINUS expr)");
             $$ = NULL;
         } else {
-            expr* expr_temp = create_arith_expr(get_temp_symbol());
+            Symbol* res_sym;
+            if(hasTempSymbol($2)) { res_sym = $2->symbol; }
+            else { res_sym = get_temp_symbol(); }
+            expr* expr_temp = create_arith_expr(res_sym);
             emit(OP_UMINUS, expr_temp, $2, NULL, 0);
             $$ = expr_temp;
         }
@@ -518,8 +584,7 @@ term:
                 $2->boolConst = 0;
                 expr_sym = $2;
             } else {
-                expr_sym = create_var_expr(get_temp_symbol
-());
+                expr_sym = create_var_expr(get_temp_symbol());
                 emit(OP_ASSIGN, expr_sym, $2, NULL, 0);
             }
             $$ = expr_sym;
@@ -570,11 +635,11 @@ assignexpr:
                 emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
                 rvalue = mysym;
             } else { rvalue = $3; }
-            $1 = emit_if_table_item_set($1, rvalue);
+            emit_if_table_item_set($1, rvalue);
             expr* expr_result = create_var_expr(get_temp_symbol());
             /* boolConst is 1 if previous emit_if_table was true */
             if($1->boolConst == 1) {
-                emit_if_table_item_get($1, expr_result);
+                $1 = emit_if_table_item_get($1, expr_result);
                 $1->boolConst = 0;
             } else {
                 // First assign
@@ -706,31 +771,39 @@ whilestmt:
     ;
 
 forprefix:
-    FOR LEFT_PARENTHESIS elist M SEMICOLON expr SEMICOLON {
-        if($6 && $6->type == EXP_BOOL) {
+    FOR LEFT_PARENTHESIS elist {
+        // Simple Garbage Collection
+        // Elist isn't used in this context after it has been evaluated
+        while($3) {
+            freeIfTemp($3);
+            $3 = $3->next;
+        }
+    }
+    M SEMICOLON expr SEMICOLON {
+        if($7 && $7->type == EXP_BOOL) {
             /* Create new temp bool expr */
             expr* mysym = create_bool_expr(get_temp_symbol());
             /* Truelist assigns TRUE to temp symbol */
-            backpatch($6->truelist, nextquad());
+            backpatch($7->truelist, nextquad());
             emit(OP_ASSIGN, mysym, create_constbool_expr(1), NULL, 0);
             /* Then skips FALSE symbol */
             emit(OP_JUMP, NULL, NULL, NULL, nextquad()+2);
             /* Falselist assigns FALSE to temp symbol */
-            backpatch($6->falselist, nextquad());
+            backpatch($7->falselist, nextquad());
             emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0); 
-            $6 = mysym; 
+            $7 = mysym; 
         }
-        if($6) {
+        if($7) {
             /* THEN Jump */
-            $6->truelist = makelist(nextquad());
-            emit(OP_IFEQ, NULL, $6, create_constbool_expr(1), -1);
+            $7->truelist = makelist(nextquad());
+            emit(OP_IFEQ, NULL, $7, create_constbool_expr(1), -1);
             /* ELSE jump */
-            $6->falselist = makelist(nextquad());
+            $7->falselist = makelist(nextquad());
             emit(OP_JUMP, NULL, NULL, NULL, -1);
             /* Store start of expr block in boolConst temporarily */
-            $6->boolConst = $4;
+            $7->boolConst = $5;
         }
-        $$ = $6;
+        $$ = $7;
     }
     ;
 
@@ -790,8 +863,7 @@ call:
                 expr* table;
                 if($2 && from_method == 1) {
                     /* from_method indigates a table function */
-                    table = create_var_expr(get_temp_symbol
-    ());
+                    table = create_var_expr(get_temp_symbol());
                     char msg[1024];
                     /* Add "" to name of function, placed inside stringConst */
                     snprintf(msg, sizeof(msg), "\"%s\"", $2->stringConst);
@@ -804,8 +876,7 @@ call:
                     }
                 } else { table = $1; }
                 emit(OP_CALL, NULL, table, NULL, 0);
-                result = create_var_expr(get_temp_symbol
-());
+                result = create_var_expr(get_temp_symbol());
                 emit(OP_GETRETVAL, result, NULL, NULL, 0);
             } else {
                 yyerror("Error. Symbol is NOT a function");
@@ -822,8 +893,7 @@ call:
                 /* Arguments from right to left */
                 handle_arguments($5);
                 emit(OP_CALL, NULL, $2, NULL, 0);
-                result = create_var_expr(get_temp_symbol
-());
+                result = create_var_expr(get_temp_symbol());
                 emit(OP_GETRETVAL, result, NULL, NULL, 0);
             } else {
                 yyerror("Error. Symbol is NOT a function");
@@ -845,52 +915,48 @@ normcall:
     ;
 
 elist: 
-    expr elist_list { 
+    expr {
+        if($1 && $1->type == EXP_BOOL) {
+            /* Create new temp bool expr */
+            expr* mysym = create_bool_expr(get_temp_symbol());
+            /* Truelist assigns TRUE to temp symbol */
+            backpatch($1->truelist, nextquad());
+            emit(OP_ASSIGN, mysym, create_constbool_expr(1), NULL, 0);
+            /* Then skips FALSE symbol */
+            emit(OP_JUMP, NULL, NULL, NULL, nextquad()+2);
+            /* Falselist assigns FALSE to temp symbol */
+            backpatch($1->falselist, nextquad());
+            emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
+            $1 = mysym;
+        }
+    } elist_list { 
         if($1) {
-            if($1->type == EXP_BOOL) {
-                /* Create new temp bool expr */
-                expr* mysym = create_bool_expr(get_temp_symbol
-());
-                /* Truelist assigns TRUE to temp symbol */
-                backpatch($1->truelist, nextquad());
-                emit(OP_ASSIGN, mysym, create_constbool_expr(1), NULL, 0);
-                /* Then skips FALSE symbol */
-                emit(OP_JUMP, NULL, NULL, NULL, nextquad()+2);
-                /* Falselist assigns FALSE to temp symbol */
-                backpatch($1->falselist, nextquad());
-                emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
-                mysym->next = $2;
-                $$ = mysym;
-            } else {
-                $1->next = $2;
-                $$ = $1;
-            }
+            $1->next = $3;
+            $$ = $1;
         } else { $$ = NULL; }
     }
     | { $$ = NULL; }
     ;
 
 elist_list: 
-    COMMA expr elist_list { 
+    COMMA expr {
+        if($2 && $2->type == EXP_BOOL) {
+            /* Create new temp bool expr */
+            expr* mysym = create_bool_expr(get_temp_symbol());
+            /* Truelist assigns TRUE to temp symbol */
+            backpatch($2->truelist, nextquad());
+            emit(OP_ASSIGN, mysym, create_constbool_expr(1), NULL, 0);
+            /* Then skips FALSE symbol */
+            emit(OP_JUMP, NULL, NULL, NULL, nextquad()+2);
+            /* Falselist assigns FALSE to temp symbol */
+            backpatch($2->falselist, nextquad());
+            emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
+            $2 = mysym;
+        }
+    } elist_list { 
         if($2) {
-            if($2->type == EXP_BOOL) {
-                /* Create new temp bool expr */
-                expr* mysym = create_bool_expr(get_temp_symbol
-());
-                /* Truelist assigns TRUE to temp symbol */
-                backpatch($2->truelist, nextquad());
-                emit(OP_ASSIGN, mysym, create_constbool_expr(1), NULL, 0);
-                /* Then skips FALSE symbol */
-                emit(OP_JUMP, NULL, NULL, NULL, nextquad()+2);
-                /* Falselist assigns FALSE to temp symbol */
-                backpatch($2->falselist, nextquad());
-                emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
-                mysym->next = $2;
-                $$ = mysym;
-            } else {
-                $2->next = $3;
-                $$ = $2;
-            }
+            $2->next = $4;
+            $$ = $2;
         } else { $$ = NULL; } 
     }
     | { $$ = NULL; }
@@ -967,8 +1033,7 @@ returnstmt:
         } else {
             if($2 && $2->type == EXP_BOOL) {
                 /* Create new temp bool expr */
-                expr* mysym = create_bool_expr(get_temp_symbol
-());
+                expr* mysym = create_bool_expr(get_temp_symbol());
                 /* Truelist assigns TRUE to temp symbol */
                 backpatch($2->truelist, nextquad());
                 emit(OP_ASSIGN, mysym, create_constbool_expr(1), NULL, 0);
@@ -992,7 +1057,7 @@ returnstmt:
     ;
 
 block:
-     LEFT_BRACE L {
+    LEFT_BRACE L {
         /* Functions make their own scopes */
         if(!fromFunct) { enter_Next_Scope(0); }
         /* If I am a function block, reset loop_stack */
@@ -1138,7 +1203,7 @@ P: { push_loop(); }
 int main(int argc, char** argv) {
 
     Initialize_HashTable();
-    reset_temp_array();
+    initialize_temp_array();
 
     if(argc > 1) {
         if(!(yyin = fopen(argv[1], "r"))) {
@@ -1159,8 +1224,8 @@ int main(int argc, char** argv) {
     }
 
     /* Print SymTable */
-    printf("\n           ======= Syntax Analysis =======\n");
-    print_SymTable();
+    /* printf("\n           ======= Syntax Analysis =======\n");
+    print_SymTable(); */
     
     /* Print Quads */
     printf("\n           ======= Intermediate Code =======\n");

@@ -36,14 +36,17 @@ expr* emit_if_table_item_get(expr* e, expr* result) {
     } else {
         if(!result) { result = create_var_expr(get_temp_symbol()); }
         result->type = EXP_TABLEITEM;
-        if(e) { emit(OP_TABLEGETELEM, result, e, e->index, 0); }
+        if(e) {
+            emit(OP_TABLEGETELEM, result, e, e->index, 0);
+            freeIfTemp(e);
+        }
         else { printf("Error in emit if GET. NULL e given\n"); }
         result->boolConst = 1;
         return result; 
     }
 }
 
-expr* emit_if_table_item_set(expr* table, expr* arg2) {
+void emit_if_table_item_set(expr* table, expr* arg2) {
     if(table && table->type == EXP_TABLEITEM) {
         emit(OP_TABLESETELEM, table, table->index, arg2, 0);
         table->boolConst = 1;
@@ -51,7 +54,6 @@ expr* emit_if_table_item_set(expr* table, expr* arg2) {
         if(table) table->boolConst = 0;
         else { printf("Error in emit if SET. NULL table given\n"); }
     }
-    return table;
 }
 
 /*===============================================================================================*/
@@ -356,7 +358,13 @@ void freeIfTemp(expr* ex) {
     }
 }
 
-void reset_temp_array(void) {
+void reset_temps(void) {
+    for(int i=0; i<temp_counter; i++) {
+        temp_array[i]->isActive = 0;
+    }
+}
+
+void initialize_temp_array(void) {
     for(int i=0; i<MAX_TEMPS; i++) temp_array[i] = NULL;
 }
 
