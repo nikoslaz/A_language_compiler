@@ -54,7 +54,11 @@ typedef struct Symbol {
     int offset;
     int line;
     int isActive;
+    /* For Functions */
     argument_node* args;
+    unsigned int num_args;
+    unsigned int num_locals;
+    unsigned int quad_addr;
     /* For scope list */
     struct Symbol* next_in_scope;
     /* For collision list */
@@ -90,6 +94,7 @@ unsigned int hash(const char* str);
 void Initialize_HashTable(void);
 void enter_Next_Scope(int fromFunct);
 void exit_Current_Scope(void);
+ScopeList* int_to_Scope(int index);
 void print_SymTable(void);
 void free_HashTable(void);
 void MemoryFail(void);

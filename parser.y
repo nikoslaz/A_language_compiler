@@ -90,6 +90,9 @@
 %type <exprZoumi> normcall
 %type <exprZoumi> methodcall
 
+/* For local count (offsett) */
+%type <intZoumi> block
+
 %type <quadLabelZoumi> M  /* Mark */
 %type <quadLabelZoumi> MJ /* Mark and Jump */
 %type <exprZoumi> F /* Function Name */
@@ -982,6 +985,8 @@ elist_list:
 funcdef:
     FUNCTION ID F MJ LEFT_PARENTHESIS {
         expr* res = create_prog_func_expr(resolve_FuncSymbol($2));
+        /* Save Address */
+        if(res && res->symbol) { res->symbol->quad_addr = nextquad(); }
         emit(OP_FUNCSTART, res, NULL, NULL, 0);
         /* Store function symbol */
         if($3) { $3->symbol = res->symbol; }
@@ -993,6 +998,8 @@ funcdef:
     } idlist RIGHT_PARENTHESIS block {
         /* Patch return list */
         backpatch(return_stack->return_list, nextquad());
+        /* Calculate function total offset */
+        if($3 && $3->symbol) { $3->symbol->num_locals =( $9-($3->symbol->num_args)); }
         emit(OP_FUNCEND, $3, NULL, NULL, 0);
         fromFunct = 0;
         inFunction--;
@@ -1003,6 +1010,8 @@ funcdef:
     }
     | FUNCTION F MJ LEFT_PARENTHESIS {
         expr* sym = create_prog_func_expr(resolve_AnonymousFunc());
+        /* Save Address */
+        if(sym && sym->symbol) { sym->symbol->quad_addr = nextquad(); }
         emit(OP_FUNCSTART, sym, NULL, NULL, 0);
         /* Store function symbol */
         if($2) { $2->symbol = sym->symbol; }
@@ -1014,6 +1023,8 @@ funcdef:
     } idlist RIGHT_PARENTHESIS block {
         /* Patch return list */
         backpatch(return_stack->return_list, nextquad());
+        /* Calculate function total offset */
+        if($2 && $2->symbol) { $2->symbol->num_locals = ($8-($2->symbol->num_args)); }
         emit(OP_FUNCEND, $2, NULL, NULL, 0);
         fromFunct = 0;
         inFunction--;
@@ -1081,9 +1092,11 @@ block:
         else { loop_stack = NULL; }
         fromFunct=0;
     } stmt_list RIGHT_BRACE {
+        int offset = int_to_Scope(ht->currentScope)->scopeOffset;
         exit_Current_Scope();
         /* Restore loop_stack */
         loop_stack = $2;
+        $$ = offset;
     }
     ;
 
@@ -1267,8 +1280,8 @@ int main(int argc, char** argv) {
     }
 
     /* Print SymTable */
-    /* printf("\n           ======= Syntax Analysis =======\n");
-    print_SymTable(); */
+    printf("\n           ======= Syntax Analysis =======\n");
+    print_SymTable();
     
     /* Print Quads */
     printf("\n           ======= Intermediate Code =======\n");

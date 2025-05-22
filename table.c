@@ -109,6 +109,9 @@ Symbol* insert_Symbol(const char* name, SymbolType type) {
         }
     } else { new->offset = 0; }
     new->args = NULL;
+    new->num_args=0;
+    new->num_locals=0;
+    new->quad_addr=0;
     new->next_in_scope = NULL;
     if(type==USERFUNC_T) { currFunction = new; }
     /* Link with HashTable */
@@ -212,6 +215,7 @@ void createArgumentNode(Symbol* mySymbol) {
     newarg->next = NULL;
     /* Link at the end of args list */
     if(!currFunction) { return; }
+    currFunction->num_args++;
     if(!currFunction->args) { currFunction->args = newarg; }
     else {
         argument_node* currnode = currFunction->args;
@@ -406,22 +410,22 @@ Symbol* createTempSymbol(void) {
     static int temp_counter = 0;
     char temp_name[32];
     snprintf(temp_name, sizeof(temp_name), "__temp%d", temp_counter++);
-
     Symbol* new = (Symbol*)malloc(sizeof(Symbol));
-    if (!new) {
+    if(!new) {
         fprintf(stderr, "Fatal Error. Memory Allocation failed\n");
         exit(1);
     }
-
     new->name = strdup(temp_name);
     new->type = LOCAL_T;  
     new->scope = ht->currentScope;  
     new->line = yylineno;  
     new->isActive = 1;  
     new->args = NULL;  
+    new->num_args=0;
+    new->num_locals=0;
+    new->quad_addr=0;
     new->next_in_scope = NULL;  
     new->next_in_bucket = NULL;  
-
     return new;
 }
 
@@ -429,31 +433,27 @@ Symbol* createTempSymbol(void) {
 /* Final Steps */
 
 void free_HashTable(void) {
-    if (!ht) { return; }
-
+    if(!ht) { return; }
     /* Free all symbols and their argument nodes via ScopeList */
     ScopeList* scope_curr = ht->ScopesHead;
-    while (scope_curr) {
+    while(scope_curr) {
         Symbol* sym_curr = scope_curr->head;
-        while (sym_curr) {
+        while(sym_curr) {
             argument_node* arg_curr = sym_curr->args;
-            while (arg_curr) {
+            while(arg_curr) {
                 argument_node* arg_next = arg_curr->next;
                 free(arg_curr); 
                 arg_curr = arg_next;
             }
-            
             Symbol* sym_next = sym_curr->next_in_scope;
             free(sym_curr->name); 
             free(sym_curr);
             sym_curr = sym_next;
         }
-        
         ScopeList* scope_next = scope_curr->next;
         free(scope_curr);
         scope_curr = scope_next;
     }
-
     /* FINALLY: free the hash table */
     free(ht);
     ht = NULL; 
@@ -488,19 +488,20 @@ void printScopes(const ScopeList* scopelist) {
     printf("|-----------------|-----------------|--------|--------|---------|\n");
     
     Symbol* symbol = scopelist->head;
-    while (symbol) {
-        if (symbol->type != LIBFUNC_T) {
+    while(symbol) {
+        if(symbol->type != LIBFUNC_T) {
             printf("| %-15s | %-15s | %-6d | %-6d | %-7d |",
-                   symbol->name,
-                   symbolTypeToString(symbol->type),
-                   symbol->line,
-                   symbol->scope,
-                   symbol->offset);
-            if (symbol->type == USERFUNC_T) {
-                if (!symbol->args) {
-                    printf(" with no args");
+                symbol->name,
+                symbolTypeToString(symbol->type),
+                symbol->line,
+                symbol->scope,
+                symbol->offset);
+            if(symbol->type == USERFUNC_T) {
+                printf(" addr:%d, locals:%d, ", symbol->quad_addr+1, symbol->num_locals);
+                if(!symbol->args) {
+                    printf("with no args");
                 } else {
-                    printf(" with args: %s", symbol->args->symbol->name);
+                    printf("with %d args: %s", symbol->num_args, symbol->args->symbol->name);
                     printArgs(symbol->args->next);
                 }
             }

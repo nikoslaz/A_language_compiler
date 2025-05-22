@@ -322,7 +322,6 @@ void add_to_continueList(unsigned int quad_to_patch) {
 /* Temporary Symbols */
 
 unsigned int temp_counter = 0;
-ScopeList* int_to_Scope(int index);
 Symbol* temp_array[MAX_TEMPS];
 
 Symbol* get_temp_symbol(void) {
@@ -385,6 +384,9 @@ Symbol* insert_Global_Temp_Symbol(void) {
     new->scope = 0;
     new->offset = scope_list->scopeOffset++;
     new->args = NULL;
+    new->num_args=0;
+    new->num_locals=0;
+    new->quad_addr=0;
     new->next_in_scope = NULL;
     /* Link with HashTable */
     int index = hash(temp_name);
