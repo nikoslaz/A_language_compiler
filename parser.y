@@ -860,7 +860,7 @@ call:
         $$ = result;
     }
     | lvalue callsuffix {
-        expr* result;
+        expr* result = NULL;
         if($1) {
             $1 = emit_if_table_item_get($1, NULL);
             /* Only Functions or Dynamic Symbols allowed */
@@ -875,11 +875,9 @@ call:
                     snprintf(msg, sizeof(msg), "\"%s\"", $2->stringConst);
                     $2->stringConst = msg;
                     emit(OP_TABLEGETELEM, table, $1, $2, 0);
-                    if($2) {
-                        /* Arguments from right to left */
-                        handle_arguments($2->next);
-                        emit(OP_PARAM, NULL, $1, NULL, 0);
-                    }
+                    /* Arguments from right to left */
+                    handle_arguments($2->next);
+                    emit(OP_PARAM, NULL, $1, NULL, 0);
                 } else { table = $1; }
                 emit(OP_CALL, NULL, table, NULL, 0);
                 result = create_var_expr(get_temp_symbol());
@@ -912,14 +910,7 @@ call:
 
 /* Use boolConst temporarily to differentiate between call options */ 
 callsuffix:
-    normcall {
-        if($1) {
-            $1->boolConst = 0;
-            $$ = $1;
-        } else {
-            $$ = NULL;
-        }
-    }
+    normcall { $$ = NULL; }
     | methodcall { 
         if($1) {
             $1->boolConst = 1;
@@ -997,7 +988,7 @@ funcdef:
         enter_Next_Scope(1);
     } idlist RIGHT_PARENTHESIS block {
         /* Patch return list */
-        backpatch(return_stack->return_list, nextquad());
+        if(return_stack) { backpatch(return_stack->return_list, nextquad()); }
         /* Calculate function total offset */
         if($3 && $3->symbol) { $3->symbol->num_locals =( $9-($3->symbol->num_args)); }
         emit(OP_FUNCEND, $3, NULL, NULL, 0);
@@ -1022,7 +1013,7 @@ funcdef:
         enter_Next_Scope(1);
     } idlist RIGHT_PARENTHESIS block {
         /* Patch return list */
-        backpatch(return_stack->return_list, nextquad());
+        if(return_stack) { backpatch(return_stack->return_list, nextquad()); }
         /* Calculate function total offset */
         if($2 && $2->symbol) { $2->symbol->num_locals = ($8-($2->symbol->num_args)); }
         emit(OP_FUNCEND, $2, NULL, NULL, 0);
@@ -1203,6 +1194,19 @@ member:
     }
     | lvalue LEFT_BRACKET expr RIGHT_BRACKET { 
         $1 = emit_if_table_item_get($1, NULL);
+        if($3 && $3->type == EXP_BOOL) {
+            /* Create new temp bool expr */
+            expr* mysym = create_bool_expr(get_temp_symbol());
+            /* Truelist assigns TRUE to temp symbol */
+            backpatch($3->truelist, nextquad());
+            emit(OP_ASSIGN, mysym, create_constbool_expr(1), NULL, 0);
+            /* Then skips FALSE symbol */
+            emit(OP_JUMP, NULL, NULL, NULL, nextquad()+2);
+            /* Falselist assigns FALSE to temp symbol */
+            backpatch($3->falselist, nextquad());
+            emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
+            $3 = mysym;
+        }
         if($1) {
             $1->type = EXP_TABLEITEM;
             $1->index = $3;
@@ -1227,7 +1231,20 @@ member:
     }
     | call LEFT_BRACKET expr RIGHT_BRACKET {
         $1 = emit_if_table_item_get($1, NULL);
-        if($1 && $3) {
+        if($3 && $3->type == EXP_BOOL) {
+            /* Create new temp bool expr */
+            expr* mysym = create_bool_expr(get_temp_symbol());
+            /* Truelist assigns TRUE to temp symbol */
+            backpatch($3->truelist, nextquad());
+            emit(OP_ASSIGN, mysym, create_constbool_expr(1), NULL, 0);
+            /* Then skips FALSE symbol */
+            emit(OP_JUMP, NULL, NULL, NULL, nextquad()+2);
+            /* Falselist assigns FALSE to temp symbol */
+            backpatch($3->falselist, nextquad());
+            emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
+            $3 = mysym;
+        }
+        if($1 && $3 && $3->symbol) {
             $1->index = create_conststring_expr($3->symbol->name);
             $1->type = EXP_TABLEITEM;
             char* msg = (char*)malloc(128);

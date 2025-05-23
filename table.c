@@ -411,10 +411,7 @@ Symbol* createTempSymbol(void) {
     char temp_name[32];
     snprintf(temp_name, sizeof(temp_name), "__temp%d", temp_counter++);
     Symbol* new = (Symbol*)malloc(sizeof(Symbol));
-    if(!new) {
-        fprintf(stderr, "Fatal Error. Memory Allocation failed\n");
-        exit(1);
-    }
+    if(!new) { MemoryFail(); }
     new->name = strdup(temp_name);
     new->type = LOCAL_T;  
     new->scope = ht->currentScope;  
