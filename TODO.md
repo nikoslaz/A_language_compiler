@@ -4,6 +4,54 @@ TODOOOOOOO
 DODODODODO
 
 ---------------------------------------------------------------------------------
+// PHASE 4
+
+Target code:
+
+FTIAXNOUME to target.c
+
+Vazoume mesa ta emit target:
+
+How to translate symbols to address: XRHSIMOPOIW MONO OFFSET?
+<!-- Nai, alla remember apo ta locals na afaireis ta total formals: -->
+
+2 fields: pointer to translated quad AND incomplete jump index
+SKATA
+REMEMBER: modify function address to translated_address (after translation)
+ALSO: for each quad, store the address of the translated_quad
+and at the end, after we have finished the whole translated array, make
+every jump point to the destination quad translated address
+
+First we make the final code dynamic array (similar to quads, but use generate_x)
+patch JUMPS
+
+Create more dynamic arrays for CONSTS (num, string etc) funcs
+
+Write everything in a binary file in order ??
+
+
+
+
+
+AVM
+
+(when do we make functstart and funcend push_pop the activation stack?)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---------------------------------------------------------------------------------
+// PHASE 3
 
 <!-- - Check operations between constants in compile time -->
 <!-- - Create quad structs, dynamic array -->

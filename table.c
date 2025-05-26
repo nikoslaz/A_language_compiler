@@ -80,15 +80,6 @@ void exit_Current_Scope(void) {
     ht->currentScope--;
 }
 
-int isGlobalishScope(void) {
-    ScopeList* scope_list = int_to_Scope(ht->currentScope);
-    while(scope_list->scope != 0) {
-        if(scope_list->isFunc) { return 0; }
-        scope_list = scope_list->next;
-    }
-    return 1;
-}
-
 /*===============================================================================================*/
 /* Insertion */
 
@@ -102,11 +93,7 @@ Symbol* insert_Symbol(const char* name, SymbolType type) {
     new->type = type;
     new->scope = ht->currentScope;
     if(type!=LIBFUNC_T) {
-        if(isGlobalishScope()) {
-            new->offset = int_to_Scope(0)->scopeOffset++;
-        } else {
-            new->offset = int_to_Scope(ht->currentScope)->scopeOffset++;
-        }
+        new->offset = int_to_Scope(ht->currentScope)->scopeOffset++;
     } else { new->offset = 0; }
     new->args = NULL;
     new->num_args=0;

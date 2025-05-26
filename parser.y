@@ -986,17 +986,18 @@ funcdef:
         /* Return List */
         push_return();
         enter_Next_Scope(1);
-    } idlist RIGHT_PARENTHESIS block {
+    } idlist { int_to_Scope(ht->currentScope)->scopeOffset = 0; } RIGHT_PARENTHESIS block {
         /* Patch return list */
         if(return_stack) { backpatch(return_stack->return_list, nextquad()); }
         /* Calculate function total offset */
-        if($3 && $3->symbol) { $3->symbol->num_locals =( $9-($3->symbol->num_args)); }
+        if($3 && $3->symbol) { $3->symbol->num_locals =( $10-($3->symbol->num_args)); }
         emit(OP_FUNCEND, $3, NULL, NULL, 0);
         fromFunct = 0;
         inFunction--;
         /* Patch jump to skip funcdef */
         simplepatch($4, nextquad());
         pop_return();
+        exit_Current_Scope();
         $$ = $3;
     }
     | FUNCTION F MJ LEFT_PARENTHESIS {
@@ -1011,17 +1012,18 @@ funcdef:
         /* Return List */
         push_return();
         enter_Next_Scope(1);
-    } idlist RIGHT_PARENTHESIS block {
+    } idlist { int_to_Scope(ht->currentScope)->scopeOffset = 0; } RIGHT_PARENTHESIS block {
         /* Patch return list */
         if(return_stack) { backpatch(return_stack->return_list, nextquad()); }
         /* Calculate function total offset */
-        if($2 && $2->symbol) { $2->symbol->num_locals = ($8-($2->symbol->num_args)); }
+        if($2 && $2->symbol) { $2->symbol->num_locals = ($9-($2->symbol->num_args)); }
         emit(OP_FUNCEND, $2, NULL, NULL, 0);
         fromFunct = 0;
         inFunction--;
         /* Patch jump to skip funcdef */
         simplepatch($3, nextquad());
         pop_return();
+        exit_Current_Scope();
         $$ = $2;
     }
     ;
@@ -1077,14 +1079,11 @@ returnstmt:
 
 block:
     LEFT_BRACE L {
-        /* Functions make their own scopes */
-        if(!fromFunct) { enter_Next_Scope(0); }
         /* If I am a function block, reset loop_stack */
-        else { loop_stack = NULL; }
+        if(fromFunct) { loop_stack = NULL; }
         fromFunct=0;
     } stmt_list RIGHT_BRACE {
         int offset = int_to_Scope(ht->currentScope)->scopeOffset;
-        exit_Current_Scope();
         /* Restore loop_stack */
         loop_stack = $2;
         $$ = offset;
