@@ -484,4 +484,27 @@ void printQuads(void) {
     printf("-----+----------------------------------------------------------------------------\n\n");
 }
 
+void printQuadsToFile(const char* filename) {
+    FILE* file = fopen(filename, "w");
+    if (!file) {
+        perror("Error opening file");
+        return;
+    }
+
+    fprintf(file, "LINE # OP RESULT ARG1 ARG2 LABEL\n");
+    for (unsigned int i = 0; i < currquad; ++i) {
+        fprintf(file, "%u %u %s %s %s %s",
+                quads[i].line, i + 1, opcodeToStr(quads[i].op),
+                exprToStr(quads[i].result), exprToStr(quads[i].arg1), exprToStr(quads[i].arg2));
+        if (quads[i].op == OP_JUMP || quads[i].op == OP_IFEQ || quads[i].op == OP_IFNOTEQ ||
+            quads[i].op == OP_IFGREATER || quads[i].op == OP_IFGREATEREQ || quads[i].op == OP_IFLESS || quads[i].op == OP_IFLESSEQ) {
+            fprintf(file, " %u\n", quads[i].label + 1);
+        } else {
+            fprintf(file, "\n");
+        }
+    }
+
+    fclose(file);
+}
+
 /* end of alpha_quads.c */
