@@ -83,6 +83,24 @@ void exit_Current_Scope(void) {
 /*===============================================================================================*/
 /* Insertion */
 
+int isGlobalishScope(void) {
+    ScopeList* scope_list = int_to_Scope(ht->currentScope);
+    while(scope_list->scope != 0) {
+        if(scope_list->isFunc) { return 0; }
+        scope_list = scope_list->next;
+    }
+    return 1;
+}
+
+ScopeList* findLastScopelist(void) {
+    ScopeList* scope_list = int_to_Scope(ht->currentScope);
+    while(scope_list->scope != 0) {
+        if(scope_list->isFunc) { return scope_list; }
+        scope_list = scope_list->next;
+    }
+    return NULL;
+}
+
 Symbol* insert_Symbol(const char* name, SymbolType type) {
     /* Create new Node */
     Symbol* new = (Symbol*)malloc(sizeof(Symbol));
@@ -93,7 +111,12 @@ Symbol* insert_Symbol(const char* name, SymbolType type) {
     new->type = type;
     new->scope = ht->currentScope;
     if(type!=LIBFUNC_T) {
-        new->offset = int_to_Scope(ht->currentScope)->scopeOffset++;
+        if(isGlobalishScope()) {
+            new->offset = int_to_Scope(0)->scopeOffset++;
+            // if(new->type == LOCAL_T) new->type = GLOBAL_T;
+        } else {
+            new->offset = findLastScopelist()->scopeOffset++;
+        }
     } else { new->offset = 0; }
     new->args = NULL;
     new->num_args=0;

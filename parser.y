@@ -990,14 +990,13 @@ funcdef:
         /* Patch return list */
         if(return_stack) { backpatch(return_stack->return_list, nextquad()); }
         /* Calculate function total offset */
-        if($3 && $3->symbol) { $3->symbol->num_locals =( $10-($3->symbol->num_args)); }
+        if($3 && $3->symbol) { $3->symbol->num_locals = $10; }
         emit(OP_FUNCEND, $3, NULL, NULL, 0);
         fromFunct = 0;
         inFunction--;
         /* Patch jump to skip funcdef */
         simplepatch($4, nextquad());
         pop_return();
-        exit_Current_Scope();
         $$ = $3;
     }
     | FUNCTION F MJ LEFT_PARENTHESIS {
@@ -1016,14 +1015,13 @@ funcdef:
         /* Patch return list */
         if(return_stack) { backpatch(return_stack->return_list, nextquad()); }
         /* Calculate function total offset */
-        if($2 && $2->symbol) { $2->symbol->num_locals = ($9-($2->symbol->num_args)); }
+        if($2 && $2->symbol) { $2->symbol->num_locals = $9; }
         emit(OP_FUNCEND, $2, NULL, NULL, 0);
         fromFunct = 0;
         inFunction--;
         /* Patch jump to skip funcdef */
         simplepatch($3, nextquad());
         pop_return();
-        exit_Current_Scope();
         $$ = $2;
     }
     ;
@@ -1080,10 +1078,12 @@ returnstmt:
 block:
     LEFT_BRACE L {
         /* If I am a function block, reset loop_stack */
-        if(fromFunct) { loop_stack = NULL; }
+        if(!fromFunct) { enter_Next_Scope(0); }
+        else { loop_stack = NULL; }
         fromFunct=0;
     } stmt_list RIGHT_BRACE {
         int offset = int_to_Scope(ht->currentScope)->scopeOffset;
+        exit_Current_Scope();
         /* Restore loop_stack */
         loop_stack = $2;
         $$ = offset;
