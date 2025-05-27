@@ -28,7 +28,7 @@ Create more dynamic arrays for CONSTS (num, string etc) funcs
 
 Write everything in a binary file in order ??
 
-
+Keep up with target.h && target.c!
 
 
 

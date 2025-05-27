@@ -1,0 +1,172 @@
+#ifndef TARGET_H
+#define TARGET_H
+
+#include "quads.h"
+
+typedef enum VmargType {
+    GLOBAL_V,
+    LOCAL_V,
+    FORMAL_V,
+    USERFUNC_V,
+    LIBFUNC_V,
+    TEMPORARY_V,
+    BOOL_V,
+    STRING_V,
+    NUMBER_V,
+    NIL_V,
+} vmarg_t;
+
+typedef struct vmarg {
+    vmarg_t type;
+    unsigned val;
+} vmarg;
+
+typedef enum Vmopcode {
+    /* Arithmetic */
+    ADD_V,
+    SUB_V,
+    MUL_V,
+    DIV_V,
+    MOD_V,
+    UMINUS_V,
+
+    /* Relational */
+    AND_V,
+    OR_V,
+    NOT_V,
+    JEQ_V,
+    JNE_V,
+    JGT_V,
+    JLT_V,
+    JGE_V,
+    JLE_V,
+
+    /* Control Flow */
+    CALL_V,
+    RETURN_V,
+    GETRETVAL_V,
+
+    /* Memory Access */
+    ASSIGN_V,
+    GETTABLEITEM_V,
+    SETTABLEITEM_V,
+
+    /* Function Calls */
+    PARAM_V,
+    FUNCSTART_V,
+    FUNCEND_V,
+    
+    /* Miscellaneous */
+    NEWTABLE_V,
+    TABLEGETELEM_V,
+    TABLESETELEM_V,
+    
+    /* Input/Output */
+    PRINT_V,
+
+    /* End of instructions */
+    NOP_V
+} vmopcode;
+
+typedef struct instruction {
+    vmopcode opcode;
+    vmarg result;
+    vmarg arg1;
+    vmarg arg2;
+    unsigned srcLine;
+} instruction;
+
+instruction* instructions;
+
+typedef struct incomplete_jump {
+    unsigned instrNo;     
+    unsigned iaddress;    
+    struct incomplete_jump* next; 
+} incomplete_jump;
+
+incomplete_jump* ij_head = (incomplete_jump*) 0;
+unsigned ij_total = 0;
+unsigned int curr_instruction = 0;
+
+void add_incomplete_jump(unsigned instrNo, unsigned iaddress);
+void patch_incomplete_jumps(void);
+
+char** string_const;
+unsigned int total_str_const;
+unsigned int curr_str_const;
+
+double* number_const;
+unsigned int total_num_const;
+unsigned int curr_num_const;
+
+char** libfunc_const;
+char** named_lib_funcs;
+unsigned int total_libfunc_const;
+unsigned int curr_libfunc_const;
+
+unsigned consts_newstring(char* s);
+unsigned consts_newnumber(double n);
+unsigned libfuncs_newused(char* s);
+void make_operand(expr* e, vmarg* arg);
+
+// ------------------------------------------------------------------------------------------------------------------------------- //
+
+extern void generate_ADD(quad*);
+extern void generate_SUB(quad*);
+extern void generate_MUL(quad*);
+extern void generate_DIV(quad*);
+extern void generate_MOD(quad*);
+extern void generate_NEWTABLE(quad*);
+extern void generate_TABLEGETELEM(quad*);
+extern void generate_TABLESETELEM(quad*);
+extern void generate_ASSIGN(quad*);
+extern void generate_NOP(quad*);
+extern void generate_JUMP(quad*);
+extern void generate_IF_EQ(quad*);
+extern void generate_IF_NOTEQ(quad*);
+extern void generate_IF_GREATER(quad*);
+extern void generate_IF_GREATEREQ(quad*);
+extern void generate_IF_LESS(quad*);
+extern void generate_IF_LESSEQ(quad*);
+extern void generate_NOT(quad*);
+extern void generate_OR(quad*);
+extern void generate_PARAM(quad*);
+extern void generate_CALL(quad*);
+extern void generate_GETRETVAL(quad*);
+extern void generate_FUNCSTART(quad*);
+extern void generate_RETURN(quad*);
+extern void generate_FUNCEND(quad*);
+
+typedef void (*generator_func_t)(quad*);
+
+generator_func_t generators[] = {
+    generate_ADD,
+    generate_SUB,
+    generate_MUL,
+    generate_DIV,
+    generate_MOD,
+    generate_NEWTABLE,
+    generate_TABLEGETELEM,
+    generate_TABLESETELEM,
+    generate_ASSIGN,
+    generate_NOP,
+    generate_JUMP,
+    generate_IF_EQ,
+    generate_IF_NOTEQ,
+    generate_IF_GREATER,
+    generate_IF_GREATEREQ,
+    generate_IF_LESS,
+    generate_IF_LESSEQ,
+    generate_NOT,
+    generate_OR,
+    generate_PARAM,
+    generate_CALL,
+    generate_GETRETVAL,
+    generate_FUNCSTART,
+    generate_RETURN,
+    generate_FUNCEND
+};
+
+void generate(void);
+
+#endif // TARGET_H
