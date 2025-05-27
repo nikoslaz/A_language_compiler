@@ -1,4 +1,4 @@
-/* alpha_quads.h */
+/* quads.h */
 /**
  * @authors nikos , nikoletta , mihalis
  */
@@ -133,4 +133,4 @@ void printQuads(void);
 void printQuadsToFile(const char* filename);
 
 #endif
-/* end of alpha_quads.h */
+/* end of quads.h */

@@ -4,7 +4,7 @@
      * @authors nikos , nikoletta , mihalis
      */
     #include "table.h"
-    #include "alpha_quads.h"
+    #include "quads.h"
 
     /* Globals */
     int inFunction = 0;

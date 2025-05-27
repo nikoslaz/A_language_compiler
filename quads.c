@@ -1,8 +1,8 @@
-/* alpha_quads.c */
+/* quads.c */
 /**
  * @authors nikos , nikoletta , mihalis
  */
-#include "alpha_quads.h"
+#include "quads.h"
 
 quad* quads = NULL;
 LoopContext* loop_stack = NULL;
@@ -507,4 +507,4 @@ void printQuadsToFile(const char* filename) {
     fclose(file);
 }
 
-/* end of alpha_quads.c */
+/* end of quads.c */

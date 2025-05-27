@@ -13,9 +13,8 @@ FTIAXNOUME to target.c
 Vazoume mesa ta emit target:
 
 How to translate symbols to address: XRHSIMOPOIW MONO OFFSET?
-<!-- Nai, alla remember apo ta locals na afaireis ta total formals: -->
 
-2 fields: pointer to translated quad AND incomplete jump index
+1 extra field: pointer to translated quad
 SKATA
 REMEMBER: modify function address to translated_address (after translation)
 ALSO: for each quad, store the address of the translated_quad

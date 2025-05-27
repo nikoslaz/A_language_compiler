@@ -7,7 +7,7 @@ This program is a lexical analyzer, syntax analyzer, and **intermediate code gen
 *   `scanner.l` (Lexer)
 *   `parser.y` (Parser & Intermediate Code Generator)
 *   `table.h`, `table.c` (Symbol Table Management)
-*   `alpha_quads.h`, `alpha_quads.c` (Quadruple Generation & Management)
+*   `quads.h`, `quads.c` (Quadruple Generation & Management)
 *   `list.h`, `list.c` (Utility Lists)
 
 ## Core Functionality:

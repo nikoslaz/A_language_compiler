@@ -4,7 +4,7 @@
 TARGET = calc
 LIST = list
 TABLE = table
-QUADS = alpha_quads
+QUADS = quads
 PARSER = parser
 SCANNER = scanner
 CC = gcc
