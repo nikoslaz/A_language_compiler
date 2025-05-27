@@ -4,6 +4,6 @@
 scanner.c
 parser.c
 parser.h
-parser.output
+*.output
 calc
 phase3

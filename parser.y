@@ -1300,8 +1300,14 @@ int main(int argc, char** argv) {
     print_SymTable();
     
     /* Print Quads */
-    printf("\n           ======= Intermediate Code =======\n");
-    printQuads();
+    /* printf("\n           ======= Intermediate Code =======\n");
+    printQuads(); */
+    FILE* fd;
+    if(!(fd = fopen("quads.output", "w"))) {
+        fprintf(stderr, "Cannot create quads.output file\n");
+        return 1;
+    }
+    printQuadsToFile(fd);
     
     /* Return Normally */
     free_HashTable();

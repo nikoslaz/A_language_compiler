@@ -484,26 +484,19 @@ void printQuads(void) {
     printf("-----+----------------------------------------------------------------------------\n\n");
 }
 
-void printQuadsToFile(const char* filename) {
-    FILE* file = fopen(filename, "w");
-    if (!file) {
-        perror("Error opening file");
-        return;
+void printQuadsToFile(FILE* file) {
+    fprintf(file, "%-4s|   %-3s %-14s %-15s %-15s %-15s %-5s\n", "LINE", "#", "OP", "RESULT", "ARG1", "ARG2", "LABEL");
+    for(unsigned int i = 0; i < currquad; ++i) {
+        if(quads[i].op == OP_FUNCSTART) { fprintf(file, "    |\n"); }
+        fprintf(file, " %-3u|   %-3u %-14s %-15s %-15s %-15s",
+        quads[i].line, i+1, opcodeToStr(quads[i].op),
+        exprToStr(quads[i].result), exprToStr(quads[i].arg1), exprToStr(quads[i].arg2));
+        if(quads[i].op==OP_JUMP || quads[i].op==OP_IFEQ || quads[i].op==OP_IFNOTEQ ||
+        quads[i].op==OP_IFGREATER || quads[i].op==OP_IFGREATEREQ || quads[i].op==OP_IFLESS || quads[i].op==OP_IFLESSEQ)
+        { fprintf(file, " %-5u\n", quads[i].label+1); }
+        else { fprintf(file, "\n"); }
+        if(quads[i].op == OP_FUNCEND) { fprintf(file, "    |\n"); }
     }
-
-    fprintf(file, "LINE # OP RESULT ARG1 ARG2 LABEL\n");
-    for (unsigned int i = 0; i < currquad; ++i) {
-        fprintf(file, "%u %u %s %s %s %s",
-                quads[i].line, i + 1, opcodeToStr(quads[i].op),
-                exprToStr(quads[i].result), exprToStr(quads[i].arg1), exprToStr(quads[i].arg2));
-        if (quads[i].op == OP_JUMP || quads[i].op == OP_IFEQ || quads[i].op == OP_IFNOTEQ ||
-            quads[i].op == OP_IFGREATER || quads[i].op == OP_IFGREATEREQ || quads[i].op == OP_IFLESS || quads[i].op == OP_IFLESSEQ) {
-            fprintf(file, " %u\n", quads[i].label + 1);
-        } else {
-            fprintf(file, "\n");
-        }
-    }
-
     fclose(file);
 }
 

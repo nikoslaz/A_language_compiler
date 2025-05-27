@@ -130,7 +130,7 @@ void add_to_continueList(unsigned int quad_to_patch);
 
 /* Final Print */
 void printQuads(void);
-void printQuadsToFile(const char* filename);
+void printQuadsToFile(FILE* file);
 
 #endif
 /* end of quads.h */
