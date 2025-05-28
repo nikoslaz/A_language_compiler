@@ -89,6 +89,8 @@ void emit_target(instruction* p) {
         if(!instructions) { MemoryFail(); }
     }
 	instruction* i = instructions+curr_instruction++;
+    i = (instruction*)malloc(sizeof(instruction));
+    if(!i) {MemoryFail();}
 	i->opcode 	= p->opcode;
 	i->arg1 	= p->arg1;
 	i->arg2 	= p->arg2;
@@ -264,8 +266,6 @@ void helper_generate_relational(vmopcode op, quad* q){
     t->opcode = op;
     make_operand(q->arg1, &(t->arg1));
     make_operand(q->arg2, &(t->arg2));
-    t->result.type = LABEL_V;
-    t->result.val = q->label;
     q->target_addr = curr_instruction;
     emit_target(t);
 }
@@ -292,10 +292,8 @@ void helper_generate_res(vmopcode op, quad* q){
     emit_target(t);
 }
 
-
-
 void generate(void) {
-    for(unsigned i = 0; i < totalquads; ++i) {
+    for(unsigned i = 0; i < currquad; ++i) {
         /* REMEBER GENERATORS MUST ALSO FILL target_addr field of their quad */
         (*generators[quads[i].op])(quads + i);
     }
