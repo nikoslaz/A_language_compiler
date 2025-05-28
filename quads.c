@@ -25,6 +25,7 @@ quad* emit(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label) 
     new->result = result;
     new->label = label;
     new->line = yylineno;
+    new->target_addr = -1;
     quads[currquad++] = *new;
     return new;
 }

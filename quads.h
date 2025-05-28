@@ -75,6 +75,7 @@ typedef struct quad_s {
     expr* arg2;
     unsigned int label;
     unsigned int line;
+    unsigned int target_addr;
 } quad;
 
 extern quad* quads;

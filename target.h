@@ -1,7 +1,17 @@
+/* target.h */
+/**
+ * @authors nikos , nikoletta , mihalis
+ */
 #ifndef TARGET_H
 #define TARGET_H
 
 #include "quads.h"
+
+#define CURR_STR_SIZE (total_str_const*sizeof(char*))
+#define CURR_NUM_SIZE (total_str_const*sizeof(double))
+#define CURR_LIBFUNC_SIZE (total_str_const*sizeof(char*))
+#define CURR_INSTRUCTION_SIZE (total_instruction*sizeof(instruction*))
+
 
 typedef enum VmargType {
     GLOBAL_V,
@@ -76,8 +86,6 @@ typedef struct instruction {
     unsigned srcLine;
 } instruction;
 
-instruction* instructions;
-
 typedef struct incomplete_jump {
     unsigned instrNo;     
     unsigned iaddress;    
@@ -86,30 +94,36 @@ typedef struct incomplete_jump {
 
 incomplete_jump* ij_head = (incomplete_jump*) 0;
 unsigned ij_total = 0;
-unsigned int curr_instruction = 0;
 
 void add_incomplete_jump(unsigned instrNo, unsigned iaddress);
 void patch_incomplete_jumps(void);
 
-char** string_const;
-unsigned int total_str_const;
-unsigned int curr_str_const;
-
-double* number_const;
-unsigned int total_num_const;
-unsigned int curr_num_const;
-
-char** libfunc_const;
-char** named_lib_funcs;
-unsigned int total_libfunc_const;
-unsigned int curr_libfunc_const;
-
 unsigned consts_newstring(char* s);
 unsigned consts_newnumber(double n);
-unsigned libfuncs_newused(char* s);
+unsigned consts_newlibfunc(char* s);
+
 void make_operand(expr* e, vmarg* arg);
 
-// ------------------------------------------------------------------------------------------------------------------------------- //
+/*===============================================================================================*/
+/* Globals */
+
+extern char** string_const;
+extern unsigned int total_str_const;
+extern unsigned int curr_str_const;
+extern double* number_const;
+extern unsigned int total_num_const;
+extern unsigned int curr_num_const;
+extern char** libfunc_const;
+extern unsigned int total_libfunc_const;
+extern unsigned int curr_libfunc_const;
+extern instruction* instructions;
+extern unsigned int total_instruction;
+extern unsigned int curr_instruction;
+
+/*===============================================================================================*/
+/* Generators */
+
+void generate(void);
 
 extern void generate_ADD(quad*);
 extern void generate_SUB(quad*);
@@ -167,6 +181,5 @@ generator_func_t generators[] = {
     generate_FUNCEND
 };
 
-void generate(void);
-
-#endif // TARGET_H
+#endif
+/* end of list.h */
