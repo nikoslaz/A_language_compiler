@@ -10,11 +10,11 @@ ARITH, SET, GET, UMINUS (2 args, result) - FULL ( TURH UMINUS TO FULL, USE CONST
 RELATIONAL (2 args, index)         - RELATIONAL
 FUNCSTART, FUNCEND, CALL, PARAM (arg1) - ARG1
 GETRETVAL, RETURN - (result)        - RES
+NOP                      - NOP
 
 
 ASSIGN - (arg1, result)  - ASSIGN
 JUMP (index)             - JUMP
-NOP                      - NOP
 
 Target code:
 

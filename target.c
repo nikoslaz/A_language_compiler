@@ -172,7 +172,14 @@ void patch_incomplete_jumps(void) {
 /* Generate */
 
 void generate_ASSIGN(quad* q) {
-
+    instruction* t = (instruction*)malloc(sizeof(instruction));
+    if (!t) { perror("Failed to allocate instruction"); exit(EXIT_FAILURE); }
+    t->opcode =ASSIGN_V;
+    make_operand(q->arg1, &(t->arg1));   
+    make_operand(NULL, &(t->arg2));      
+    make_operand(q->result, &(t->result)); 
+    q->target_addr = curr_instruction;
+    emit_target(t);
 }
 
 void generate_ADD(quad* q) { helper_generate_full(ADD_V, q); } 
@@ -211,7 +218,15 @@ void generate_TABLEGETELEM(quad* q) { helper_generate_full(TABLEGETELEM_V, q); }
 void generate_TABLESETELEM(quad* q) { helper_generate_full(TABLEGETELEM_V, q); }
 
 void generate_JUMP(quad* q) {
-
+    instruction* t = (instruction*)malloc(sizeof(instruction));
+    if (!t) { perror("Failed to allocate instruction"); exit(EXIT_FAILURE); }
+    t->opcode = JUMP_V;
+    make_operand(NULL, &(t->arg1)); 
+    make_operand(NULL, &(t->arg2)); 
+    t->result.type = LABEL_V;
+    t->result.val = q->label;
+    q->target_addr = curr_instruction;
+    emit_target(t);
 }
 
 void generate_NOP(quad* q) { printf("NOP Should not exist\n"); }
@@ -233,6 +248,8 @@ void helper_generate_relational(vmopcode op, quad* q){
     t->opcode = op;
     make_operand(q->arg1, &(t->arg1));
     make_operand(q->arg2, &(t->arg2));
+    t->result.type = LABEL_V;
+    t->result.val = q->label;
     q->target_addr = curr_instruction;
     emit_target(t);
 }
@@ -258,6 +275,8 @@ void helper_generate_res(vmopcode op, quad* q){
     q->target_addr = curr_instruction;
     emit_target(t);
 }
+
+
 
 void generate(void) {
     for(unsigned i = 0; i < totalquads; ++i) {

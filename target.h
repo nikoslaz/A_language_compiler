@@ -26,6 +26,7 @@ typedef enum VmargType {
     STRING_V,
     NUMBER_V,
     NIL_V,
+    LABEL_V,
 } vmarg_t;
 
 typedef struct vmarg {
