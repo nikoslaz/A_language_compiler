@@ -171,87 +171,114 @@ void patch_incomplete_jumps(void) {
 /*===============================================================================================*/
 /* Generate */
 
-void generate_ADD(quad*) {
-    
+void generate_ASSIGN(quad* q) {
+
 }
-void generate_SUB(quad*) {
-    
+
+void generate_ADD(quad* q) {
+
+} 
+
+void generate_SUB(quad* q) {
+
+} 
+
+void generate_MUL(quad* q) {
+
 }
-void generate_MUL(quad*) {
-    
+
+void generate_DIV(quad* q) {
+
+} 
+
+void generate_MOD(quad* q) {
+
 }
-void generate_DIV(quad*) {
-    
+
+void generate_UMINUS(quad* q) {
+
 }
-void generate_MOD(quad*) {
-    
+
+void generate_AND(quad* q) {
+
 }
-void generate_UMINUS(quad*) {
-    
+
+void generate_OR(quad* q) {
+
 }
-void generate_NEWTABLE(quad*) {
-    
+
+void generate_NOT(quad* q) {
+
 }
-void generate_TABLEGETELEM(quad*) {
-    
+
+void generate_IF_EQ(quad* q) {
+
 }
-void generate_TABLESETELEM(quad*) {
-    
+
+void generate_IF_NOTEQ(quad* q) {
+
 }
-void generate_ASSIGN(quad*) {
-    
+
+void generate_IF_LESSEQ(quad* q) {
+
 }
-void generate_NOP(quad*) {
-    
+
+void generate_IF_GREATEREQ(quad* q) {
+
 }
-void generate_JUMP(quad*) {
-    
+
+void generate_IF_LESS(quad* q) {
+
 }
-void generate_IF_EQ(quad*) {
-    
+
+void generate_IF_GREATER(quad* q) {
+
 }
-void generate_IF_NOTEQ(quad*) {
-    
+
+void generate_CALL(quad* q) {
+
 }
-void generate_IF_GREATER(quad*) {
-    
+
+void generate_PARAM(quad* q) {
+
 }
-void generate_IF_GREATEREQ(quad*) {
-    
+
+void generate_RETURN(quad* q) {
+
 }
-void generate_IF_LESS(quad*) {
-    
+
+void generate_GETRETVAL(quad* q) {
+
 }
-void generate_IF_LESSEQ(quad*) {
-    
+
+void generate_FUNCSTART(quad* q) {
+
 }
-void generate_NOT(quad*) {
-    
+
+void generate_FUNCEND(quad* q) {
+
 }
-void generate_OR(quad*) {
-    
+
+void generate_NEWTABLE(quad* q) {
+
 }
-void generate_AND(quad*) {
-    
+
+void generate_TABLEGETELEM(quad* q) {
+
 }
-void generate_PARAM(quad*) {
-    
+
+void generate_TABLESETELEM(quad* q) {
+
 }
-void generate_CALL(quad*) {
-    
+
+void generate_JUMP(quad* q) {
+
 }
-void generate_GETRETVAL(quad*) {
-    
+
+void generate_NOP(quad* q) {
+
 }
-void generate_FUNCSTART(quad*) {
-    
-}
-void generate_RETURN(quad*) {
-    
-}
-void generate_FUNCEND(quad*) {
-    
-}
+
 
 
 void generate(void) {
