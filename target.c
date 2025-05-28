@@ -279,6 +279,62 @@ void generate_NOP(quad* q) {
 
 }
 
+void helper_generate_full(vmopcode op, quad* q){
+    instruction* t = (instruction*)malloc(sizeof(instruction));
+    if (!t) { perror("Failed to allocate instruction"); exit(EXIT_FAILURE); }
+
+    t->opcode = op;
+
+    make_operand(q->arg1, &(t->arg1));
+    make_operand(q->arg2, &(t->arg2));
+    make_operand(q->result, &(t->result));
+
+    q->target_addr = curr_instruction;
+    emit_target(t);
+}
+
+void helper_generate_relational(vmopcode op, quad* q){
+    instruction* t = (instruction*)malloc(sizeof(instruction));
+    if (!t) { perror("Failed to allocate instruction"); exit(EXIT_FAILURE); }
+
+    t->opcode = op;
+
+    make_operand(q->arg1, &(t->arg1));
+    make_operand(q->arg2, &(t->arg2));
+
+    q->target_addr = curr_instruction;
+    emit_target(t);
+}
+
+void helper_generate_arg1(vmopcode op, quad* q){
+    instruction* t = (instruction*)malloc(sizeof(instruction));
+    if (!t) { perror("Failed to allocate instruction"); exit(EXIT_FAILURE); }
+
+    t->opcode = op;
+
+    make_operand(q->arg1, &(t->arg1));
+    make_operand(NULL, &(t->arg2));
+    make_operand(q->result, &(t->result));
+
+    q->target_addr = curr_instruction;
+    emit_target(t);
+}
+
+void helper_generate_res(vmopcode op, quad* q){
+    instruction* t = (instruction*)malloc(sizeof(instruction));
+    if (!t) { perror("Failed to allocate instruction"); exit(EXIT_FAILURE); }
+
+    t->opcode = op;
+
+    make_operand(NULL, &(t->arg1));
+    make_operand(NULL, &(t->arg2)); 
+    make_operand(q->result, &(t->result));
+    
+
+    q->target_addr = curr_instruction;
+    emit_target(t);
+}
+
 
 
 void generate(void) {
