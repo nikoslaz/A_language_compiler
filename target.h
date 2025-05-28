@@ -12,7 +12,6 @@
 #define CURR_LIBFUNC_SIZE (total_str_const*sizeof(char*))
 #define CURR_INSTRUCTION_SIZE (total_instruction*sizeof(instruction*))
 
-
 typedef enum VmargType {
     GLOBAL_V,
     LOCAL_V,
@@ -96,6 +95,7 @@ extern void generate_SUB(quad*);
 extern void generate_MUL(quad*);
 extern void generate_DIV(quad*);
 extern void generate_MOD(quad*);
+extern void generate_UMINUS(quad*);
 extern void generate_NEWTABLE(quad*);
 extern void generate_TABLEGETELEM(quad*);
 extern void generate_TABLESETELEM(quad*);
@@ -110,6 +110,7 @@ extern void generate_IF_LESS(quad*);
 extern void generate_IF_LESSEQ(quad*);
 extern void generate_NOT(quad*);
 extern void generate_OR(quad*);
+extern void generate_AND(quad*);
 extern void generate_PARAM(quad*);
 extern void generate_CALL(quad*);
 extern void generate_GETRETVAL(quad*);
