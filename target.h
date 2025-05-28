@@ -13,7 +13,7 @@
 #define CURR_INSTRUCTION_SIZE (total_instruction*sizeof(instruction*))
 
 #define MAGIC_NUMBER 0xDEADBEEF
-unsigned magic_number = MAGIC_NUMBER;
+extern unsigned magic_number;
 
 typedef enum VmargType {
     GLOBAL_V,
@@ -60,8 +60,8 @@ typedef struct incomplete_jump {
     struct incomplete_jump* next; 
 } incomplete_jump;
 
-incomplete_jump* ij_head = (incomplete_jump*) 0;
-unsigned ij_total = 0;
+extern incomplete_jump* ij_head;
+extern unsigned ij_total;
 
 void add_incomplete_jump(unsigned instrNo, unsigned iaddress);
 void patch_incomplete_jumps(void);
@@ -125,20 +125,11 @@ void helper_generate_full(vmopcode op, quad* q);
 void helper_generate_relational(vmopcode op, quad* q);
 void helper_generate_arg1(vmopcode op, quad* q);
 void helper_generate_res(vmopcode op, quad* q);
+void printFile();
 
 typedef void (*generator_func_t)(quad*);
 
-generator_func_t generators[] = {
-    generate_ASSIGN,
-    generate_ADD, generate_SUB, generate_MUL, generate_DIV, generate_MOD,
-    generate_UMINUS,
-    generate_AND, generate_OR, generate_NOT,
-    generate_IF_EQ, generate_IF_NOTEQ, generate_IF_LESSEQ, generate_IF_GREATEREQ, generate_IF_LESS, generate_IF_GREATER,
-    generate_CALL, generate_PARAM, generate_RETURN, generate_GETRETVAL, generate_FUNCSTART, generate_FUNCEND,
-    generate_NEWTABLE, generate_TABLEGETELEM, generate_TABLESETELEM,
-    generate_JUMP,
-    generate_NOP
-};
+extern generator_func_t generators[];
 
 #endif
 /* end of list.h */

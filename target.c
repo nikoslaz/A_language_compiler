@@ -1,6 +1,22 @@
 #include "target.h"
 #include "quads.h"
 
+unsigned magic_number = MAGIC_NUMBER;
+incomplete_jump* ij_head = (incomplete_jump*) 0;
+unsigned ij_total = 0;
+
+generator_func_t generators[] = {
+    generate_ASSIGN,
+    generate_ADD, generate_SUB, generate_MUL, generate_DIV, generate_MOD,
+    generate_UMINUS,
+    generate_AND, generate_OR, generate_NOT,
+    generate_IF_EQ, generate_IF_NOTEQ, generate_IF_LESSEQ, generate_IF_GREATEREQ, generate_IF_LESS, generate_IF_GREATER,
+    generate_CALL, generate_PARAM, generate_RETURN, generate_GETRETVAL, generate_FUNCSTART, generate_FUNCEND,
+    generate_NEWTABLE, generate_TABLEGETELEM, generate_TABLESETELEM,
+    generate_JUMP,
+    generate_NOP
+};
+
 /* Globals */
 char** string_const=(char**)0;
 unsigned int total_str_const=0;
@@ -265,6 +281,180 @@ void generate(void) {
         (*generators[quads[i].op])(quads + i);
     }
     patch_incomplete_jumps();
+}
+
+static const char* vmopcode_to_string(vmopcode op) {
+    switch (op) {
+        case ASSIGN_V: return "ASSIGN";
+        case ADD_V: return "ADD";
+        case SUB_V: return "SUB";
+        case MUL_V: return "MUL";
+        case DIV_V: return "DIV";
+        case MOD_V: return "MOD";
+        case UMINUS_V: return "UMINUS";
+        case AND_V: return "AND";
+        case OR_V: return "OR";
+        case NOT_V: return "NOT";
+        case JEQ_V: return "JEQ";
+        case JNE_V: return "JNE";
+        case JLE_V: return "JLE";
+        case JGE_V: return "JGE";
+        case JLT_V: return "JLT";
+        case JGT_V: return "JGT";
+        case CALL_V: return "CALL";
+        case PARAM_V: return "PARAM";
+        case RETURN_V: return "RETURN";
+        case GETRETVAL_V: return "GETRETVAL";
+        case FUNCSTART_V: return "FUNCSTART";
+        case FUNCEND_V: return "FUNCEND";
+        case TABLECREATE_V: return "TABLECREATE";
+        case TABLEGETELEM_V: return "TABLEGETELEM";
+        case TABLESETELEM_V: return "TABLESETELEM";
+        case JUMP_V: return "JUMP";
+        case NOP_V: return "NOP";
+        default: return "UNKNOWN_OP";
+    }
+}
+
+// Helper function to check if an opcode is a jump instruction
+static int is_jump_opcode(vmopcode op) {
+    switch (op) {
+        case JEQ_V:
+        case JNE_V:
+        case JLE_V:
+        case JGE_V:
+        case JLT_V:
+        case JGT_V:
+        case JUMP_V:
+            return 1; // True
+        default:
+            return 0; // False
+    }
+}
+
+// Helper function to print a vmarg operand
+static void print_vmarg(FILE* fp, vmarg* arg, int is_jump_target) {
+    if (!arg) {
+        fprintf(fp, "(null vmarg)");
+        return;
+    }
+
+    if (is_jump_target) {
+        // For jump targets, arg->val is an instruction address (label)
+        // The type might be 0 (GLOBAL_V) by default from calloc if not specifically set.
+        // We can just print the label.
+        fprintf(fp, "Label(%u)", arg->val);
+        return;
+    }
+    
+    // Print type as number for debugging, then human-readable form
+    // fprintf(fp, "(%u)", arg->type); 
+
+    switch (arg->type) {
+        case GLOBAL_V:    fprintf(fp, "G[%u]", arg->val); break;
+        case LOCAL_V:     fprintf(fp, "L[%u]", arg->val); break;
+        case FORMAL_V:    fprintf(fp, "F[%u]", arg->val); break;
+        case USERFUNC_V:
+            // Assuming arg->val for USERFUNC_V is the starting instruction index of the function
+            fprintf(fp, "UFuncAddr(%u)", arg->val);
+            break;
+        case LIBFUNC_V:
+            if (arg->val < curr_libfunc_const && libfunc_const != NULL) {
+                fprintf(fp, "LibFunc(\"%s\")", libfunc_const[arg->val]);
+            } else {
+                fprintf(fp, "LibFunc(INVALID_IDX:%u)", arg->val);
+            }
+            break;
+        case TEMPORARY_V: fprintf(fp, "T[%u]", arg->val); break;
+        case BOOL_V:      fprintf(fp, "%s", arg->val ? "true" : "false"); break;
+        case STRING_V:
+            if (arg->val < curr_str_const && string_const != NULL) {
+                fprintf(fp, "\"%s\"", string_const[arg->val]);
+            } else {
+                fprintf(fp, "Str(INVALID_IDX:%u)", arg->val);
+            }
+            break;
+        case NUMBER_V:
+            if (arg->val < curr_num_const && number_const != NULL) {
+                fprintf(fp, "%g", number_const[arg->val]);
+            } else {
+                fprintf(fp, "Num(INVALID_IDX:%u)", arg->val);
+            }
+            break;
+        case NIL_V:       fprintf(fp, "nil"); break;
+        // If you add a LABEL_V type for jump targets, handle it here:
+        // case LABEL_V:     fprintf(fp, "Label(%u)", arg->val); break;
+        default:          fprintf(fp, "UnknownType(%u):%u", arg->type, arg->val); break;
+    }
+}
+
+// Main function to print the generated AVM code to a file
+void printFile() {
+    FILE* fp = fopen("avm_output.txt", "w");
+    if (!fp) {
+        perror("Error opening avm_output.txt for writing");
+        return;
+    }
+
+    fprintf(fp, "magic_number: 0x%X (%u)\n\n", magic_number, magic_number);
+
+    fprintf(fp, "--- String Constants (%u total) ---\n", curr_str_const);
+    if (string_const) {
+        for (unsigned i = 0; i < curr_str_const; ++i) {
+            fprintf(fp, "%u: \"%s\"\n", i, string_const[i]);
+        }
+    } else {
+        fprintf(fp, "(No string constants defined or array is null)\n");
+    }
+    fprintf(fp, "\n");
+
+    fprintf(fp, "--- Number Constants (%u total) ---\n", curr_num_const);
+    if (number_const) {
+        for (unsigned i = 0; i < curr_num_const; ++i) {
+            fprintf(fp, "%u: %g\n", i, number_const[i]);
+        }
+    } else {
+        fprintf(fp, "(No number constants defined or array is null)\n");
+    }
+    fprintf(fp, "\n");
+
+    fprintf(fp, "--- Library Functions Used (%u total) ---\n", curr_libfunc_const);
+    if (libfunc_const) {
+        for (unsigned i = 0; i < curr_libfunc_const; ++i) {
+            fprintf(fp, "%u: \"%s\"\n", i, libfunc_const[i]);
+        }
+    } else {
+        fprintf(fp, "(No library functions used or array is null)\n");
+    }
+    fprintf(fp, "\n");
+
+    // Print Instructions
+    fprintf(fp, "--- Instructions (%u total) ---\n", curr_instruction);
+    fprintf(fp, "Instr#\tOpcode\t\tResult\t\tArg1\t\tArg2\t\tSrcLine\n");
+    fprintf(fp, "------------------------------------------------------------------------------------\n");
+    if (instructions) {
+        for (unsigned i = 0; i < curr_instruction; ++i) {
+            instruction* instr = &instructions[i];
+            fprintf(fp, "%u:\t%-10s\t", i, vmopcode_to_string(instr->opcode));
+
+            int is_jump_instr = is_jump_opcode(instr->opcode);
+            print_vmarg(fp, &instr->result, is_jump_instr);
+            fprintf(fp, "\t\t");
+
+            print_vmarg(fp, &instr->arg1, 0); 
+            fprintf(fp, "\t\t");
+
+            print_vmarg(fp, &instr->arg2, 0); 
+            fprintf(fp, "\t\t");
+
+            fprintf(fp, "%u\n", instr->srcLine);
+        }
+    } else {
+        fprintf(fp, "(No instructions generated or array is null)\n");
+    }
+
+    fclose(fp);
+    printf("AVM code written to avm_output.txt\n");
 }
 
 /* end of target.c */

@@ -5,6 +5,7 @@
      */
     #include "table.h"
     #include "quads.h"
+    #include "target.h"
 
     /* Globals */
     int inFunction = 0;
@@ -1309,6 +1310,9 @@ int main(int argc, char** argv) {
     }
     printQuadsToFile(fd);
     
+    generate();
+    printFile();
+
     /* Return Normally */
     free_HashTable();
     freeTokenList(&root);
