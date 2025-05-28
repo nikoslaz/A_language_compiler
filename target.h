@@ -12,6 +12,9 @@
 #define CURR_LIBFUNC_SIZE (total_str_const*sizeof(char*))
 #define CURR_INSTRUCTION_SIZE (total_instruction*sizeof(instruction*))
 
+#define MAGIC_NUMBER 0xDEADBEEF
+unsigned magic_number = MAGIC_NUMBER;
+
 typedef enum VmargType {
     GLOBAL_V,
     LOCAL_V,
@@ -90,33 +93,33 @@ extern unsigned int curr_instruction;
 
 void generate(void);
 
-extern void generate_ADD(quad*);
-extern void generate_SUB(quad*);
+extern void generate_ASSIGN(quad*);
+extern void generate_ADD(quad*); 
+extern void generate_SUB(quad*); 
 extern void generate_MUL(quad*);
-extern void generate_DIV(quad*);
+extern void generate_DIV(quad*); 
 extern void generate_MOD(quad*);
 extern void generate_UMINUS(quad*);
+extern void generate_AND(quad*);
+extern void generate_OR(quad*);
+extern void generate_NOT(quad*);
+extern void generate_IF_EQ(quad*);
+extern void generate_IF_NOTEQ(quad*);
+extern void generate_IF_LESSEQ(quad*);
+extern void generate_IF_GREATEREQ(quad*);
+extern void generate_IF_LESS(quad*);
+extern void generate_IF_GREATER(quad*);
+extern void generate_CALL(quad*);
+extern void generate_PARAM(quad*);
+extern void generate_RETURN(quad*);
+extern void generate_GETRETVAL(quad*);
+extern void generate_FUNCSTART(quad*);
+extern void generate_FUNCEND(quad*);
 extern void generate_NEWTABLE(quad*);
 extern void generate_TABLEGETELEM(quad*);
 extern void generate_TABLESETELEM(quad*);
-extern void generate_ASSIGN(quad*);
-extern void generate_NOP(quad*);
 extern void generate_JUMP(quad*);
-extern void generate_IF_EQ(quad*);
-extern void generate_IF_NOTEQ(quad*);
-extern void generate_IF_GREATER(quad*);
-extern void generate_IF_GREATEREQ(quad*);
-extern void generate_IF_LESS(quad*);
-extern void generate_IF_LESSEQ(quad*);
-extern void generate_NOT(quad*);
-extern void generate_OR(quad*);
-extern void generate_AND(quad*);
-extern void generate_PARAM(quad*);
-extern void generate_CALL(quad*);
-extern void generate_GETRETVAL(quad*);
-extern void generate_FUNCSTART(quad*);
-extern void generate_RETURN(quad*);
-extern void generate_FUNCEND(quad*);
+extern void generate_NOP(quad*);
 
 typedef void (*generator_func_t)(quad*);
 
