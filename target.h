@@ -31,52 +31,17 @@ typedef struct vmarg {
     unsigned val;
 } vmarg;
 
-typedef enum Vmopcode {
-    /* Arithmetic */
-    ADD_V,
-    SUB_V,
-    MUL_V,
-    DIV_V,
-    MOD_V,
-    UMINUS_V,
-
-    /* Relational */
-    AND_V,
-    OR_V,
-    NOT_V,
-    JEQ_V,
-    JNE_V,
-    JGT_V,
-    JLT_V,
-    JGE_V,
-    JLE_V,
-
-    /* Control Flow */
-    CALL_V,
-    RETURN_V,
-    GETRETVAL_V,
-
-    /* Memory Access */
+typedef enum vmopcode {
     ASSIGN_V,
-    GETTABLEITEM_V,
-    SETTABLEITEM_V,
-
-    /* Function Calls */
-    PARAM_V,
-    FUNCSTART_V,
-    FUNCEND_V,
-    
-    /* Miscellaneous */
-    NEWTABLE_V,
-    TABLEGETELEM_V,
-    TABLESETELEM_V,
-    
-    /* Input/Output */
-    PRINT_V,
-
-    /* End of instructions */
-    NOP_V
+    ADD_V, SUB_V, MUL_V, DIV_V, MOD_V,
+    UMINUS_V,
+    AND_V, OR_V, NOT_V,    
+    JEQ_V, JNE_V, JLE_V, JGE_V, JLT_V, JGT_V,      
+    CALL_V, PARAM_V, RETURN_V, GETRETVAL_V, FUNCSTART_V, FUNCEND_V,
+    OP_TABLECREATE, TABLEGETELEM_V, TABLESETELEM_V,
+    JUMP_V
 } vmopcode;
+
 
 typedef struct instruction {
     vmopcode opcode;
