@@ -6,6 +6,16 @@ DODODODODO
 ---------------------------------------------------------------------------------
 // PHASE 4
 
+ARITH, SET, GET, UMINUS (2 args, result) - FULL ( TURH UMINUS TO FULL, USE CONST NUM -1)
+RELATIONAL (2 args, index)         - RELATIONAL
+FUNCSTART, FUNCEND, CALL, PARAM (arg1) - ARG1
+GETRETVAL, RETURN - (result)        - RES
+
+
+ASSIGN - (arg1, result)  - ASSIGN
+JUMP (index)             - JUMP
+NOP                      - NOP
+
 Target code:
 
 FTIAXNOUME to target.c
@@ -29,7 +39,6 @@ Create more dynamic arrays for CONSTS (num, string etc) funcs
 Write everything in a binary file in order ??
 
 Keep up with target.h && target.c!
-
 
 
 AVM
