@@ -121,10 +121,10 @@ extern void generate_TABLESETELEM(quad*);
 extern void generate_JUMP(quad*);
 extern void generate_NOP(quad*);
 
-void helper_generate_full(quad* q);
-void helper_generate_relational(quad* q);
-void helper_generate_arg1(quad* q);
-void helper_generate_res(quad* q);
+void helper_generate_full(vmopcode op, quad* q);
+void helper_generate_relational(vmopcode op, quad* q);
+void helper_generate_arg1(vmopcode op, quad* q);
+void helper_generate_res(vmopcode op, quad* q);
 
 typedef void (*generator_func_t)(quad*);
 
