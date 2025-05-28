@@ -118,6 +118,11 @@ extern void generate_FUNCSTART(quad*);
 extern void generate_RETURN(quad*);
 extern void generate_FUNCEND(quad*);
 
+void helper_generate_full(quad* q);
+void helper_generate_relational(quad* q);
+void helper_generate_arg1(quad* q);
+void helper_generate_res(quad* q);
+
 typedef void (*generator_func_t)(quad*);
 
 generator_func_t generators[] = {
