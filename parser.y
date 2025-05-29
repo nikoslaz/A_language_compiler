@@ -1301,17 +1301,17 @@ int main(int argc, char** argv) {
     print_SymTable();
     
     /* Print Quads */
-    /* printf("\n           ======= Intermediate Code =======\n");
-    printQuads(); */
-    FILE* fd;
+    printf("\n           ======= Intermediate Code =======\n");
+    printQuads();
+    /* FILE* fd;
     if(!(fd = fopen("quads.output", "w"))) {
         fprintf(stderr, "Cannot create quads.output file\n");
         return 1;
     }
-    printQuadsToFile(fd);
+    printQuadsToFile(fd); */
     
-    generate();
-    printFile();
+    generateTarget();
+    printTargetToFile();
 
     /* Return Normally */
     free_HashTable();

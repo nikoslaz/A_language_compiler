@@ -25,8 +25,9 @@ typedef enum VmargType {
     BOOL_V,
     STRING_V,
     NUMBER_V,
-    NIL_V,
     LABEL_V,
+    NIL_V,
+    UNDEFINED_V
 } vmarg_t;
 
 typedef struct vmarg {
@@ -52,26 +53,19 @@ typedef struct instruction {
     vmarg result;
     vmarg arg1;
     vmarg arg2;
-    unsigned srcLine;
 } instruction;
 
-typedef struct incomplete_jump {
-    unsigned instrNo;     
-    unsigned iaddress;    
-    struct incomplete_jump* next; 
-} incomplete_jump;
+// typedef struct incomplete_jump {
+//     unsigned instrNo;     
+//     unsigned iaddress;    
+//     struct incomplete_jump* next; 
+// } incomplete_jump;
 
-extern incomplete_jump* ij_head;
-extern unsigned ij_total;
+// extern incomplete_jump* ij_head;
+// extern unsigned ij_total;
 
-void add_incomplete_jump(unsigned instrNo, unsigned iaddress);
-void patch_incomplete_jumps(void);
-
-unsigned consts_newstring(char* s);
-unsigned consts_newnumber(double n);
-unsigned consts_newlibfunc(char* s);
-
-void make_operand(expr* e, vmarg* arg);
+// void add_incomplete_jump(unsigned instrNo, unsigned iaddress);
+// void patch_incomplete_jumps(void);
 
 /*===============================================================================================*/
 /* Globals */
@@ -92,7 +86,15 @@ extern unsigned int curr_instruction;
 /*===============================================================================================*/
 /* Generators */
 
-void generate(void);
+typedef void (*generator_func_t)(quad*);
+extern generator_func_t generators[];
+
+unsigned int consts_newstring(char* s);
+unsigned int consts_newnumber(double n);
+unsigned int consts_newlibfunc(char* s);
+void make_operand(expr* e, vmarg* arg);
+
+void generateTarget(void);
 
 extern void generate_ASSIGN(quad*);
 extern void generate_ADD(quad*); 
@@ -126,11 +128,7 @@ void helper_generate_full(vmopcode op, quad* q);
 void helper_generate_relational(vmopcode op, quad* q);
 void helper_generate_arg1(vmopcode op, quad* q);
 void helper_generate_res(vmopcode op, quad* q);
-void printFile();
-
-typedef void (*generator_func_t)(quad*);
-
-extern generator_func_t generators[];
+void printTargetToFile();
 
 #endif
 /* end of list.h */
