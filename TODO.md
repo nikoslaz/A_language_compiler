@@ -18,8 +18,8 @@ ASSIGN - (arg1, result)
 JUMP (index)
 FUNCSTART (2 args) -->
 
-FIX RESOLVE RAW SYMBOL (NIKOOOOO)
-GIA: LOCAL, GLOBALk, RAW
+<!-- FIX RESOLVE RAW SYMBOL (NIKOOOOO) -->
+<!-- GIA: LOCAL, GLOBALk, RAW -->
 <!-- REMEMBER: ftiaxe na fainontai na locals sto FUNCSTART -->
 <!-- REMEMBER: apo8hkeyoyme kapou posa program func yparxoun -->
 <!-- REMEMBER: ftiaxnoyme ola ta ecalls apo twra ston pinaka -->
@@ -35,10 +35,8 @@ How to translate symbols to address: XRHSIMOPOIW MONO OFFSET? -->
 
 Write everything in a binary file in order ??
 
-
 ---------------------------------------------------------------------------------
 AVM
-
 
 
 ---------------------------------------------------------------------------------
