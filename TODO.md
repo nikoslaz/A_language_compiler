@@ -19,6 +19,7 @@ JUMP (index)
 FUNCSTART (2 args) -->
 
 FIX RESOLVE RAW SYMBOL (NIKOOOOO)
+GIA: LOCAL, GLOBALk, RAW
 <!-- REMEMBER: ftiaxe na fainontai na locals sto FUNCSTART -->
 <!-- REMEMBER: apo8hkeyoyme kapou posa program func yparxoun -->
 <!-- REMEMBER: ftiaxnoyme ola ta ecalls apo twra ston pinaka -->

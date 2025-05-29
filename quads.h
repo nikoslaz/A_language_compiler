@@ -103,6 +103,7 @@ expr* create_bool_expr(Symbol* sym);
 expr* create_empty_bool_expr(void);
 expr* create_var_expr(Symbol* symbol);
 expr* create_prog_func_expr(Symbol* symbol);
+expr* create_lib_func_expr(Symbol* symbol);
 expr* create_constnum_expr(double value);
 expr* create_conststring_expr(char* value);
 expr* create_constbool_expr(unsigned int value);

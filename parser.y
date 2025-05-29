@@ -662,28 +662,42 @@ assignexpr:
     ;
 
 lvalue:
-    ID {
-        int inaccessible = 0;
-        Symbol* sym = lookUp_All($1, &inaccessible);
-        /* If lookUp returned NULL its either new or inaccessible */
-        if(sym == NULL) {
-            if(inaccessible && inFunction) {
-                /* Symbol is inaccessible */
-                char msg[100];
-                snprintf(msg, sizeof(msg), "Cannot access '%s' inside function", $1);
-                yyerror(msg);
-                $$ = NULL;
+    ID { 
+        Symbol* sym = resolve_RawSymbol($1);
+        if(sym) {
+            if(sym->type == USERFUNC_T) {
+                $$ = create_prog_func_expr(sym);
+            } else if(sym->type == LIBFUNC_T) {
+                $$ = create_lib_func_expr(sym);
             } else {
-                /* Create new symbol */
-                $$ = create_var_expr(resolve_RawSymbol($1));
+                $$ = create_var_expr(sym);
             }
-        } else {    
-            /* Symbol already exists and is accessible */        
-            $$ = create_var_expr(sym);
         }
     }
-    | LOCAL ID { $$ = create_var_expr(resolve_LocalSymbol($2)); }
-    | COLON_COLON ID { $$ = create_var_expr(resolve_GlobalSymbol($2)); }
+    | LOCAL ID {
+        Symbol* sym = resolve_LocalSymbol($2);
+        if(sym) {
+            if(sym->type == USERFUNC_T) {
+                $$ = create_prog_func_expr(sym);
+            } else if(sym->type == LIBFUNC_T) {
+                $$ = create_lib_func_expr(sym);
+            } else {
+                $$ = create_var_expr(sym);
+            }
+        }
+    }
+    | COLON_COLON ID {
+        Symbol* sym = resolve_GlobalSymbol($2);
+        if(sym) {
+            if(sym->type == USERFUNC_T) {
+                $$ = create_prog_func_expr(sym);
+            } else if(sym->type == LIBFUNC_T) {
+                $$ = create_lib_func_expr(sym);
+            } else {
+                $$ = create_var_expr(sym);
+            }
+        }
+    }
     | member { $$ = $1; }
     ;
 

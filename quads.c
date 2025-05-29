@@ -131,6 +131,21 @@ expr* create_prog_func_expr(Symbol* symbol) {
     return temp;
 }
 
+expr* create_lib_func_expr(Symbol* symbol) {
+    expr* temp=(expr*)malloc(sizeof(expr));
+    if(!temp) { MemoryFail(); }
+    temp->type=EXP_LIBRARYFUNC;
+    temp->symbol=symbol;
+    temp->index=NULL;
+    temp->numConst=0;
+    temp->stringConst=0;
+    temp->boolConst=0;
+    temp->next=NULL;
+    temp->truelist=NULL;
+    temp->falselist=NULL;
+    return temp;
+}
+
 expr* create_constnum_expr(double value) {
     expr* temp=(expr*)malloc(sizeof(expr));
     if(!temp) { MemoryFail(); }
