@@ -2,6 +2,10 @@
 #include "quads.h"
 #include "table.h"
 
+#define COL_WIDTH_OPCODE 12
+#define COL_WIDTH_ARG    20
+#define COL_WIDTH_LINE   5
+
 unsigned magic_number = MAGIC_NUMBER;
 
 generator_func_t generators[] = {
@@ -333,68 +337,79 @@ static int is_jump_opcode(vmopcode op) {
     }
 }
 
-static void print_vmarg(FILE* fp, vmarg* arg, int is_jump_target) {
-    if(!arg) { fprintf(fp, "null vmarg)"); return; }
-    if(is_jump_target) { fprintf(fp, "Label(%u)", arg->val+1); return; }
-    switch(arg->type) {
-        case GLOBAL_V:    fprintf(fp, "G[%u]", arg->val); break;
-        case LOCAL_V:     fprintf(fp, "L[%u]", arg->val); break;
-        case FORMAL_V:    fprintf(fp, "F[%u]", arg->val); break;
-        case USERFUNC_V:  fprintf(fp, "UsrFunc(%u)", arg->val+1); break;
-        case LIBFUNC_V:   fprintf(fp, "LibFunc(%u)", arg->val); break;
-        case TEMPORARY_V: fprintf(fp, "T[%u]", arg->val); break;
-        case BOOL_V:      fprintf(fp, "%s", arg->val ? "TRUE" : "FALSE"); break;
-        case STRING_V:    fprintf(fp, "Str(%u)", arg->val); break;
-        case NUMBER_V:    fprintf(fp, "Num(%u)", arg->val); break;
-        case LABEL_V:     fprintf(fp, "Label(%u)", arg->val+1); break;
-        case NUMLOCALS_V: fprintf(fp, "Locals(%u)", arg->val); break;
-        case NIL_V:       fprintf(fp, "NIL"); break;
-        case UNDEFINED_V: fprintf(fp, "Undef"); break;
-        default:          fprintf(fp, "Unrecoqnized vmarg_type"); break;
+static void print_vmarg_aligned(FILE* fp, vmarg* arg, int is_jump_target) {
+    char buffer[64] = {0};
+
+    if (!arg) {
+        snprintf(buffer, sizeof(buffer), "null vmarg)");
+    } else if (is_jump_target) {
+        snprintf(buffer, sizeof(buffer), "Label(%u)", arg->val + 1);
+    } else {
+        switch (arg->type) {
+            case GLOBAL_V:    snprintf(buffer, sizeof(buffer), "G[%u]",       arg->val); break;
+            case LOCAL_V:     snprintf(buffer, sizeof(buffer), "L[%u]",       arg->val); break;
+            case FORMAL_V:    snprintf(buffer, sizeof(buffer), "F[%u]",       arg->val); break;
+            case USERFUNC_V:  snprintf(buffer, sizeof(buffer), "UsrFunc(%u)", arg->val + 1); break;
+            case LIBFUNC_V:   snprintf(buffer, sizeof(buffer), "LibFunc(%u)", arg->val); break;
+            case TEMPORARY_V: snprintf(buffer, sizeof(buffer), "T[%u]",       arg->val); break;
+            case BOOL_V:      snprintf(buffer, sizeof(buffer), "%s",          arg->val ? "TRUE" : "FALSE"); break;
+            case STRING_V:    snprintf(buffer, sizeof(buffer), "Str(%u)",     arg->val); break;
+            case NUMBER_V:    snprintf(buffer, sizeof(buffer), "Num(%u)",     arg->val); break;
+            case LABEL_V:     snprintf(buffer, sizeof(buffer), "Label(%u)",   arg->val + 1); break;
+            case NUMLOCALS_V: snprintf(buffer, sizeof(buffer), "Locals(%u)",  arg->val); break;
+            case NIL_V:       snprintf(buffer, sizeof(buffer), "NIL");        break;
+            case UNDEFINED_V: snprintf(buffer, sizeof(buffer), "Undef");      break;
+            default:          snprintf(buffer, sizeof(buffer), "Unknown");    break;
+        }
     }
+
+    fprintf(fp, "%-*s", COL_WIDTH_ARG, buffer);
 }
 
 void printTargetToFile() {
     FILE* fp = fopen("target.output", "w");
-    if(!fp) { perror("Error opening target.output for writing"); return; }
+    if (!fp) {
+        perror("Error opening target.output for writing");
+        return;
+    }
+
     fprintf(fp, "Magic_number: 0x%X (%u)\n", magic_number, magic_number);
     fprintf(fp, "Total Program Variables: (%u)\n\n", int_to_Scope(0)->scopeOffset);
-    
+
     fprintf(fp, "--- String Constants (%u total) ---\n", curr_str_const);
-    for(unsigned i = 0; i < curr_str_const; ++i) {
-        fprintf(fp, "%u: \"%s\"\n", i, string_const[i]);
-    } fprintf(fp, "\n");
+    for (unsigned i = 0; i < curr_str_const; ++i)
+        fprintf(fp, "%-4u: \"%s\"\n", i, string_const[i]);
+    fprintf(fp, "\n");
 
     fprintf(fp, "--- Number Constants (%u total) ---\n", curr_num_const);
-    for(unsigned i = 0; i < curr_num_const; ++i) {
-        fprintf(fp, "%u: %g\n", i, number_const[i]);
-    } fprintf(fp, "\n");
+    for (unsigned i = 0; i < curr_num_const; ++i)
+        fprintf(fp, "%-4u: %g\n", i, number_const[i]);
+    fprintf(fp, "\n");
 
     fprintf(fp, "--- Library Functions (%u total) ---\n", curr_libfunc_const);
-    for(unsigned i = 0; i < curr_libfunc_const; ++i) {
-        fprintf(fp, "%u: \"%s\"\n", i, libfunc_const[i]);
-    } fprintf(fp, "\n");
+    for (unsigned i = 0; i < curr_libfunc_const; ++i)
+        fprintf(fp, "%-4u: \"%s\"\n", i, libfunc_const[i]);
+    fprintf(fp, "\n");
 
     fprintf(fp, "--- Instructions (%u total) ---\n", curr_instruction);
-    fprintf(fp, "#\tOpcode\t\tResult\t\tArg1\t\tArg2\t\tLine\n");
-    fprintf(fp, "----------------------------------------------------------\n");
-    for(unsigned i = 0; i < curr_instruction; ++i) {
-        instruction* instr = &instructions[i];
-        fprintf(fp, "%u:\t%-10s\t", i+1, vmopcode_to_string(instr->opcode));
-        
-        print_vmarg(fp, &instr->result, is_jump_opcode(instr->opcode));
-        fprintf(fp, "\t\t");
-        
-        print_vmarg(fp, &instr->arg1, 0); 
-        fprintf(fp, "\t\t");
-        
-        print_vmarg(fp, &instr->arg2, 0); 
-        fprintf(fp, "\t\t");
+    fprintf(fp, "#   Opcode      Result             Arg1               Arg2               Line\n");
+    fprintf(fp, "-------------------------------------------------------------------------------\n");
 
-        fprintf(fp, "%u\n", instr->srcLine);
+    for (unsigned i = 0; i < curr_instruction; ++i) {
+        instruction* instr = &instructions[i];
+
+        fprintf(fp, "%-3u %-*s", i + 1, COL_WIDTH_OPCODE, vmopcode_to_string(instr->opcode));
+
+        print_vmarg_aligned(fp, &instr->result, is_jump_opcode(instr->opcode));
+        print_vmarg_aligned(fp, &instr->arg1, 0);
+        print_vmarg_aligned(fp, &instr->arg2, 0);
+
+        fprintf(fp, "%-*u\n", COL_WIDTH_LINE, instr->srcLine);
     }
+
     fclose(fp);
     printf("Target code written to target.output\n");
 }
+
 
 /* end of target.c */
