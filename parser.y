@@ -495,7 +495,7 @@ expr:
         } 
         $$ = expr_temp;
     }
-    | term 
+    | term { $$ = $1; }
     ;
 
 // Simple Garbage Collection
@@ -673,9 +673,7 @@ lvalue:
             } else {
                 $$ = create_var_expr(sym);
             }
-        } else {
-            $$ = NULL;
-        }
+        } else { $$ = NULL; }
     }
     | LOCAL ID {
         Symbol* sym = resolve_LocalSymbol($2);
@@ -687,9 +685,7 @@ lvalue:
             } else {
                 $$ = create_var_expr(sym);
             }
-        } else {
-            $$ = NULL;
-        }
+        } else { $$ = NULL; }
     }
     | COLON_COLON ID {
         Symbol* sym = resolve_GlobalSymbol($2);
@@ -701,9 +697,7 @@ lvalue:
             } else {
                 $$ = create_var_expr(sym);
             }
-        } else {
-            $$ = NULL;
-        }
+        } else { $$ = NULL; }
     }
     | member { $$ = $1; }
     ;

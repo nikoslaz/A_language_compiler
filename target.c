@@ -282,6 +282,7 @@ void generateTarget(void) {
         consts_newlibfunc(is_Lib_Func(strdup(library_names[i]))->name);
     }
     for(unsigned i = 0; i < currquad; ++i) {
+        printf("Generating quad %d\n", i+1);
         (*generators[quads[i].op])(quads + i);
     }
 }
