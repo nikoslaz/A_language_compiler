@@ -56,7 +56,7 @@ unsigned int consts_newstring(char* s) {
 unsigned int consts_newnumber(double n) {
     if(curr_num_const == total_num_const) {
         total_num_const += EXPAND_SIZE;
-        number_const = realloc(number_const, total_str_const*sizeof(double));
+        number_const = realloc(number_const, total_num_const*sizeof(double));
         if(!number_const) { MemoryFail(); }
     }
     for(int i = 0; i < curr_num_const; i++) {
@@ -69,7 +69,7 @@ unsigned int consts_newnumber(double n) {
 unsigned int consts_newlibfunc(char* s) {
     if(curr_libfunc_const == total_libfunc_const) {
         total_libfunc_const += EXPAND_SIZE;
-        libfunc_const = realloc(libfunc_const, total_str_const*sizeof(char*));
+        libfunc_const = realloc(libfunc_const, total_libfunc_const*sizeof(char*));
         if(!libfunc_const) { MemoryFail(); }
     }
     for(int i = 0; i < curr_libfunc_const; i++) {
@@ -85,7 +85,7 @@ unsigned int consts_newlibfunc(char* s) {
 void emit_target(instruction p) {
 	if(curr_instruction==total_instruction) {
         total_instruction += EXPAND_SIZE;
-        instructions = realloc(instructions, total_str_const*sizeof(instruction*));
+        instructions = realloc(instructions, total_instruction*sizeof(instruction*));
         if(!instructions) { MemoryFail(); }
     }
 	instruction* i = (instruction*)malloc(sizeof(instruction));
@@ -282,7 +282,7 @@ void generateTarget(void) {
         consts_newlibfunc(is_Lib_Func(strdup(library_names[i]))->name);
     }
     for(unsigned i = 0; i < currquad; ++i) {
-        printf("Generating quad %d\n", i+1);
+        // printf("Generating quad %d\n", i+1);
         (*generators[quads[i].op])(quads + i);
     }
 }
