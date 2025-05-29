@@ -9,6 +9,7 @@
 
     /* Globals */
     int inFunction = 0;
+    int hasError = 0;
 %}
 
 %start program
@@ -621,7 +622,7 @@ term:
 
 assignexpr:
     lvalue EQUALS expr {
-        if($1 && ($1->symbol->type == LIBFUNC_T || $1->symbol->type == LIBFUNC_T)) {
+        if($1 && ($1->symbol->type == LIBFUNC_T || $1->symbol->type == USERFUNC_T)) {
             char msg[1024];
             snprintf(msg, sizeof(msg), "Using %s as an lvalue", $1->type == USERFUNC_T ? "ProgramFunc" : "LibFunc");
             yyerror(msg);
@@ -672,6 +673,8 @@ lvalue:
             } else {
                 $$ = create_var_expr(sym);
             }
+        } else {
+            $$ = NULL;
         }
     }
     | LOCAL ID {
@@ -684,6 +687,8 @@ lvalue:
             } else {
                 $$ = create_var_expr(sym);
             }
+        } else {
+            $$ = NULL;
         }
     }
     | COLON_COLON ID {
@@ -696,6 +701,8 @@ lvalue:
             } else {
                 $$ = create_var_expr(sym);
             }
+        } else {
+            $$ = NULL;
         }
     }
     | member { $$ = $1; }
@@ -1310,22 +1317,25 @@ int main(int argc, char** argv) {
         exit(1);
     }
 
-    /* Print SymTable */
-    printf("\n           ======= Syntax Analysis =======\n");
-    print_SymTable();
+    if(!hasError) {
+
+        /* Print SymTable */
+        printf("\n           ======= Syntax Analysis =======\n");
+        print_SymTable();
     
-    /* Print Quads */
-    printf("\n           ======= Intermediate Code =======\n");
-    printQuads();
-    /* FILE* fd;
-    if(!(fd = fopen("quads.output", "w"))) {
-        fprintf(stderr, "Cannot create quads.output file\n");
-        return 1;
-    }
-    printQuadsToFile(fd); */
-    
-    generateTarget();
-    printTargetToFile();
+        /* Print Quads */
+        printf("\n           ======= Intermediate Code =======\n");
+        printQuads();
+        /* FILE* fd;
+        if(!(fd = fopen("quads.output", "w"))) {
+            fprintf(stderr, "Cannot create quads.output file\n");
+            return 1;
+        }
+        printQuadsToFile(fd); */
+        
+        generateTarget();
+        printTargetToFile();
+    } else { printf("\nTarget code generation failed:(\n"); }
 
     /* Return Normally */
     free_HashTable();

@@ -19,6 +19,7 @@ int yyerror(char* yaccProvidedMessage);
 int yylex(void);
 extern int yylineno;
 extern char* yytext;
+extern int hasError;
 extern FILE* yyin;
 extern FILE* yyout;
 #define MAX_NESTED_COMMENTS 100

@@ -20,6 +20,7 @@ void MemoryFail(void) {
 
 /* yyerror */
 int yyerror(char* yaccProvidedMessage) {
+    hasError=1;
     fprintf(stderr, "Error in Line %d: %s\n",
     yylineno, yaccProvidedMessage);
 }
@@ -367,14 +368,14 @@ Symbol* resolve_RawSymbol(const char* name) {
     Symbol* res = NULL;
     int inaccessible = 0;
 
-    if((res = is_Lib_Func(name))) {
-        yyerror("Trying to redefine Library Function");
-        return res;
-    }
-    if((res = is_User_Func(name))) {
-        yyerror("Trying to redefine User Function");
-        return res;
-    }
+    // if((res = is_Lib_Func(name))) {
+    //     yyerror("Trying to redefine Library Function");
+    //     return res;
+    // }
+    // if((res = is_User_Func(name))) {
+    //     yyerror("Trying to redefine User Function");
+    //     return res;
+    // }
 
     res = lookUp_All(name, &inaccessible);
     if(res) {
