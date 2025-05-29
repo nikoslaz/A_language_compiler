@@ -6,55 +6,37 @@ DODODODODO
 ---------------------------------------------------------------------------------
 // PHASE 4
 
-ARITH, SET, GET, UMINUS (2 args, result) - FULL ( TURH UMINUS TO FULL, USE CONST NUM -1)
-RELATIONAL (2 args, index)         - RELATIONAL
-FUNCSTART, FUNCEND, CALL, PARAM (arg1) - ARG1
-GETRETVAL, RETURN - (result)        - RES
-NOP                      - NOP
-
-
-ASSIGN - (arg1, result)  - ASSIGN
-JUMP (index)             - JUMP
-
 Target code:
 
-FTIAXNOUME to target.c
+<!-- ARITH, SET, GET, UMINUS (2 args, result) - FULL ( TURH UMINUS TO FULL, USE CONST NUM -1)
+RELATIONAL (2 args, index)         - RELATIONAL
+FUNCEND, CALL, PARAM (arg1) - ARG1
+GETRETVAL, RETURN - (result)        - RES
 
+NOP
+ASSIGN - (arg1, result)
+JUMP (index)
+FUNCSTART (2 args) -->
+
+FIX RESOLVE RAW SYMBOL (NIKOOOOO)
+<!-- REMEMBER: ftiaxe na fainontai na locals sto FUNCSTART -->
+<!-- REMEMBER: apo8hkeyoyme kapou posa program func yparxoun -->
+<!-- REMEMBER: ftiaxnoyme ola ta ecalls apo twra ston pinaka -->
+<!-- REMEMBER: bale pisw ta source line ston target (gia otan trwme error sthn avm) -->
+
+<!-- FTIAXNOUME to target.c
 Vazoume mesa ta emit target:
+How to translate symbols to address: XRHSIMOPOIW MONO OFFSET? -->
 
-How to translate symbols to address: XRHSIMOPOIW MONO OFFSET?
+<!-- First we make the final code dynamic array (similar to quads, but use generate_x) -->
 
-1 extra field: pointer to translated quad
-SKATA
-REMEMBER: modify function address to translated_address (after translation)
-ALSO: for each quad, store the address of the translated_quad
-and at the end, after we have finished the whole translated array, make
-every jump point to the destination quad translated address
-
-First we make the final code dynamic array (similar to quads, but use generate_x)
-patch JUMPS
-
-Create more dynamic arrays for CONSTS (num, string etc) funcs
+<!-- Create more dynamic arrays for CONSTS (num, string etc) funcs -->
 
 Write everything in a binary file in order ??
 
-Keep up with target.h && target.c!
 
-
+---------------------------------------------------------------------------------
 AVM
-
-(when do we make functstart and funcend push_pop the activation stack?)
-
-
-
-
-
-
-
-
-
-
-
 
 
 

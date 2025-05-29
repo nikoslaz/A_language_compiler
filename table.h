@@ -106,6 +106,7 @@ Symbol* handleAnonymousFuncCall(Symbol* funcdef);
 Symbol* createTempSymbol(void);
 Symbol* lookUp_All(const char* name, int* inaccessible);
 Symbol* lookUp_CurrentScope(const char* name);
+Symbol* is_Lib_Func(const char* name);
 
 /* Resolve Symbols */
 Symbol* insert_Symbol(const char* name, SymbolType type);

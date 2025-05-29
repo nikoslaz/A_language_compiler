@@ -979,7 +979,7 @@ funcdef:
         expr* res = create_prog_func_expr(resolve_FuncSymbol($2));
         /* Save Address */
         if(res && res->symbol) { res->symbol->quad_addr = nextquad(); }
-        emit(OP_FUNCSTART, res, NULL, NULL, 0);
+        emit(OP_FUNCSTART, NULL, res, NULL, 0);
         /* Store function symbol */
         if($3) { $3->symbol = res->symbol; }
         fromFunct = 1;
@@ -992,7 +992,7 @@ funcdef:
         if(return_stack) { backpatch(return_stack->return_list, nextquad()); }
         /* Calculate function total offset */
         if($3 && $3->symbol) { $3->symbol->num_locals = $10; }
-        emit(OP_FUNCEND, $3, NULL, NULL, 0);
+        emit(OP_FUNCEND, NULL, $3, NULL, 0);
         fromFunct = 0;
         inFunction--;
         /* Patch jump to skip funcdef */
@@ -1004,7 +1004,7 @@ funcdef:
         expr* sym = create_prog_func_expr(resolve_AnonymousFunc());
         /* Save Address */
         if(sym && sym->symbol) { sym->symbol->quad_addr = nextquad(); }
-        emit(OP_FUNCSTART, sym, NULL, NULL, 0);
+        emit(OP_FUNCSTART, NULL, sym, NULL, 0);
         /* Store function symbol */
         if($2) { $2->symbol = sym->symbol; }
         fromFunct = 1;
@@ -1017,7 +1017,7 @@ funcdef:
         if(return_stack) { backpatch(return_stack->return_list, nextquad()); }
         /* Calculate function total offset */
         if($2 && $2->symbol) { $2->symbol->num_locals = $9; }
-        emit(OP_FUNCEND, $2, NULL, NULL, 0);
+        emit(OP_FUNCEND, NULL, $2, NULL, 0);
         fromFunct = 0;
         inFunction--;
         /* Patch jump to skip funcdef */

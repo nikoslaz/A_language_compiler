@@ -26,6 +26,7 @@ typedef enum VmargType {
     STRING_V,
     NUMBER_V,
     LABEL_V,
+    NUMLOCALS_V,
     NIL_V,
     UNDEFINED_V
 } vmarg_t;
@@ -53,6 +54,7 @@ typedef struct instruction {
     vmarg result;
     vmarg arg1;
     vmarg arg2;
+    unsigned int srcLine;
 } instruction;
 
 // typedef struct incomplete_jump {
