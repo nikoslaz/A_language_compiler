@@ -1332,8 +1332,8 @@ int main(int argc, char** argv) {
     } else { printf("\nTarget code generation failed:(\n"); }
 
     /* Return Normally */
-    /* free_HashTable();
-    freeTokenList(&root); */
+    free_HashTable();
+    freeTokenList(&root);
 
     return 0;
 }

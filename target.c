@@ -393,13 +393,13 @@ void printTargetToFile() {
     fprintf(fp, "\n");
 
     fprintf(fp, "--- Instructions (%u total) ---\n", curr_instruction);
-    fprintf(fp, "#   Opcode      Result             Arg1               Arg2               Line\n");
+    fprintf(fp, "#   Opcode       Result             Arg1               Arg2               Line\n");
     fprintf(fp, "-------------------------------------------------------------------------------\n");
 
     for (unsigned i = 0; i < curr_instruction; ++i) {
         instruction* instr = &instructions[i];
 
-        fprintf(fp, "%-3u %-*s", i + 1, COL_WIDTH_OPCODE, vmopcode_to_string(instr->opcode));
+        fprintf(fp, "%-3u %-*s ", i + 1, COL_WIDTH_OPCODE, vmopcode_to_string(instr->opcode));
 
         print_vmarg_aligned(fp, &instr->result, is_jump_opcode(instr->opcode));
         print_vmarg_aligned(fp, &instr->arg1, 0);
