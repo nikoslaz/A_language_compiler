@@ -214,7 +214,7 @@ void generate_FUNCEND(quad* q) { helper_generate_arg1(FUNCEND_V, q); }
 void generate_NEWTABLE(quad* q) { helper_generate_res(TABLECREATE_V, q); }
 
 void generate_TABLEGETELEM(quad* q) { helper_generate_full(TABLEGETELEM_V, q); }
-void generate_TABLESETELEM(quad* q) { helper_generate_full(TABLEGETELEM_V, q); }
+void generate_TABLESETELEM(quad* q) { helper_generate_full(TABLESETELEM_V, q); }
 
 void generate_JUMP(quad* q) {
     instruction t;
@@ -406,7 +406,6 @@ void printTargetToFile() {
 
         fprintf(fp, "%-*u\n", COL_WIDTH_LINE, instr->srcLine);
     }
-
     fclose(fp);
     printf("Target code written to target.output\n");
 }
