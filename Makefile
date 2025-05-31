@@ -29,5 +29,5 @@ $(SCANNER).c: $(SCANNER).l $(PARSER).h
 	flex $(SCANNER).l
 # Clean the Directory
 clean:
-	rm -f *.o $(TARGET) $(SCANNER).c $(PARSER).c $(PARSER).h $(PARSER).output chief.alpha
+	rm -f *.o $(TARGET) $(AVMTARGET) $(SCANNER).c $(PARSER).c $(PARSER).h *.output chief.alpha
 # End of Makefile

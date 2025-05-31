@@ -68,7 +68,7 @@ extern unsigned int total_libfunc_const;
 extern instruction* instructions;
 extern unsigned int total_instruction;
 
-extern int totalprogvar;
+extern unsigned int totalprogvar;
 
 void read_binary(void);
 

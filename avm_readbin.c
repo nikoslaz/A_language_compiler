@@ -8,7 +8,7 @@ char** libfunc_const;
 unsigned int total_libfunc_const;
 instruction* instructions;
 unsigned int total_instruction;
-int totalprogvar;
+unsigned int totalprogvar;
 
 void read_binary(void) {
 
