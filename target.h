@@ -131,6 +131,7 @@ void helper_generate_relational(vmopcode op, quad* q);
 void helper_generate_arg1(vmopcode op, quad* q);
 void helper_generate_res(vmopcode op, quad* q);
 void printTargetToFile();
+void write_binary();
 
 #endif
 /* end of list.h */

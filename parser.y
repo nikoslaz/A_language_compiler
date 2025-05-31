@@ -1329,6 +1329,8 @@ int main(int argc, char** argv) {
         
         generateTarget();
         printTargetToFile();
+        write_binary();
+
     } else { printf("\nTarget code generation failed:(\n"); }
 
     /* Return Normally */

@@ -280,6 +280,66 @@ void generateTarget(void) {
     }
 }
 
+
+/*===============================================================================================*/
+/* Write binary */
+
+void write_binary(){
+
+	FILE *fd;
+	int i;
+	int length;
+
+	fd = fopen("chief.alpha","wb");
+
+	fwrite(&magic_number,sizeof(unsigned),1,fd);
+
+
+	
+	fwrite(&curr_str_const,sizeof(unsigned),1,fd);
+
+
+	for(i=0;i<curr_str_const;++i){
+	
+		length = strlen(string_const[i]);
+		fwrite(&length,sizeof(unsigned),1,fd);
+		fwrite(string_const[i],sizeof(char),length,fd);
+	}
+
+
+	fwrite(&curr_num_const,sizeof(unsigned),1,fd);
+
+
+	for(i=0;i<curr_num_const;++i){
+		fwrite(&number_const[i],sizeof(double),1,fd);
+	}
+
+
+	fwrite(&curr_libfunc_const,sizeof(unsigned),1,fd);
+
+
+	for(i=0;i<curr_libfunc_const;++i){
+
+		length = strlen(libfunc_const[i]);
+		fwrite(&length,sizeof(unsigned),1,fd);
+		fwrite(libfunc_const[i],sizeof(char),length,fd);
+
+	}
+
+	fwrite(&curr_instruction,sizeof(unsigned),sizeof(unsigned),fd);
+
+	for (i = 0; i < curr_instruction; i++) {
+
+		fwrite(&instructions[i],sizeof(instruction),1,fd);
+
+	}
+	fwrite(&int_to_Scope(0)->scopeOffset,sizeof(int),1,fd);
+
+
+	fclose(fd);
+}
+
+
 /*===============================================================================================*/
 /* Print */
 
