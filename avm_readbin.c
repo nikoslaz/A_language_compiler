@@ -12,6 +12,75 @@ int totalprogvar;
 
 void read_binary(void) {
 
+	FILE *fd;
+	int i;
+	int length;
+    unsigned magic_number;
+
+	fd = fopen("chief.alpha","rb");
+    
+
+	fread(&magic_number,sizeof(unsigned),1,fd);
+
+	assert(magic_number==MAGIC_NUMBER);
+
+	fread(&total_str_const,sizeof(unsigned),1,fd);
+
+	if(total_str_const)
+		string_const = (char ** ) malloc ( total_str_const * sizeof(char *));
+
+	for(i=0;i<total_str_const;++i){
+
+		fread(&length,sizeof(unsigned),1,fd);
+
+		string_const[i] = (char *) malloc (length * sizeof(char));
+
+		fread(string_const[i], length * sizeof(char) ,sizeof(char),fd);
+
+	}
+
+	fread(&total_num_const,sizeof(unsigned),1,fd);
+
+	if(total_num_const)
+		number_const = (double * ) malloc ( total_num_const * sizeof(double ));
+
+	
+
+	for(i=0;i<total_num_const;++i){
+
+		fread(&number_const[i],sizeof(double),1,fd);
+	}
+
+	fread(&total_libfunc_const,sizeof(unsigned),1,fd);
+
+	if(total_libfunc_const)
+		libfunc_const = (char ** ) malloc ( total_libfunc_const * sizeof(char *));
+
+	for(i=0;i<total_libfunc_const;++i){
+
+		fread(&length,sizeof(unsigned),1,fd);
+
+		libfunc_const[i] = (char *)malloc (length * sizeof(char));
+
+		fread(libfunc_const[i],length * sizeof(char),1,fd);
+
+	}
+
+	fread(&total_instruction,sizeof(unsigned),sizeof(unsigned),fd);
+
+	if(total_instruction)
+		instructions = (instruction *)malloc (total_instruction * sizeof(instruction));
+
+
+	for (i = 0; i < total_instruction; i++) {
+
+		fread(&instructions[i],sizeof(instruction),1,fd);
+
+	}
+	fread(&totalprogvar,sizeof(unsigned),1,fd);
+
+	fclose(fd);
+
 }
 
 /*===============================================================================================*/
