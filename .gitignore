@@ -6,4 +6,4 @@ parser.c
 parser.h
 *.output
 calc
-phase3
+chief.alpha
