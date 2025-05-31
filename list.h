@@ -109,6 +109,7 @@ extern int yylineno;
 void insertToken(alpha_token_t** root, unsigned int line, unsigned int num_token, char* zoumi, ALPHA_CATEGORY category, ALPHA_NAME name, ALPHA_SUPERCLASS superclass);
 void printTokens(alpha_token_t* root);
 alpha_token_t* searchToken(alpha_token_t* root, unsigned int num_token);
+void trim_escape(char** destination, char* source);
 void deleteToken(alpha_token_t** root, unsigned int num_token);
 void freeTokenList(alpha_token_t** root);
 

@@ -125,7 +125,9 @@ illegal           .
                     return REAL; } 
 
 {string}            { insertToken(&root, yylineno, tokenCounter++, yytext, C_STRING, N_ERR, S_CHARSTAR);
-                    yylval.stringZoumi = strdup(yytext);
+                    char* trimmed;
+                    trim_escape(&trimmed, yytext);
+                    yylval.stringZoumi = trimmed;
                     return STRING; }
 
 {newline}           { }
