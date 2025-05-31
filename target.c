@@ -85,17 +85,10 @@ unsigned int consts_newlibfunc(char* s) {
 void emit_target(instruction p) {
 	if(curr_instruction==total_instruction) {
         total_instruction += EXPAND_SIZE;
-        instructions = realloc(instructions, total_instruction*sizeof(instruction*));
+        instructions = realloc(instructions, total_instruction*sizeof(instruction));
         if(!instructions) { MemoryFail(); }
     }
-	instruction* i = (instruction*)malloc(sizeof(instruction));
-    if(!i) {MemoryFail();}
-	i->opcode 	= p.opcode;
-	i->arg1 	= p.arg1;
-	i->arg2 	= p.arg2;
-	i->result 	= p.result;
-    i->srcLine	= p.srcLine;
-    instructions[curr_instruction++] = *i;
+    instructions[curr_instruction++] = p;
 }
 
 /*===============================================================================================*/
@@ -176,7 +169,7 @@ void generate_MUL(quad* q) { helper_generate_full(MUL_V, q); }
 void generate_DIV(quad* q) { helper_generate_full(DIV_V, q); } 
 void generate_MOD(quad* q) { helper_generate_full(MOD_V, q); }
 void generate_UMINUS(quad* q) {
-    q->arg2 = create_constbool_expr(-1);
+    q->arg2 = create_constnum_expr(-1);
     helper_generate_full(MUL_V, q);
 }
 
