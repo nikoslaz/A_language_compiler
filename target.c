@@ -294,8 +294,6 @@ void write_binary(void) {
 
 	fwrite(&magic_number,sizeof(unsigned),1,fd);
 
-
-	
 	fwrite(&curr_str_const,sizeof(unsigned),1,fd);
 
 

@@ -33,7 +33,7 @@ How to translate symbols to address: XRHSIMOPOIW MONO OFFSET? -->
 
 <!-- Create more dynamic arrays for CONSTS (num, string etc) funcs -->
 
-Write everything in a binary file in order ??
+<!-- Write everything in a binary file in order ?? -->
 
 ---------------------------------------------------------------------------------
 AVM
