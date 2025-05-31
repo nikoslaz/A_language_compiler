@@ -1318,7 +1318,7 @@ int main(int argc, char** argv) {
         print_SymTable();
     
         /* Print Quads */
-        printf("\n           ======= Intermediate Code =======\n");
+        printf("           ======= Intermediate Code =======\n");
         printQuads();
         /* FILE* fd;
         if(!(fd = fopen("quads.output", "w"))) {

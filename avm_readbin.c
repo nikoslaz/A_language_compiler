@@ -1,86 +1,55 @@
 #include "avm_readbin.h"
 
-char** string_const;
+char** string_const=(char**)0;
 unsigned int total_str_const;
-double* number_const;
+double* number_const=(double*)0;
 unsigned int total_num_const;
-char** libfunc_const;
+char** libfunc_const=(char**)0;
 unsigned int total_libfunc_const;
-instruction* instructions;
-unsigned int total_instruction;
-unsigned int totalprogvar;
+instruction* instructions=(instruction*)0;
+unsigned int total_instructions;
+int totalprogvar;
 
 void read_binary(void) {
-
-	FILE *fd;
-	int i;
+	FILE *fd = fopen("chief.alpha","rb");
+    if(!fd) { printf("Error reading chief.alpha file.\n"); exit(-1); }
 	int length;
     unsigned magic_number;
 
-	fd = fopen("chief.alpha","rb");
-    
+	fread(&magic_number, sizeof(unsigned), 1, fd);
+	assert(magic_number == MAGIC_NUMBER);
 
-	fread(&magic_number,sizeof(unsigned),1,fd);
-
-	assert(magic_number==MAGIC_NUMBER);
-
-	fread(&total_str_const,sizeof(unsigned),1,fd);
-
-	if(total_str_const)
-		string_const = (char ** ) malloc ( total_str_const * sizeof(char *));
-
-	for(i=0;i<total_str_const;++i){
-
-		fread(&length,sizeof(unsigned),1,fd);
-
-		string_const[i] = (char *) malloc (length * sizeof(char));
-
-		fread(string_const[i], length * sizeof(char) ,sizeof(char),fd);
-
+	fread(&total_str_const, sizeof(unsigned), 1, fd);
+	if(total_str_const) { string_const = (char** )malloc(total_str_const*sizeof(char*)); }
+	for(int i=0; i<total_str_const; i++) {
+		fread(&length, sizeof(unsigned), 1, fd);
+		string_const[i] = (char*)malloc(length*sizeof(char));
+		fread(string_const[i], length*sizeof(char) ,sizeof(char), fd);
 	}
 
-	fread(&total_num_const,sizeof(unsigned),1,fd);
-
-	if(total_num_const)
-		number_const = (double * ) malloc ( total_num_const * sizeof(double ));
-
-	
-
-	for(i=0;i<total_num_const;++i){
-
-		fread(&number_const[i],sizeof(double),1,fd);
+	fread(&total_num_const, sizeof(unsigned), 1, fd);
+	if(total_num_const) { number_const = (double*)malloc(total_num_const*sizeof(double)); }
+	for(int i=0; i<total_num_const; i++) {
+		fread(&number_const[i], sizeof(double), 1, fd);
 	}
 
-	fread(&total_libfunc_const,sizeof(unsigned),1,fd);
-
-	if(total_libfunc_const)
-		libfunc_const = (char ** ) malloc ( total_libfunc_const * sizeof(char *));
-
-	for(i=0;i<total_libfunc_const;++i){
-
-		fread(&length,sizeof(unsigned),1,fd);
-
-		libfunc_const[i] = (char *)malloc (length * sizeof(char));
-
-		fread(libfunc_const[i],length * sizeof(char),1,fd);
-
+	fread(&total_libfunc_const, sizeof(unsigned), 1, fd);
+	if(total_libfunc_const) { libfunc_const = (char**)malloc(total_libfunc_const*sizeof(char*)); }
+	for(int i=0; i<total_libfunc_const; i++) {
+		fread(&length, sizeof(unsigned), 1, fd);
+		libfunc_const[i] = (char*)malloc(length*sizeof(char));
+		fread(libfunc_const[i], length*sizeof(char), 1, fd);
 	}
 
-	fread(&total_instruction,sizeof(unsigned),sizeof(unsigned),fd);
-
-	if(total_instruction)
-		instructions = (instruction *)malloc (total_instruction * sizeof(instruction));
-
-
-	for (i = 0; i < total_instruction; i++) {
-
-		fread(&instructions[i],sizeof(instruction),1,fd);
-
+	fread(&total_instructions, sizeof(unsigned), sizeof(unsigned), fd);
+	if(total_instructions) { instructions = (instruction*)malloc(total_instructions*sizeof(instruction)); }
+	for(int i=0; i<total_instructions; i++) {
+		fread(&instructions[i], sizeof(instruction), 1, fd);
 	}
-	fread(&totalprogvar,sizeof(unsigned),1,fd);
+
+    fread(&totalprogvar, sizeof(int), 1, fd);
 
 	fclose(fd);
-
 }
 
 /*===============================================================================================*/
@@ -136,10 +105,10 @@ static int is_jump_opcode(vmopcode op) {
 
 static void print_vmarg_aligned(FILE* fp, vmarg* arg, int is_jump_target) {
     char buffer[64] = {0};
-    if (!arg) { snprintf(buffer, sizeof(buffer), "null vmarg)"); }
-    else if (is_jump_target) { snprintf(buffer, sizeof(buffer), "Label(%u)", arg->val + 1); }
+    if(!arg) { snprintf(buffer, sizeof(buffer), "null vmarg)"); }
+    else if(is_jump_target) { snprintf(buffer, sizeof(buffer), "Label(%u)", arg->val + 1); }
     else {
-        switch (arg->type) {
+        switch(arg->type) {
             case GLOBAL_V:    snprintf(buffer, sizeof(buffer), "G[%u]",       arg->val); break;
             case LOCAL_V:     snprintf(buffer, sizeof(buffer), "L[%u]",       arg->val); break;
             case FORMAL_V:    snprintf(buffer, sizeof(buffer), "F[%u]",       arg->val); break;
@@ -161,12 +130,11 @@ static void print_vmarg_aligned(FILE* fp, vmarg* arg, int is_jump_target) {
 
 void printTargetToFile(void) {
     FILE* fp = fopen("readtarget.output", "w");
-    if (!fp) {
+    if(!fp) {
         perror("Error opening readtarget.output for writing");
         return;
     }
-    fprintf(fp, "Magic_number: 0x%X (%u)\n", MAGIC_NUMBER, MAGIC_NUMBER);
-    fprintf(fp, "Total Program Variables: (%u)\n\n", totalprogvar);
+    fprintf(fp, "Magic_number: 0x%X (%u)\n\n", MAGIC_NUMBER, MAGIC_NUMBER);
 
     fprintf(fp, "--- String Constants (%u total) ---\n", total_str_const);
     for (unsigned i = 0; i < total_str_const; ++i)
@@ -183,11 +151,11 @@ void printTargetToFile(void) {
         fprintf(fp, "%-4u: \"%s\"\n", i, libfunc_const[i]);
     fprintf(fp, "\n");
 
-    fprintf(fp, "--- Instructions (%u total) ---\n", total_instruction);
-    fprintf(fp, "#   Opcode       Result             Arg1               Arg2               Line\n");
-    fprintf(fp, "-------------------------------------------------------------------------------\n");
+    fprintf(fp, "--- Instructions (%u total) ---\n", total_instructions);
+    fprintf(fp, "#   Opcode       Result              Arg1                Arg2               Line\n");
+    fprintf(fp, "---------------------------------------------------------------------------------\n");
 
-    for (unsigned i = 0; i < total_instruction; ++i) {
+    for(unsigned i = 0; i < total_instructions; ++i) {
         instruction* instr = &instructions[i];
 
         fprintf(fp, "%-3u %-*s ", i + 1, COL_WIDTH_OPCODE, vmopcode_to_string(instr->opcode));
@@ -198,6 +166,9 @@ void printTargetToFile(void) {
 
         fprintf(fp, "%-*u\n", COL_WIDTH_LINE, instr->srcLine);
     }
+
+    fprintf(fp, "\nTotal Program Variables: (%d)\n", totalprogvar);
+
     fclose(fp);
     printf("Read Target code written to readtarget.output\n");
 }

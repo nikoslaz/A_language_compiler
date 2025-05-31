@@ -285,54 +285,37 @@ void generateTarget(void) {
 /* Write binary */
 
 void write_binary(void) {
-
-	FILE *fd;
-	int i;
+	FILE *fd = fopen("chief.alpha","wb");
+    if(!fd) { printf("Error opening chief.alpha for writing.\n"); return; }
 	int length;
 
-	fd = fopen("chief.alpha","wb");
-
-	fwrite(&magic_number,sizeof(unsigned),1,fd);
+	fwrite(&magic_number, sizeof(unsigned), 1, fd);
 
 	fwrite(&curr_str_const,sizeof(unsigned),1,fd);
-
-
-	for(i=0;i<curr_str_const;++i){
-	
+	for(int i=0; i<curr_str_const; i++) {
 		length = strlen(string_const[i]);
-		fwrite(&length,sizeof(unsigned),1,fd);
-		fwrite(string_const[i],sizeof(char),length,fd);
+		fwrite(&length, sizeof(unsigned), 1, fd);
+		fwrite(string_const[i], sizeof(char), length, fd);
 	}
 
+	fwrite(&curr_num_const, sizeof(unsigned), 1, fd);
+	for(int i=0; i<curr_num_const; i++) {
+		fwrite(&number_const[i], sizeof(double), 1, fd);
+	} 
 
-	fwrite(&curr_num_const,sizeof(unsigned),1,fd);
-
-
-	for(i=0;i<curr_num_const;++i){
-		fwrite(&number_const[i],sizeof(double),1,fd);
-	}
-
-
-	fwrite(&curr_libfunc_const,sizeof(unsigned),1,fd);
-
-
-	for(i=0;i<curr_libfunc_const;++i){
-
+	fwrite(&curr_libfunc_const, sizeof(unsigned), 1, fd);
+	for(int i=0; i<curr_libfunc_const; i++) {
 		length = strlen(libfunc_const[i]);
-		fwrite(&length,sizeof(unsigned),1,fd);
-		fwrite(libfunc_const[i],sizeof(char),length,fd);
-
+		fwrite(&length, sizeof(unsigned), 1, fd);
+		fwrite(libfunc_const[i], sizeof(char), length, fd);
 	}
 
-	fwrite(&curr_instruction,sizeof(unsigned),sizeof(unsigned),fd);
-
-	for (i = 0; i < curr_instruction; i++) {
-
-		fwrite(&instructions[i],sizeof(instruction),1,fd);
-
+	fwrite(&curr_instruction, sizeof(unsigned), sizeof(unsigned), fd);
+	for(int i=0; i<curr_instruction; i++) {
+		fwrite(&instructions[i], sizeof(instruction), 1, fd);
 	}
-	fwrite(&int_to_Scope(0)->scopeOffset,sizeof(int),1,fd);
 
+    fwrite(&int_to_Scope(0)->scopeOffset, sizeof(int), 1, fd);
 
 	fclose(fd);
 }
@@ -391,13 +374,10 @@ static int is_jump_opcode(vmopcode op) {
 
 static void print_vmarg_aligned(FILE* fp, vmarg* arg, int is_jump_target) {
     char buffer[64] = {0};
-
-    if (!arg) {
-        snprintf(buffer, sizeof(buffer), "null vmarg)");
-    } else if (is_jump_target) {
-        snprintf(buffer, sizeof(buffer), "Label(%u)", arg->val + 1);
-    } else {
-        switch (arg->type) {
+    if(!arg) { snprintf(buffer, sizeof(buffer), "null vmarg)"); }
+    else if(is_jump_target) { snprintf(buffer, sizeof(buffer), "Label(%u)", arg->val + 1); }
+    else {
+        switch(arg->type) {
             case GLOBAL_V:    snprintf(buffer, sizeof(buffer), "G[%u]",       arg->val); break;
             case LOCAL_V:     snprintf(buffer, sizeof(buffer), "L[%u]",       arg->val); break;
             case FORMAL_V:    snprintf(buffer, sizeof(buffer), "F[%u]",       arg->val); break;
@@ -420,34 +400,33 @@ static void print_vmarg_aligned(FILE* fp, vmarg* arg, int is_jump_target) {
 
 void printTargetToFile(void) {
     FILE* fp = fopen("target.output", "w");
-    if (!fp) {
+    if(!fp) {
         perror("Error opening target.output for writing");
         return;
     }
 
-    fprintf(fp, "Magic_number: 0x%X (%u)\n", magic_number, magic_number);
-    fprintf(fp, "Total Program Variables: (%u)\n\n", int_to_Scope(0)->scopeOffset);
+    fprintf(fp, "Magic_number: 0x%X (%u)\n\n", magic_number, magic_number);
 
     fprintf(fp, "--- String Constants (%u total) ---\n", curr_str_const);
-    for (unsigned i = 0; i < curr_str_const; ++i)
+    for(unsigned i = 0; i < curr_str_const; ++i)
         fprintf(fp, "%-4u: \"%s\"\n", i, string_const[i]);
     fprintf(fp, "\n");
 
     fprintf(fp, "--- Number Constants (%u total) ---\n", curr_num_const);
-    for (unsigned i = 0; i < curr_num_const; ++i)
+    for(unsigned i = 0; i < curr_num_const; ++i)
         fprintf(fp, "%-4u: %g\n", i, number_const[i]);
     fprintf(fp, "\n");
 
     fprintf(fp, "--- Library Functions (%u total) ---\n", curr_libfunc_const);
-    for (unsigned i = 0; i < curr_libfunc_const; ++i)
+    for(unsigned i = 0; i < curr_libfunc_const; ++i)
         fprintf(fp, "%-4u: \"%s\"\n", i, libfunc_const[i]);
     fprintf(fp, "\n");
 
     fprintf(fp, "--- Instructions (%u total) ---\n", curr_instruction);
-    fprintf(fp, "#   Opcode       Result             Arg1               Arg2               Line\n");
-    fprintf(fp, "-------------------------------------------------------------------------------\n");
+    fprintf(fp, "#   Opcode       Result              Arg1                Arg2               Line\n");
+    fprintf(fp, "---------------------------------------------------------------------------------\n");
 
-    for (unsigned i = 0; i < curr_instruction; ++i) {
+    for(unsigned i = 0; i < curr_instruction; ++i) {
         instruction* instr = &instructions[i];
 
         fprintf(fp, "%-3u %-*s ", i + 1, COL_WIDTH_OPCODE, vmopcode_to_string(instr->opcode));
@@ -458,6 +437,9 @@ void printTargetToFile(void) {
 
         fprintf(fp, "%-*u\n", COL_WIDTH_LINE, instr->srcLine);
     }
+
+    fprintf(fp, "\nTotal Program Variables: (%u)\n", int_to_Scope(0)->scopeOffset);
+    
     fclose(fp);
     printf("Target code written to target.output\n");
 }

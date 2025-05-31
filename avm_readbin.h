@@ -58,17 +58,13 @@ typedef struct instruction {
 
 extern char** string_const;
 extern unsigned int total_str_const;
-
 extern double* number_const;
 extern unsigned int total_num_const;
-
 extern char** libfunc_const;
 extern unsigned int total_libfunc_const;
-
 extern instruction* instructions;
-extern unsigned int total_instruction;
-
-extern unsigned int totalprogvar;
+extern unsigned int total_instructions;
+extern int totalprogvar;
 
 void read_binary(void);
 
