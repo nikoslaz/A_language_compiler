@@ -121,4 +121,4 @@ void printTargetToFile(void);
 void write_binary(void);
 
 #endif
-/* end of list.h */
+/* end of target.h */

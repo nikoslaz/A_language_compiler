@@ -1,5 +1,10 @@
-#include "avm_readbin.h"
+/* avm.c */
+/**
+ * @authors nikos , nikoletta , mihalis
+ */
+#include "avm.h"
 
+/* Globals */
 char** string_const=(char**)0;
 unsigned int total_str_const;
 double* number_const=(double*)0;
@@ -9,6 +14,9 @@ unsigned int total_libfunc_const;
 instruction* instructions=(instruction*)0;
 unsigned int total_instructions;
 int totalprogvar;
+
+/*===============================================================================================*/
+/* Read Binary */
 
 void read_binary(void) {
 	FILE *fd = fopen("chief.alpha","rb");
@@ -53,7 +61,7 @@ void read_binary(void) {
 }
 
 /*===============================================================================================*/
-/* Main */
+/* Print */
 
 static const char* vmopcode_to_string(vmopcode op) {
     switch(op) {
@@ -130,10 +138,7 @@ static void print_vmarg_aligned(FILE* fp, vmarg* arg, int is_jump_target) {
 
 void printTargetToFile(void) {
     FILE* fp = fopen("readtarget.output", "w");
-    if(!fp) {
-        perror("Error opening readtarget.output for writing");
-        return;
-    }
+    if(!fp) { perror("Error opening readtarget.output for writing\n"); return; }
     fprintf(fp, "Magic_number: 0x%X (%u)\n\n", MAGIC_NUMBER, MAGIC_NUMBER);
 
     fprintf(fp, "--- String Constants (%u total) ---\n", total_str_const);
@@ -173,8 +178,13 @@ void printTargetToFile(void) {
     printf("Read Target code written to readtarget.output\n");
 }
 
+/*===============================================================================================*/
+/* Main */
+
 int main(void) {
     read_binary();
     printTargetToFile();
     return 0;
 }
+
+/* end of avm.c */

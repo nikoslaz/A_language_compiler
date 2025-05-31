@@ -1,9 +1,9 @@
-/* avm_readbin.h */
+/* avm.h */
 /**
  * @authors nikos , nikoletta , mihalis
  */
-#ifndef AVMREAD_H
-#define AVMREAD_H
+#ifndef AVM_H
+#define AVM_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,6 +56,7 @@ typedef struct instruction {
     unsigned int srcLine;
 } instruction;
 
+/* Globals */
 extern char** string_const;
 extern unsigned int total_str_const;
 extern double* number_const;
@@ -66,7 +67,5 @@ extern instruction* instructions;
 extern unsigned int total_instructions;
 extern int totalprogvar;
 
-void read_binary(void);
-
 #endif
-/* end of avm_readbin.h */
+/* end of avm.h */

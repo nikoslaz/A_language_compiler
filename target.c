@@ -1,3 +1,7 @@
+/* target.c */
+/**
+ * @authors nikos , nikoletta , mihalis
+ */
 #include "target.h"
 #include "quads.h"
 #include "table.h"
@@ -394,16 +398,12 @@ static void print_vmarg_aligned(FILE* fp, vmarg* arg, int is_jump_target) {
             default:          snprintf(buffer, sizeof(buffer), "Unknown");    break;
         }
     }
-
     fprintf(fp, "%-*s", COL_WIDTH_ARG, buffer);
 }
 
 void printTargetToFile(void) {
     FILE* fp = fopen("target.output", "w");
-    if(!fp) {
-        perror("Error opening target.output for writing");
-        return;
-    }
+    if(!fp) { perror("Error opening target.output for writing\n"); return; }
 
     fprintf(fp, "Magic_number: 0x%X (%u)\n\n", magic_number, magic_number);
 
