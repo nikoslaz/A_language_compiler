@@ -284,7 +284,7 @@ void generateTarget(void) {
 /*===============================================================================================*/
 /* Write binary */
 
-void write_binary(){
+void write_binary(void) {
 
 	FILE *fd;
 	int i;
@@ -420,7 +420,7 @@ static void print_vmarg_aligned(FILE* fp, vmarg* arg, int is_jump_target) {
     fprintf(fp, "%-*s", COL_WIDTH_ARG, buffer);
 }
 
-void printTargetToFile() {
+void printTargetToFile(void) {
     FILE* fp = fopen("target.output", "w");
     if (!fp) {
         perror("Error opening target.output for writing");

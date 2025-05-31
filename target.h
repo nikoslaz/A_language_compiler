@@ -48,7 +48,6 @@ typedef enum vmopcode {
     NOP_V
 } vmopcode;
 
-
 typedef struct instruction {
     vmopcode opcode;
     vmarg result;
@@ -56,18 +55,6 @@ typedef struct instruction {
     vmarg arg2;
     unsigned int srcLine;
 } instruction;
-
-// typedef struct incomplete_jump {
-//     unsigned instrNo;     
-//     unsigned iaddress;    
-//     struct incomplete_jump* next; 
-// } incomplete_jump;
-
-// extern incomplete_jump* ij_head;
-// extern unsigned ij_total;
-
-// void add_incomplete_jump(unsigned instrNo, unsigned iaddress);
-// void patch_incomplete_jumps(void);
 
 /*===============================================================================================*/
 /* Globals */
@@ -130,8 +117,8 @@ void helper_generate_full(vmopcode op, quad* q);
 void helper_generate_relational(vmopcode op, quad* q);
 void helper_generate_arg1(vmopcode op, quad* q);
 void helper_generate_res(vmopcode op, quad* q);
-void printTargetToFile();
-void write_binary();
+void printTargetToFile(void);
+void write_binary(void);
 
 #endif
 /* end of list.h */

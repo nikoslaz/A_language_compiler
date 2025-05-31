@@ -2,17 +2,22 @@
 # |   Makefile  |
 # 0=============0
 TARGET = calc
+AVMTARGET = avm
 LIST = list
 TABLE = table
 QUADS = quads
 TCODE = target
 PARSER = parser
 SCANNER = scanner
+AVMREAD = avm_readbin
 CC = gcc
 # Compile all
-all: $(TARGET)
-# Executable
+all: $(TARGET) $(AVMTARGET)
+# Compiler Executable
 $(TARGET): $(SCANNER).o $(PARSER).o $(LIST).o $(TABLE).o $(QUADS).o $(TCODE).o
+	$(CC) -o $@ $^
+# AVM Executable
+$(AVMTARGET): $(AVMREAD).o
 	$(CC) -o $@ $^
 # Object Files
 %.o: %.c
