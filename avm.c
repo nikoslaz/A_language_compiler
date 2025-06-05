@@ -117,19 +117,19 @@ static void print_vmarg_aligned(FILE* fp, vmarg* arg, int is_jump_target) {
     else if(is_jump_target) { snprintf(buffer, sizeof(buffer), "Label(%u)", arg->val + 1); }
     else {
         switch(arg->type) {
-            case GLOBAL_V:    snprintf(buffer, sizeof(buffer), "G[%u]",       arg->val); break;
-            case LOCAL_V:     snprintf(buffer, sizeof(buffer), "L[%u]",       arg->val); break;
-            case FORMAL_V:    snprintf(buffer, sizeof(buffer), "F[%u]",       arg->val); break;
-            case USERFUNC_V:  snprintf(buffer, sizeof(buffer), "UsrFunc(%u)", arg->val + 1); break;
-            case LIBFUNC_V:   snprintf(buffer, sizeof(buffer), "LibFunc(%u)", arg->val); break;
-            case TEMPORARY_V: snprintf(buffer, sizeof(buffer), "T[%u]",       arg->val); break;
-            case BOOL_V:      snprintf(buffer, sizeof(buffer), "%s",          arg->val ? "TRUE" : "FALSE"); break;
-            case STRING_V:    snprintf(buffer, sizeof(buffer), "Str(%u)",     arg->val); break;
-            case NUMBER_V:    snprintf(buffer, sizeof(buffer), "Num(%u)",     arg->val); break;
-            case LABEL_V:     snprintf(buffer, sizeof(buffer), "Label(%u)",   arg->val + 1); break;
-            case NUMLOCALS_V: snprintf(buffer, sizeof(buffer), "Locals(%u)",  arg->val); break;
-            case NIL_V:       snprintf(buffer, sizeof(buffer), "NIL");        break;
-            case UNDEFINED_V: snprintf(buffer, sizeof(buffer), "Undef");      break;
+            case ARG_GLOBAL:    snprintf(buffer, sizeof(buffer), "G[%u]",       arg->val); break;
+            case ARG_LOCAL:     snprintf(buffer, sizeof(buffer), "L[%u]",       arg->val); break;
+            case ARG_FORMAL:    snprintf(buffer, sizeof(buffer), "F[%u]",       arg->val); break;
+            case ARG_USERFUNC:  snprintf(buffer, sizeof(buffer), "UsrFunc(%u)", arg->val + 1); break;
+            case ARG_LIBFUNC:   snprintf(buffer, sizeof(buffer), "LibFunc(%u)", arg->val); break;
+            case ARG_TEMPORARY: snprintf(buffer, sizeof(buffer), "T[%u]",       arg->val); break;
+            case ARG_BOOL:      snprintf(buffer, sizeof(buffer), "%s",          arg->val ? "TRUE" : "FALSE"); break;
+            case ARG_STRING:    snprintf(buffer, sizeof(buffer), "Str(%u)",     arg->val); break;
+            case ARG_NUMBER:    snprintf(buffer, sizeof(buffer), "Num(%u)",     arg->val); break;
+            case ARG_LABEL:     snprintf(buffer, sizeof(buffer), "Label(%u)",   arg->val + 1); break;
+            case ARG_NUMLOCALS: snprintf(buffer, sizeof(buffer), "Locals(%u)",  arg->val); break;
+            case ARG_NIL:       snprintf(buffer, sizeof(buffer), "NIL");        break;
+            case ARG_UNDEFINED: snprintf(buffer, sizeof(buffer), "Undef");      break;
             default:          snprintf(buffer, sizeof(buffer), "Unknown");    break;
         }
     }
