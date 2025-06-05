@@ -75,6 +75,9 @@ unsigned int program_counter = 0;
 unsigned int stack_top = 0;
 unsigned int stack_maul = 0;
 
+/* STACK */
+avm_memcell stack[AVM_STACKSIZE];
+
 /*===============================================================================================*/
 /* Read Binary */
 
@@ -119,6 +122,64 @@ void read_binary(FILE *fd) {
     fread(&totalprogvar, sizeof(int), 1, fd);
 
 	fclose(fd);
+}
+
+/*===============================================================================================*/
+/* Stack */
+
+static void avm_initilizestack(){
+    for (int i = 0; i < AVM_STACKSIZE; ++i){
+        memset(&stack[i], 0, sizeof(stack[i]));
+        stack[i].type = MEM_UNDEF;
+    }
+}
+
+void avm_clear_memcell(avm_memcell* cell) {
+    if (!cell) return;
+
+    if (cell->type == MEM_STRING && cell->data.string_zoumi) {
+        free(cell->data.string_zoumi); // IMPORTANT: Assumes strVal was malloc'd/strdup'd
+        cell->data.string_zoumi = NULL;
+    } else if (cell->type == MEM_TABLE && cell->data.table_zoumi) {
+        cell->data.table_zoumi = NULL; 
+    }
+    memset(cell, 0, sizeof(avm_memcell));
+    cell->type = MEM_UNDEF;
+}
+
+void avm_push(avm_memcell val) {
+    if (stack_top >= AVM_STACKSIZE) {
+        perror("Stack overflow: Cannot push onto a full stack.");
+        return;
+    }
+    stack_top++;
+    stack[stack_top] = val;
+}
+
+avm_memcell avm_pop() {
+    avm_memcell popped_cell;
+
+    if (stack_top == 0) {
+        Perror("Stack underflow: Cannot pop from an empty stack.");
+        avm_clear_memcell(&popped_cell); // edw kane memset
+        return popped_cell;
+    }
+    popped_cell = stack[stack_top];
+    stack_top--;
+
+    avm_clear_memcell(&stack[stack_top]);
+
+    return popped_cell;
+}
+
+
+void avm_initialize(){
+
+    avm_initilizestack();
+    //stack_top = AVM_STACKSIZE - 1 - totalprogvar; //?????? not sure about this ETSI TO KANEI O GG ANAGN
+
+    stack_maul = 1;
+
 }
 
 /*===============================================================================================*/

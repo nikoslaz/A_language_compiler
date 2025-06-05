@@ -11,6 +11,8 @@
 
 #define MAGIC_NUMBER 0xDEADBEEF
 
+#define	AVM_STACKSIZE	8192
+
 typedef enum VmargType {
     ARG_GLOBAL,
     ARG_LOCAL,
@@ -167,6 +169,8 @@ extern unsigned char jgt_rel(double, double);
 extern unsigned char jle_rel(double, double);
 extern unsigned char jge_rel(double, double);
 extern unsigned char jlt_rel(double, double);
+
+static void avm_initstack(void);
 
 #endif
 /* end of avm.h */
