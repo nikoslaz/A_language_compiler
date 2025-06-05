@@ -4,6 +4,58 @@
  */
 #include "avm.h"
 
+execute_func_t executors[] = {
+    execute_ASSIGN,
+    execute_ADD, execute_SUB, execute_MUL, execute_DIV, execute_MOD,
+    execute_UMINUS,
+    execute_AND, execute_OR, execute_NOT,    
+    execute_JEQ, execute_JNE, execute_JLE, execute_JGE, execute_JLT, execute_JGT,      
+    execute_CALL, execute_PUSHARG, execute_RET, execute_GETRETVAL, execute_FUNCENTER, execute_FUNCEXIT,
+    execute_NEWTABLE, execute_TABLEGETELEM, execute_TABLESETELEM,
+    execute_JUMP,
+    execute_NOP
+};
+
+tostring_func_t to_string_func[] = {
+    number_tostring,
+    string_tostring,
+    bool_tostring,
+    table_tostring,
+    userfunc_tostring,
+    libfunc_tostring,
+    nil_tostring,
+    undef_tostring,
+    invalid_tostring
+};
+
+tobool_func_t to_bool_func[] = {
+    number_tobool,
+    string_tobool,
+    bool_tobool,
+    table_tobool,
+    userfunc_tobool,
+    libfunc_tobool,
+    nil_tobool,
+    undef_tobool,
+    invalid_tobool
+};
+
+arithmetic_func_t arith_func[] = {
+    add_arith,
+    sub_arith,
+    mul_arith,
+    div_arith,
+    mod_arith,
+    uminus_arith
+};
+
+relational_func_t relat_func[] = {
+	jle_rel,
+	jge_rel,
+	jlt_rel,
+	jgt_rel
+};
+
 /* Globals */
 char** string_const=(char**)0;
 unsigned int total_str_const;
@@ -67,6 +119,91 @@ void read_binary(void) {
 
 	fclose(fd);
 }
+
+/*===============================================================================================*/
+/* AVM translate */
+
+// avm_memcell * avm_translate_operand(vmarg *  arg , avm_memcell * reg){
+
+// 	switch (arg->type) {
+// 		case ARG_GLOBAL: 
+// 		{
+// 			return &stack [ AVM_STACKSIZE - 1 - arg->val];
+// 		}
+// 		case ARG_LOCAL:
+// 		{
+// 			return &stack [ topsp - arg->val];
+// 		}
+// 		case ARG_FORMAL:
+// 		{
+// 			return &stack [ topsp + AVM_STACKENV_SIZE + 1 + arg->val];
+// 		}
+// 		case RETVAL_A:
+// 		{
+// 			return &retval;
+// 		}
+
+// 		case ARG_NUMBER: 
+// 		{
+// 			reg->type = NUMBER_M;
+// 			reg->data.numVal = consts_getnumber(arg->val);	
+// 			return reg;
+// 		}
+
+// 		case ARG_STRING: 
+// 		{
+// 			reg->type = STRING_M;
+// 			reg->data.strVal = strdup(consts_getstring(arg->val));	
+// 			return reg;
+// 		}
+
+// 		case ARG_BOOL: 
+// 		{
+
+// 			reg->type = BOOL_M;
+// 			reg->data.boolVal = arg->val;	
+// 			return reg;	
+// 		}
+
+// 		case ARG_NIL: 
+// 		{
+// 			reg->type = NIL_M; 
+// 			return reg;
+// 		}
+
+// 		case ARG_USERFUNC: 
+// 		{
+// 			reg->type = USERFUNC_M;
+// 			reg->data.funcVal = user_funcs[arg->val].address;
+// 			return reg;
+// 		}
+
+// 		case ARG_LIBFUNC: 
+// 		{
+
+// 			reg->type = LIBFUNC_M;
+// 			reg->data.libfuncVal = libfuncs_getused(arg->val);
+// 			return reg;
+// 		}
+
+// 		case ARG_UNDEFINED:
+// 		{
+// 			reg=(avm_memcell *)0;
+// 			return reg;
+// 		}
+
+// 		default: {
+// 			assert(0);
+// 		}
+// 	}
+// }
+
+// void avm_memcell_clear(avm_memcell* memcell){
+
+//     if (memcell->type != MEM_UNDEF && memcell->type < 8) {
+
+//     }
+// }
 
 /*===============================================================================================*/
 /* Print */
