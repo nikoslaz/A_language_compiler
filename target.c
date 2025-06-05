@@ -110,10 +110,10 @@ void make_operand(expr* e, vmarg* arg) {
             if(e->symbol) { arg->val = e->symbol->offset; }
             else { printf("Error. NULL SYMBOL in make_operand\n"); }
             switch(e->symbol->type) {
-                case GLOBAL_T:    arg->type = GLOBAL_V; break;
-                case LOCAL_T:     arg->type = LOCAL_V; break;
-                case FORMAL_T:    arg->type = FORMAL_V; break;
-                case TEMPORARY_T: arg->type = TEMPORARY_V; break;
+                case GLOBAL_T:    arg->type = ARG_GLOBAL; break;
+                case LOCAL_T:     arg->type = ARG_LOCAL; break;
+                case FORMAL_T:    arg->type = ARG_FORMAL; break;
+                case TEMPORARY_T: arg->type = ARG_TEMPORARY; break;
                 default: printf("Error. Unknown Symbol Type in make_operand\n");
             }
             break;
@@ -121,33 +121,33 @@ void make_operand(expr* e, vmarg* arg) {
         /* Constants */
         case EXP_CONSTBOOL: {
             arg->val = e->boolConst;
-            arg->type = BOOL_V;
+            arg->type = ARG_BOOL;
             break;
         }
         case EXP_CONSTSTRING: {
             arg->val = consts_newstring(e->stringConst);
-            arg->type = STRING_V;
+            arg->type = ARG_STRING;
             break;
         }
         case EXP_CONSTNUMBER: {
             arg->val = consts_newnumber(e->numConst);
-            arg->type = NUMBER_V;
+            arg->type = ARG_NUMBER;
             break;
         }
         /* Functions */
         case EXP_PROGRAMFUNC: {
             arg->val = e->symbol->quad_addr;
-            arg->type = USERFUNC_V;
+            arg->type = ARG_USERFUNC;
             break;
         }
         case EXP_LIBRARYFUNC: {
             arg->val = consts_newlibfunc(e->symbol->name);
-            arg->type = LIBFUNC_V;
+            arg->type = ARG_LIBFUNC;
             break;
         }
         /* Nil */
         case EXP_NIL: {
-            arg->type = NIL_V;
+            arg->type = ARG_NIL;
             break;
         }
         default: printf("Error. Unknown Expression Type in make_operand\n");
@@ -161,7 +161,7 @@ void generate_ASSIGN(quad* q) {
     instruction t;
     t.opcode = OPC_ASSIGN;
     make_operand(q->arg1, &(t.arg1));   
-    t.arg2.type = UNDEFINED_V;     
+    t.arg2.type = ARG_UNDEFINED;     
     make_operand(q->result, &(t.result)); 
     emit_target(t);
 }
@@ -197,11 +197,11 @@ void generate_FUNCSTART(quad* q) {
     instruction t;
     t.opcode = OPC_FUNCSTART;
     make_operand(q->arg1, &(t.arg1));   
-    t.arg2.type = NUMLOCALS_V;
+    t.arg2.type = ARG_NUMLOCALS;
     if(q->arg1->symbol) {
         t.arg2.val = q->arg1->symbol->num_locals;
     } else { printf("Error. Calling a Null symbol\n"); }
-    t.result.type = UNDEFINED_V; 
+    t.result.type = ARG_UNDEFINED; 
     t.srcLine = q->line;
     emit_target(t);
 }
@@ -215,9 +215,9 @@ void generate_TABLESETELEM(quad* q) { helper_generate_full(OPC_TABLESETELEM, q);
 void generate_JUMP(quad* q) {
     instruction t;
     t.opcode = OPC_JUMP;
-    t.arg1.type = UNDEFINED_V; 
-    t.arg2.type = UNDEFINED_V; 
-    t.result.type = LABEL_V;
+    t.arg1.type = ARG_UNDEFINED; 
+    t.arg2.type = ARG_UNDEFINED; 
+    t.result.type = ARG_LABEL;
     t.result.val = q->label;
     t.srcLine = q->line;
     emit_target(t);
@@ -242,7 +242,7 @@ void helper_generate_relational(vmopcode op, quad* q) {
     t.opcode = op;
     make_operand(q->arg1, &(t.arg1));
     make_operand(q->arg2, &(t.arg2));
-    t.result.type = LABEL_V;
+    t.result.type = ARG_LABEL;
     t.result.val = q->label;
     t.srcLine = q->line;
     emit_target(t);
@@ -252,8 +252,8 @@ void helper_generate_arg1(vmopcode op, quad* q) {
     instruction t;
     t.opcode = op;
     make_operand(q->arg1, &(t.arg1));
-    t.arg2.type = UNDEFINED_V; 
-    t.result.type = UNDEFINED_V;
+    t.arg2.type = ARG_UNDEFINED; 
+    t.result.type = ARG_UNDEFINED;
     t.srcLine = q->line;
     emit_target(t);
 }
@@ -261,8 +261,8 @@ void helper_generate_arg1(vmopcode op, quad* q) {
 void helper_generate_res(vmopcode op, quad* q) {
     instruction t;
     t.opcode = op;
-    t.arg1.type = UNDEFINED_V; 
-    t.arg2.type = UNDEFINED_V; 
+    t.arg1.type = ARG_UNDEFINED; 
+    t.arg2.type = ARG_UNDEFINED; 
     make_operand(q->result, &(t.result));
     t.srcLine = q->line;
     emit_target(t);
@@ -381,19 +381,19 @@ static void print_vmarg_aligned(FILE* fp, vmarg* arg, int is_jump_target) {
     else if(is_jump_target) { snprintf(buffer, sizeof(buffer), "Label(%u)", arg->val + 1); }
     else {
         switch(arg->type) {
-            case GLOBAL_V:    snprintf(buffer, sizeof(buffer), "G[%u]",       arg->val); break;
-            case LOCAL_V:     snprintf(buffer, sizeof(buffer), "L[%u]",       arg->val); break;
-            case FORMAL_V:    snprintf(buffer, sizeof(buffer), "F[%u]",       arg->val); break;
-            case USERFUNC_V:  snprintf(buffer, sizeof(buffer), "UsrFunc(%u)", arg->val + 1); break;
-            case LIBFUNC_V:   snprintf(buffer, sizeof(buffer), "LibFunc(%u)", arg->val); break;
-            case TEMPORARY_V: snprintf(buffer, sizeof(buffer), "T[%u]",       arg->val); break;
-            case BOOL_V:      snprintf(buffer, sizeof(buffer), "%s",          arg->val ? "TRUE" : "FALSE"); break;
-            case STRING_V:    snprintf(buffer, sizeof(buffer), "Str(%u)",     arg->val); break;
-            case NUMBER_V:    snprintf(buffer, sizeof(buffer), "Num(%u)",     arg->val); break;
-            case LABEL_V:     snprintf(buffer, sizeof(buffer), "Label(%u)",   arg->val + 1); break;
-            case NUMLOCALS_V: snprintf(buffer, sizeof(buffer), "Locals(%u)",  arg->val); break;
-            case NIL_V:       snprintf(buffer, sizeof(buffer), "NIL");        break;
-            case UNDEFINED_V: snprintf(buffer, sizeof(buffer), "Undef");      break;
+            case ARG_GLOBAL:    snprintf(buffer, sizeof(buffer), "G[%u]",       arg->val); break;
+            case ARG_LOCAL:     snprintf(buffer, sizeof(buffer), "L[%u]",       arg->val); break;
+            case ARG_FORMAL:    snprintf(buffer, sizeof(buffer), "F[%u]",       arg->val); break;
+            case ARG_USERFUNC:  snprintf(buffer, sizeof(buffer), "UsrFunc(%u)", arg->val + 1); break;
+            case ARG_LIBFUNC:   snprintf(buffer, sizeof(buffer), "LibFunc(%u)", arg->val); break;
+            case ARG_TEMPORARY: snprintf(buffer, sizeof(buffer), "T[%u]",       arg->val); break;
+            case ARG_BOOL:      snprintf(buffer, sizeof(buffer), "%s",          arg->val ? "TRUE" : "FALSE"); break;
+            case ARG_STRING:    snprintf(buffer, sizeof(buffer), "Str(%u)",     arg->val); break;
+            case ARG_NUMBER:    snprintf(buffer, sizeof(buffer), "Num(%u)",     arg->val); break;
+            case ARG_LABEL:     snprintf(buffer, sizeof(buffer), "Label(%u)",   arg->val + 1); break;
+            case ARG_NUMLOCALS: snprintf(buffer, sizeof(buffer), "Locals(%u)",  arg->val); break;
+            case ARG_NIL:       snprintf(buffer, sizeof(buffer), "NIL");        break;
+            case ARG_UNDEFINED: snprintf(buffer, sizeof(buffer), "Undef");      break;
             default:          snprintf(buffer, sizeof(buffer), "Unknown");    break;
         }
     }

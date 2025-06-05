@@ -16,19 +16,19 @@
 extern unsigned magic_number;
 
 typedef enum VmargType {
-    GLOBAL_V,
-    LOCAL_V,
-    FORMAL_V,
-    USERFUNC_V,
-    LIBFUNC_V,
-    TEMPORARY_V,
-    BOOL_V,
-    STRING_V,
-    NUMBER_V,
-    LABEL_V,
-    NUMLOCALS_V,
-    NIL_V,
-    UNDEFINED_V
+    ARG_GLOBAL,
+    ARG_LOCAL,
+    ARG_FORMAL,
+    ARG_USERFUNC,
+    ARG_LIBFUNC,
+    ARG_TEMPORARY,
+    ARG_BOOL,
+    ARG_STRING,
+    ARG_NUMBER,
+    ARG_LABEL,
+    ARG_NUMLOCALS,
+    ARG_NIL,
+    ARG_UNDEFINED
 } vmarg_t;
 
 typedef struct vmarg {
