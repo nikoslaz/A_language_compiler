@@ -37,15 +37,15 @@ typedef struct vmarg {
 } vmarg;
 
 typedef enum vmopcode {
-    ASSIGN_V,
-    ADD_V, SUB_V, MUL_V, DIV_V, MOD_V,
-    UMINUS_V,
-    AND_V, OR_V, NOT_V,    
-    JEQ_V, JNE_V, JLE_V, JGE_V, JLT_V, JGT_V,      
-    CALL_V, PARAM_V, RETURN_V, GETRETVAL_V, FUNCSTART_V, FUNCEND_V,
-    TABLECREATE_V, TABLEGETELEM_V, TABLESETELEM_V,
-    JUMP_V,
-    NOP_V
+    OP_ASSIGN,
+    OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD,
+    OP_UMINUS,
+    OP_AND, OP_OR, OP_NOT,    
+    OP_JEQ, OP_JNE, OP_JLE, OP_JGE, OP_JLT, OP_JGT,      
+    OP_CALL, OP_PARAM, OP_RETURN, OP_GETRETVAL, OP_FUNCSTART, OP_FUNCEND,
+    OP_TABLECREATE, OP_TABLEGETELEM, OP_TABLESETELEM,
+    OP_JUMP,
+    OP_NOP
 } vmopcode;
 
 typedef struct instruction {

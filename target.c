@@ -159,44 +159,43 @@ void make_operand(expr* e, vmarg* arg) {
 
 void generate_ASSIGN(quad* q) {
     instruction t;
-    t.opcode = ASSIGN_V;
+    t.opcode = OPC_ASSIGN;
     make_operand(q->arg1, &(t.arg1));   
     t.arg2.type = UNDEFINED_V;     
     make_operand(q->result, &(t.result)); 
-    t.srcLine = q->line;
     emit_target(t);
 }
 
-void generate_ADD(quad* q) { helper_generate_full(ADD_V, q); } 
-void generate_SUB(quad* q) { helper_generate_full(SUB_V, q); } 
-void generate_MUL(quad* q) { helper_generate_full(MUL_V, q); }
-void generate_DIV(quad* q) { helper_generate_full(DIV_V, q); } 
-void generate_MOD(quad* q) { helper_generate_full(MOD_V, q); }
+void generate_ADD(quad* q) { helper_generate_full(OPC_ADD, q); }
+void generate_SUB(quad* q) { helper_generate_full(OPC_SUB, q); }
+void generate_MUL(quad* q) { helper_generate_full(OPC_MUL, q); }
+void generate_DIV(quad* q) { helper_generate_full(OPC_DIV, q); }
+void generate_MOD(quad* q) { helper_generate_full(OPC_MOD, q); }
 void generate_UMINUS(quad* q) {
     q->arg2 = create_constnum_expr(-1);
-    helper_generate_full(MUL_V, q);
+    helper_generate_full(OPC_MUL, q);
 }
 
 void generate_AND(quad* q) { printf("Error. AND Should not exist\n"); }
 void generate_OR(quad* q) { printf("Error. OR Should not exist\n"); }
 void generate_NOT(quad* q) { printf("Error. NOT Should not exist\n"); }
 
-void generate_IF_EQ(quad* q) { helper_generate_relational(JEQ_V, q); }
-void generate_IF_NOTEQ(quad* q) { helper_generate_relational(JNE_V, q); }
-void generate_IF_LESSEQ(quad* q) { helper_generate_relational(JLE_V, q); }
-void generate_IF_GREATEREQ(quad* q) { helper_generate_relational(JGE_V, q); }
-void generate_IF_LESS(quad* q) { helper_generate_relational(JLT_V, q); }
-void generate_IF_GREATER(quad* q) { helper_generate_relational(JGT_V, q); }
+void generate_IF_EQ(quad* q) { helper_generate_relational(OPC_JEQ, q); }
+void generate_IF_NOTEQ(quad* q) { helper_generate_relational(OPC_JNE, q); }
+void generate_IF_LESSEQ(quad* q) { helper_generate_relational(OPC_JLE, q); }
+void generate_IF_GREATEREQ(quad* q) { helper_generate_relational(OPC_JGE, q); }
+void generate_IF_LESS(quad* q) { helper_generate_relational(OPC_JLT, q); }
+void generate_IF_GREATER(quad* q) { helper_generate_relational(OPC_JGT, q); }
 
-void generate_CALL(quad* q) { helper_generate_arg1(CALL_V, q); }
-void generate_PARAM(quad* q) { helper_generate_arg1(PARAM_V, q); }
+void generate_CALL(quad* q) { helper_generate_arg1(OPC_CALL, q); }
+void generate_PARAM(quad* q) { helper_generate_arg1(OPC_PARAM, q); }
 
-void generate_RETURN(quad* q) { helper_generate_res(RETURN_V, q); }
-void generate_GETRETVAL(quad* q) { helper_generate_res(GETRETVAL_V, q); }
+void generate_RETURN(quad* q) { helper_generate_res(OPC_RETURN, q); }
+void generate_GETRETVAL(quad* q) { helper_generate_res(OPC_GETRETVAL, q); }
 
 void generate_FUNCSTART(quad* q) {
     instruction t;
-    t.opcode = FUNCSTART_V;
+    t.opcode = OPC_FUNCSTART;
     make_operand(q->arg1, &(t.arg1));   
     t.arg2.type = NUMLOCALS_V;
     if(q->arg1->symbol) {
@@ -206,16 +205,16 @@ void generate_FUNCSTART(quad* q) {
     t.srcLine = q->line;
     emit_target(t);
 }
-void generate_FUNCEND(quad* q) { helper_generate_arg1(FUNCEND_V, q); }
+void generate_FUNCEND(quad* q) { helper_generate_arg1(OPC_FUNCEND, q); }
 
-void generate_NEWTABLE(quad* q) { helper_generate_res(TABLECREATE_V, q); }
+void generate_NEWTABLE(quad* q) { helper_generate_res(OPC_TABLECREATE, q); }
 
-void generate_TABLEGETELEM(quad* q) { helper_generate_full(TABLEGETELEM_V, q); }
-void generate_TABLESETELEM(quad* q) { helper_generate_full(TABLESETELEM_V, q); }
+void generate_TABLEGETELEM(quad* q) { helper_generate_full(OPC_TABLEGETELEM, q); }
+void generate_TABLESETELEM(quad* q) { helper_generate_full(OPC_TABLESETELEM, q); }
 
 void generate_JUMP(quad* q) {
     instruction t;
-    t.opcode = JUMP_V;
+    t.opcode = OPC_JUMP;
     t.arg1.type = UNDEFINED_V; 
     t.arg2.type = UNDEFINED_V; 
     t.result.type = LABEL_V;
@@ -330,46 +329,46 @@ void write_binary(void) {
 
 static const char* vmopcode_to_string(vmopcode op) {
     switch(op) {
-        case ASSIGN_V: return "ASSIGN";
-        case ADD_V: return "ADD";
-        case SUB_V: return "SUB";
-        case MUL_V: return "MUL";
-        case DIV_V: return "DIV";
-        case MOD_V: return "MOD";
-        case UMINUS_V: return "UMINUS";
-        case AND_V: return "AND";
-        case OR_V: return "OR";
-        case NOT_V: return "NOT";
-        case JEQ_V: return "JEQ";
-        case JNE_V: return "JNE";
-        case JLE_V: return "JLE";
-        case JGE_V: return "JGE";
-        case JLT_V: return "JLT";
-        case JGT_V: return "JGT";
-        case CALL_V: return "CALL";
-        case PARAM_V: return "PARAM";
-        case RETURN_V: return "RETURN";
-        case GETRETVAL_V: return "GETRETVAL";
-        case FUNCSTART_V: return "FUNCSTART";
-        case FUNCEND_V: return "FUNCEND";
-        case TABLECREATE_V: return "TABLECREATE";
-        case TABLEGETELEM_V: return "TABLEGETELEM";
-        case TABLESETELEM_V: return "TABLESETELEM";
-        case JUMP_V: return "JUMP";
-        case NOP_V: return "NOP";
+        case OPC_ASSIGN: return "ASSIGN";
+        case OPC_ADD: return "ADD";
+        case OPC_SUB: return "SUB";
+        case OPC_MUL: return "MUL";
+        case OPC_DIV: return "DIV";
+        case OPC_MOD: return "MOD";
+        case OPC_UMINUS: return "UMINUS";
+        case OPC_AND: return "AND";
+        case OPC_OR: return "OR";
+        case OPC_NOT: return "NOT";
+        case OPC_JEQ: return "JEQ";
+        case OPC_JNE: return "JNE";
+        case OPC_JLE: return "JLE";
+        case OPC_JGE: return "JGE";
+        case OPC_JLT: return "JLT";
+        case OPC_JGT: return "JGT";
+        case OPC_CALL: return "CALL";
+        case OPC_PARAM: return "PARAM";
+        case OPC_RETURN: return "RETURN";
+        case OPC_GETRETVAL: return "GETRETVAL";
+        case OPC_FUNCSTART: return "FUNCSTART";
+        case OPC_FUNCEND: return "FUNCEND";
+        case OPC_TABLECREATE: return "TABLECREATE";
+        case OPC_TABLEGETELEM: return "TABLEGETELEM";
+        case OPC_TABLESETELEM: return "TABLESETELEM";
+        case OPC_JUMP: return "JUMP";
+        case OPC_NOP: return "NOP";
         default: return "UNKNOWN_OP";
     }
 }
 
 static int is_jump_opcode(vmopcode op) {
     switch(op) {
-        case JEQ_V:
-        case JNE_V:
-        case JLE_V:
-        case JGE_V:
-        case JLT_V:
-        case JGT_V:
-        case JUMP_V:
+        case OPC_JEQ:
+        case OPC_JNE:
+        case OPC_JLE:
+        case OPC_JGE:
+        case OPC_JLT:
+        case OPC_JGT:
+        case OPC_JUMP:
             return 1;
         default:
             return 0;

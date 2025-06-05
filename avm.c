@@ -65,46 +65,46 @@ void read_binary(void) {
 
 static const char* vmopcode_to_string(vmopcode op) {
     switch(op) {
-        case ASSIGN_V: return "ASSIGN";
-        case ADD_V: return "ADD";
-        case SUB_V: return "SUB";
-        case MUL_V: return "MUL";
-        case DIV_V: return "DIV";
-        case MOD_V: return "MOD";
-        case UMINUS_V: return "UMINUS";
-        case AND_V: return "AND";
-        case OR_V: return "OR";
-        case NOT_V: return "NOT";
-        case JEQ_V: return "JEQ";
-        case JNE_V: return "JNE";
-        case JLE_V: return "JLE";
-        case JGE_V: return "JGE";
-        case JLT_V: return "JLT";
-        case JGT_V: return "JGT";
-        case CALL_V: return "CALL";
-        case PARAM_V: return "PARAM";
-        case RETURN_V: return "RETURN";
-        case GETRETVAL_V: return "GETRETVAL";
-        case FUNCSTART_V: return "FUNCSTART";
-        case FUNCEND_V: return "FUNCEND";
-        case TABLECREATE_V: return "TABLECREATE";
-        case TABLEGETELEM_V: return "TABLEGETELEM";
-        case TABLESETELEM_V: return "TABLESETELEM";
-        case JUMP_V: return "JUMP";
-        case NOP_V: return "NOP";
+        case OP_ASSIGN: return "ASSIGN";
+        case OP_ADD: return "ADD";
+        case OP_SUB: return "SUB";
+        case OP_MUL: return "MUL";
+        case OP_DIV: return "DIV";
+        case OP_MOD: return "MOD";
+        case OP_UMINUS: return "UMINUS";
+        case OP_AND: return "AND";
+        case OP_OR: return "OR";
+        case OP_NOT: return "NOT";
+        case OP_JEQ: return "JEQ";
+        case OP_JNE: return "JNE";
+        case OP_JLE: return "JLE";
+        case OP_JGE: return "JGE";
+        case OP_JLT: return "JLT";
+        case OP_JGT: return "JGT";
+        case OP_CALL: return "CALL";
+        case OP_PARAM: return "PARAM";
+        case OP_RETURN: return "RETURN";
+        case OP_GETRETVAL: return "GETRETVAL";
+        case OP_FUNCSTART: return "FUNCSTART";
+        case OP_FUNCEND: return "FUNCEND";
+        case OP_TABLECREATE: return "TABLECREATE";
+        case OP_TABLEGETELEM: return "TABLEGETELEM";
+        case OP_TABLESETELEM: return "TABLESETELEM";
+        case OP_JUMP: return "JUMP";
+        case OP_NOP: return "NOP";
         default: return "UNKNOWN_OP";
     }
 }
 
 static int is_jump_opcode(vmopcode op) {
     switch(op) {
-        case JEQ_V:
-        case JNE_V:
-        case JLE_V:
-        case JGE_V:
-        case JLT_V:
-        case JGT_V:
-        case JUMP_V:
+        case OP_JEQ:
+        case OP_JNE:
+        case OP_JLE:
+        case OP_JGE:
+        case OP_JLT:
+        case OP_JGT:
+        case OP_JUMP:
             return 1;
         default:
             return 0;
