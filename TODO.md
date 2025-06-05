@@ -18,7 +18,7 @@ ASSIGN - (arg1, result)
 JUMP (index)
 FUNCSTART (2 args) -->
 
-<!-- FIX RESOLVE RAW SYMBOL (NIKOOOOO) -->
+<!-- FIX RESOLVE RAW SYMBOL -->
 <!-- GIA: LOCAL, GLOBALk, RAW -->
 <!-- REMEMBER: ftiaxe na fainontai na locals sto FUNCSTART -->
 <!-- REMEMBER: apo8hkeyoyme kapou posa program func yparxoun -->
@@ -37,6 +37,50 @@ How to translate symbols to address: XRHSIMOPOIW MONO OFFSET? -->
 
 ---------------------------------------------------------------------------------
 AVM
+
+KANONES:
+STACK SIZE 8192
+STACK TOP -> point to top element
+STACK (DARTH) MAUL - > divider gia topikes - arguments metablhtes -> point to prwto local
+METAFRASH?? question mark
+
+STACK[0] na einai to ret_val
+
+/* Procedures */ 
+
+Kanoume prwta push ta args, kanoume push kai ton ari8mo twn current args (current_args_pushed)
+meta kanoume push to return address
+mhdenizoume to ret_val
+kanoume branch sthn diey8ynsh ths synarthshs
+
+H synarthsh apo8hkeuei to prohgoymeno stack MAUL
+kanei push ta locals ths
+pali elegxoyme oti den bgainoyme ektos tou program total offset
+
+otan bgainoume apo synarthsh??
+pop ta locals
+restore to stack MAUL
+pop to return address
+kane jump ekei pou epestrepse to pop
+
+/* Structs */
+
+vm_cell -> type, union
+
+push pops me katallhla checks PROFANWS
+
+GLOBALS: successfull_branch, branch_index,
+current_args_pushed, program_counter,
+stack_top, stack_maul
+
+EXECUTORS pali me table of functions kai enum
+opws kai to to_bool, to_string, arithmetic_opcodes, relational_opcodes
+
+
+-- pio meta
+
+SOMEHOW implement libfuncs
+TABLES ??????????????????????????????????????
 
 
 ---------------------------------------------------------------------------------

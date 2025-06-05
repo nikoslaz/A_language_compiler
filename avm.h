@@ -11,9 +11,6 @@
 #include <assert.h>
 
 #define MAGIC_NUMBER 0xDEADBEEF
-#define COL_WIDTH_OPCODE 12
-#define COL_WIDTH_ARG    20
-#define COL_WIDTH_LINE   5
 
 typedef enum VmargType {
     ARG_GLOBAL,
@@ -55,17 +52,6 @@ typedef struct instruction {
     vmarg arg2;
     unsigned int srcLine;
 } instruction;
-
-/* Globals */
-extern char** string_const;
-extern unsigned int total_str_const;
-extern double* number_const;
-extern unsigned int total_num_const;
-extern char** libfunc_const;
-extern unsigned int total_libfunc_const;
-extern instruction* instructions;
-extern unsigned int total_instructions;
-extern int totalprogvar;
 
 #endif
 /* end of avm.h */

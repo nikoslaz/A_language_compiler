@@ -15,6 +15,14 @@ instruction* instructions=(instruction*)0;
 unsigned int total_instructions;
 int totalprogvar;
 
+/* AVM Globals */
+unsigned int succ_branch = 0;
+unsigned int branch_label = 0;
+unsigned int current_args_pushed = 0;
+unsigned int program_counter = 0;
+unsigned int stack_top = 0;
+unsigned int stack_maul = 0;
+
 /*===============================================================================================*/
 /* Read Binary */
 
@@ -62,6 +70,10 @@ void read_binary(void) {
 
 /*===============================================================================================*/
 /* Print */
+
+#define COL_WIDTH_OPCODE 12
+#define COL_WIDTH_ARG    20
+#define COL_WIDTH_LINE   5
 
 static const char* vmopcode_to_string(vmopcode op) {
     switch(op) {
