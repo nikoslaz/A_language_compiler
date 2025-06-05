@@ -26,14 +26,15 @@ unsigned int stack_maul = 0;
 /*===============================================================================================*/
 /* Read Binary */
 
-void read_binary(void) {
-	FILE *fd = fopen("chief.alpha","rb");
-    if(!fd) { printf("Error reading chief.alpha file.\n"); exit(-1); }
+void read_binary(FILE *fd) {
 	int length;
     unsigned magic_number;
 
 	fread(&magic_number, sizeof(unsigned), 1, fd);
-	assert(magic_number == MAGIC_NUMBER);
+	if(magic_number != MAGIC_NUMBER) {
+        printf("Error. Unrecognized binary file. Exiting...\n");
+        exit(-1);
+    }
 
 	fread(&total_str_const, sizeof(unsigned), 1, fd);
 	if(total_str_const) { string_const = (char** )malloc(total_str_const*sizeof(char*)); }
@@ -193,8 +194,15 @@ void printTargetToFile(void) {
 /*===============================================================================================*/
 /* Main */
 
-int main(void) {
-    read_binary();
+int main(int argc, char** argv) {
+    FILE* fin;
+    if(argc > 1) {
+        if(!(fin = fopen(argv[1], "r"))) {
+            fprintf(stderr, "Cannot read file: %s\n", argv[1]);
+            return 1;
+        }
+    } else { printf("Error. File not supplied\n"); return 1; }
+    read_binary(fin);
     printTargetToFile();
     return 0;
 }
