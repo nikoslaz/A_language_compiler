@@ -17,43 +17,24 @@ execute_func_t executors[] = {
 };
 
 tostring_func_t to_string_func[] = {
-    number_tostring,
-    string_tostring,
-    bool_tostring,
-    table_tostring,
-    userfunc_tostring,
-    libfunc_tostring,
-    nil_tostring,
-    undef_tostring,
-    invalid_tostring
+    number_tostring, string_tostring, bool_tostring,
+    table_tostring, userfunc_tostring, libfunc_tostring,
+    nil_tostring, undef_tostring, invalid_tostring
 };
 
 tobool_func_t to_bool_func[] = {
-    number_tobool,
-    string_tobool,
-    bool_tobool,
-    table_tobool,
-    userfunc_tobool,
-    libfunc_tobool,
-    nil_tobool,
-    undef_tobool,
-    invalid_tobool
+    number_tobool, string_tobool, bool_tobool,
+    table_tobool, userfunc_tobool, libfunc_tobool,
+    nil_tobool, undef_tobool, invalid_tobool
 };
 
 arithmetic_func_t arith_func[] = {
-    add_arith,
-    sub_arith,
-    mul_arith,
-    div_arith,
-    mod_arith,
+    add_arith, sub_arith, mul_arith, div_arith, mod_arith, 
     uminus_arith
 };
 
 relational_func_t relat_func[] = {
-	jle_rel,
-	jge_rel,
-	jlt_rel,
-	jgt_rel
+	jle_rel, jge_rel, jlt_rel, jgt_rel
 };
 
 /* Globals */
