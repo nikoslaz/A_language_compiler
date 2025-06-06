@@ -54,6 +54,7 @@ unsigned int branch_label;
 unsigned int current_args_pushed;
 unsigned int program_counter;
 unsigned int execution_finished;
+unsigned int curr_line;
 
 memcell stack[AVM_STACKSIZE];
 unsigned int stack_top;  /* Points to top non-empty element */
@@ -61,6 +62,11 @@ unsigned int stack_maul; /* Splits the activations in half */
 
 /*===============================================================================================*/
 /* Read Binary */
+
+void MemoryFail(void) {
+    fprintf(stderr, "Fatal Error. Memory Allocation failed\n");
+    exit(1);
+}
 
 void read_binary(FILE* fd) {
 	int length;
@@ -73,29 +79,43 @@ void read_binary(FILE* fd) {
     }
 
 	fread(&total_str_const, sizeof(unsigned), 1, fd);
-	if(total_str_const) { string_const = (char** )malloc(total_str_const*sizeof(char*)); }
+	if(total_str_const) {
+		string_const = (char** )malloc(total_str_const*sizeof(char*));
+		if(!string_const) { MemoryFail(); }
+	}
 	for(int i=0; i<total_str_const; i++) {
 		fread(&length, sizeof(unsigned), 1, fd);
 		string_const[i] = (char*)malloc(length*sizeof(char));
+		if(!(string_const[i])) { MemoryFail(); }
 		fread(string_const[i], length*sizeof(char) ,sizeof(char), fd);
 	}
 
 	fread(&total_num_const, sizeof(unsigned), 1, fd);
-	if(total_num_const) { number_const = (double*)malloc(total_num_const*sizeof(double)); }
+	if(total_num_const) {
+		number_const = (double*)malloc(total_num_const*sizeof(double));
+		if(!number_const) { MemoryFail(); }
+	}
 	for(int i=0; i<total_num_const; i++) {
 		fread(&number_const[i], sizeof(double), 1, fd);
 	}
 
 	fread(&total_libfunc_const, sizeof(unsigned), 1, fd);
-	if(total_libfunc_const) { libfunc_const = (char**)malloc(total_libfunc_const*sizeof(char*)); }
+	if(total_libfunc_const) {
+		libfunc_const = (char**)malloc(total_libfunc_const*sizeof(char*));
+		if(!libfunc_const) { MemoryFail(); }
+	}
 	for(int i=0; i<total_libfunc_const; i++) {
 		fread(&length, sizeof(unsigned), 1, fd);
 		libfunc_const[i] = (char*)malloc(length*sizeof(char));
+		if(!(libfunc_const[i])) { MemoryFail(); }
 		fread(libfunc_const[i], length*sizeof(char), 1, fd);
 	}
 
 	fread(&total_instructions, sizeof(unsigned), sizeof(unsigned), fd);
-	if(total_instructions) { instructions = (instruction*)malloc(total_instructions*sizeof(instruction)); }
+	if(total_instructions) {
+		instructions = (instruction*)malloc(total_instructions*sizeof(instruction));
+		if(!instructions) { MemoryFail(); }
+	}
 	for(int i=0; i<total_instructions; i++) {
 		fread(&instructions[i], sizeof(instruction), 1, fd);
 	}
@@ -109,7 +129,12 @@ void read_binary(FILE* fd) {
 /* Stack */
 
 void stackError(char* input) {
-	printf("Fatal Stack Error. %s.\n");
+	printf("Fatal Stack Error. %s.\n", input);
+	exit(-1);
+}
+
+void runtimeError(char* input) {
+	printf("Runtime Error in line %d. %s.\n", curr_line, input);
 	exit(-1);
 }
 
@@ -135,16 +160,14 @@ void clear_memcell(memcell* cell) {
 }
 
 void push(memcell val) {
-    if(stack_top >= AVM_STACKSIZE) { stackError("Stack Overflow"); }
-    stack_top++;
+	if(++stack_top >= AVM_STACKSIZE) { stackError("Stack Overflow"); }
     stack[stack_top] = val;
 }
 
 memcell pop(void) {
     if(stack_top < 0) { stackError("Stack Underflow"); }
     memcell popped_cell = stack[stack_top];
-    clear_memcell(&stack[stack_top]);
-    stack_top--;
+    clear_memcell(&stack[stack_top--]);
     return popped_cell;
 }
 
@@ -154,31 +177,33 @@ memcell pop(void) {
 /* NEEDS WORK */
 memcell* avm_translate_operand(vmarg* arg, memcell* reg) {
 	if(!arg) { printf("Error. Null vmarg in translate.\n"); return NULL; }
+	unsigned int index;
 	switch(arg->type) {
+		
+		/* Variables */
 		case ARG_GLOBAL:
-			unsigned int index = 2 + arg->val;
-			if(arg->val >= stack[1].data.stackval_zoumi || index>stack_top) {
-				stackError("Invalid Global Index");
-			}
+			index = 1 + arg->val;
+			if(index > stack_top) { stackError("Invalid Global Index"); }
 			return &stack[index];
 		case ARG_TEMPORARY:
-			unsigned int index = 2 + arg->val;
-			if(arg->val >= stack[1].data.stackval_zoumi || index>stack_top) {
-				stackError("Invalid Temporary Index");
-			}
+			index = 1 + arg->val;
+			if(index > stack_top) { stackError("Invalid Temporary Index"); }
 			return &stack[index];
 		case ARG_LOCAL:
-			unsigned int index = stack_maul + 1 + arg->val;
-			if(arg->val >= stack[stack_maul].data.stackval_zoumi || index>stack_top) {
-				stackError("Invalid Local Index");
-			}
+			index = stack_maul + arg->val;
+			if(index > stack_top) { stackError("Invalid Local Index"); }
 			return &stack[index];
 		case ARG_FORMAL:
-			unsigned int index = stack_maul - (4 + arg->val);
-			if(arg->val >= stack[stack_maul-3].data.stackval_zoumi || index>stack_top) {
-				stackError("Invalid Formal Index");
+			/* CHECK IF IT EXCEEDS GIVEN ARGUMENTS */
+			if(stack_maul-3 > stack_top) { stackError("Illegal Stack State"); }
+			if(arg->val >= stack[stack_maul-3].data.stackval_zoumi) {
+				runtimeError("Not enough arguments were supplied for this operation");
 			}
+			index = stack_maul - (4 + arg->val);
+			if(index>stack_top) { stackError("Invalid Formal Index"); }
 			return &stack[index];
+		
+			/* Consts */
 		case ARG_NUMBER:
             reg->type = MEM_NUMBER;
 			reg->data.num_zoumi = number_const[arg->val];	
@@ -221,7 +246,8 @@ void execute_cycle(void) {
 		return;
 	}
 	instruction* instr = &instructions[program_counter];
-	(*executors[instr->opcode])(instr);
+	curr_line = instr->srcLine;
+	// (*executors[instr->opcode])(instr);
 	if(succ_branch) {
 		succ_branch = 0;
 		program_counter = branch_label;
@@ -229,34 +255,37 @@ void execute_cycle(void) {
 	return;
 }
 
+void begin_execution(void) {
+	while(1) {
+		execute_cycle();
+		if(execution_finished) { break; }
+	}
+	printf("Execution Finished\n");
+}
+
 void avm_initialize(void) {
-    initilize_stack();
+    
+	initilize_stack();
+	
 	memcell cell;
+	memset(&cell, 0, sizeof(memcell));
+	cell.type = MEM_UNDEF;
 	
 	/* Push Ret Val */
-	memset(&cell, 0, sizeof(memcell));
-	cell.type = MEM_UNDEF;
 	push(cell);
-	
-	/* Push number of program variables */
-	cell.type = MEM_STACKVAL;
-	cell.data.stackval_zoumi = totalprogvar;
-	push(cell);
-	stack_maul = 1;
-	
-	/* Push program variables */
-	memset(&cell, 0, sizeof(memcell));
-	cell.type = MEM_UNDEF;
+	/* Push Locals */
 	for(int i=0; i<totalprogvar; i++) { push(cell); }
+	stack_maul = 1;
 	
 	/* Controls */
     current_args_pushed = 0;
 	execution_finished = 0;
     succ_branch = 0;
     
+	/* Execute Instructions */
 	program_counter = 0;
-	/* Start execution here */
-
+	begin_execution();
+	
 }
 
 /*===============================================================================================*/

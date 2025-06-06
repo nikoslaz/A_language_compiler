@@ -36,49 +36,63 @@ How to translate symbols to address: XRHSIMOPOIW MONO OFFSET? -->
 <!-- Write everything in a binary file in order ?? -->
 
 ---------------------------------------------------------------------------------
-AVM
+- AVM
 
-KANONES:
+/* Kanones */
 STACK SIZE 8192
 STACK TOP -> point to top element
-STACK (DARTH) MAUL - > divider gia topikes - arguments metablhtes -> point to prwto local
-METAFRASH?? question mark
+STACK (DARTH) MAUL - > divider gia topikes - arguments metablhtes
+STACK[0] einai to ret_val
 
-STACK[0] na einai to ret_val
+|          |
+| local2   | <- top
+| local1   |
+| local0   | <- maul
+| old maul |
+------------ << FUNCSTART
+| ret addr |
+| #args    |
+------------ << CALL
+| arg0     |
+| arg1     |
+| arg2     |
+------------ << BEGIN PARAMS
+| global1  |
+| global0  | <- initial maul
+------------
+| retval   | <- 0
+
+TRANSLATE:
+Globals & Temporary: stack[1 + index]
+Locals: stack[maul + index]
+Formals: stack[maul - (4+index)] but check args pushed
 
 /* Procedures */ 
 
-Kanoume prwta push ta args, kanoume push kai ton ari8mo twn current args (current_args_pushed)
+Kanoume prwta push ta args
+
+kanoume push ton ari8mo twn current args (current_args_pushed)
+mhdenizoyme to current_args_pushed
 meta kanoume push to return address
 mhdenizoume to ret_val
 kanoume branch sthn diey8ynsh ths synarthshs
 
 H synarthsh apo8hkeuei to prohgoymeno stack MAUL
-kanei push ton ari8mo twn locals kai ta locals ths
-pali elegxoyme oti den bgainoyme ektos tou program total offset
+allazoume to stack_maul sto top+1
+kanei push ta locals ths
 
 otan bgainoume apo synarthsh??
 pop ta locals
 restore to stack MAUL
-i must pop my own arguments (function that called be doesnt know when i return)
 pop to return address
-kane jump ekei pou epestrepse to pop
-
-/* Structs */
-
-vm_cell -> type, union
-
-push pops me katallhla checks PROFANWS
-
-GLOBALS: successfull_branch, branch_index,
-current_args_pushed, program_counter,
-stack_top, stack_maul
+i must pop my own arguments (function that called be doesnt know when i return)
+kane jump sto return address
 
 EXECUTORS pali me table of functions kai enum
 opws kai to to_bool, to_string, arithmetic_opcodes, relational_opcodes
 
-
--- pio meta
+---------------------------------------------------------------------------------
+- HARD
 
 SOMEHOW implement libfuncs
 TABLES ??????????????????????????????????????
