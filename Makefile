@@ -10,8 +10,9 @@ TCODE = target
 PARSER = parser
 SCANNER = scanner
 
-AVMTARGET = avm
+AVMTARGET = alpha_avm
 AVM = avm
+AVM_PRINTS = avm_prints
 
 CC = gcc
 # Compile all
@@ -22,7 +23,7 @@ $(TARGET): $(SCANNER).o $(PARSER).o $(LIST).o $(TABLE).o $(QUADS).o $(TCODE).o
 	$(CC) -o $@ $^
 
 # AVM Executable
-$(AVMTARGET): $(AVM).o
+$(AVMTARGET): $(AVM).o $(AVM_PRINTS).o
 	$(CC) -o $@ $^
 
 # Object Files

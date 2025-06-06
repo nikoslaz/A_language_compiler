@@ -54,7 +54,7 @@ mhdenizoume to ret_val
 kanoume branch sthn diey8ynsh ths synarthshs
 
 H synarthsh apo8hkeuei to prohgoymeno stack MAUL
-kanei push ta locals ths
+kanei push ton ari8mo twn locals kai ta locals ths
 pali elegxoyme oti den bgainoyme ektos tou program total offset
 
 otan bgainoume apo synarthsh??

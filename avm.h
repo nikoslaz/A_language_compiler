@@ -8,12 +8,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "avm_prints.h"
 
 #define MAGIC_NUMBER 0xDEADBEEF
+#define	AVM_STACKSIZE 8192 /* 2^13 */
 
-#define	AVM_STACKSIZE	8192
-
-typedef enum VmargType {
+typedef enum vmarg_t {
     ARG_GLOBAL,
     ARG_LOCAL,
     ARG_FORMAL,
@@ -34,7 +34,7 @@ typedef struct vmarg {
     unsigned val;
 } vmarg;
 
-typedef enum vmopcode {
+typedef enum vmopcode_t {
     OP_ASSIGN,
     OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD,
     OP_UMINUS,
@@ -44,46 +44,57 @@ typedef enum vmopcode {
     OP_TABLECREATE, OP_TABLEGETELEM, OP_TABLESETELEM,
     OP_JUMP,
     OP_NOP
-} vmopcode;
+} vmopcode_t;
 
 typedef struct instruction {
-    vmopcode opcode;
+    vmopcode_t opcode;
     vmarg result;
     vmarg arg1;
     vmarg arg2;
     unsigned int srcLine;
 } instruction;
 
-typedef enum avm_memcell{
+extern char** string_const;
+extern unsigned int total_str_const;
+extern double* number_const;
+extern unsigned int total_num_const;
+extern char** libfunc_const;
+extern unsigned int total_libfunc_const;
+extern instruction* instructions;
+extern unsigned int total_instructions;
+extern int totalprogvar;
+
+/*===============================================================================================*/
+/* AVM structs */
+
+typedef enum memcell_type_t {
 	MEM_NUMBER,
 	MEM_STRING,	
 	MEM_BOOL,
 	MEM_TABLE,
-	MEM_USERFUN,
-	MEM_LIBFUN,
+	MEM_USERFUNC,
+	MEM_LIBFUNC,
 	MEM_NIL,
-	MEM_UNDEF,
-	MEM_INVALID
-} avm_memcell_t;
+    MEM_STACKVAL,
+	MEM_UNDEF
+} memcell_type_t;
 
-typedef struct AVM_memcell {
-	avm_memcell_t type;
-
+typedef struct memcell {
+	memcell_type_t type;
 	union{
 		double num_zoumi;
 		char* string_zoumi;
 		unsigned char bool_zoumi;
+		unsigned usrfunc_zoumi;
+		unsigned libfunc_zoumi;
 		struct AVM_table* table_zoumi;
-		unsigned func_zoumi;
-		char* libfunc_zoumi;
 	} data;
-
-} avm_memcell;
+} memcell;
 
 /*===============================================================================================*/
 /* Executor */
 
-typedef void (*execute_func_t)(instruction *);
+typedef void (*execute_func_t)(instruction*);
 extern execute_func_t executors[];
 
 extern void execute_ASSIGN(instruction*);
@@ -117,39 +128,39 @@ extern void execute_GETRETVAL(instruction*);
 /*===============================================================================================*/
 /* ToStringFunc */
 
-typedef char *(*tostring_func_t)(avm_memcell *);
+typedef char* (*tostring_func_t)(memcell*);
 extern tostring_func_t to_string_func[];
 
-extern char* number_tostring(avm_memcell*);
-extern char* string_tostring(avm_memcell*);
-extern char* bool_tostring(avm_memcell*);
-extern char* table_tostring(avm_memcell*);
-extern char* userfunc_tostring(avm_memcell*);
-extern char* libfunc_tostring(avm_memcell*);
-extern char* nil_tostring(avm_memcell*);
-extern char* undef_tostring(avm_memcell*);
-extern char* invalid_tostring(avm_memcell*);
+extern char* number_tostring(memcell*);
+extern char* string_tostring(memcell*);
+extern char* bool_tostring(memcell*);
+extern char* table_tostring(memcell*);
+extern char* userfunc_tostring(memcell*);
+extern char* libfunc_tostring(memcell*);
+extern char* nil_tostring(memcell*);
+extern char* undef_tostring(memcell*);
+extern char* invalid_tostring(memcell*);
 
 /*===============================================================================================*/
 /* ToBoolFunc */
 
-typedef unsigned char (*tobool_func_t)(avm_memcell *);
+typedef unsigned int (*tobool_func_t)(memcell*);
 extern tobool_func_t to_bool_func[];
 
-extern unsigned char number_tobool(avm_memcell*);
-extern unsigned char string_tobool(avm_memcell*);
-extern unsigned char bool_tobool(avm_memcell*);
-extern unsigned char table_tobool(avm_memcell*);
-extern unsigned char userfunc_tobool(avm_memcell*);
-extern unsigned char libfunc_tobool(avm_memcell*);
-extern unsigned char nil_tobool(avm_memcell*);
-extern unsigned char undef_tobool(avm_memcell*);
-extern unsigned char invalid_tobool(avm_memcell*);
+extern unsigned int number_tobool(memcell*);
+extern unsigned int string_tobool(memcell*);
+extern unsigned int bool_tobool(memcell*);
+extern unsigned int table_tobool(memcell*);
+extern unsigned int userfunc_tobool(memcell*);
+extern unsigned int libfunc_tobool(memcell*);
+extern unsigned int nil_tobool(memcell*);
+extern unsigned int undef_tobool(memcell*);
+extern unsigned int invalid_tobool(memcell*);
 
 /*===============================================================================================*/
 /* Arithmetic */
 
-typedef double (*arithmetic_func_t) (double, double);
+typedef double (*arithmetic_func_t)(double, double);
 extern arithmetic_func_t arith_func[];
 
 extern double add_arith(double, double);
@@ -162,15 +173,13 @@ extern double uminus_arith(double, double);
 /*===============================================================================================*/
 /* Relational */
 
-typedef unsigned char (*relational_func_t) (double, double);
-extern relational_func_t relat_func;
+typedef unsigned int (*relational_func_t)(double, double);
+extern relational_func_t relat_func[];
 
-extern unsigned char jgt_rel(double, double);
-extern unsigned char jle_rel(double, double);
-extern unsigned char jge_rel(double, double);
-extern unsigned char jlt_rel(double, double);
-
-static void avm_initstack(void);
+extern unsigned int jgt_rel(double, double);
+extern unsigned int jle_rel(double, double);
+extern unsigned int jge_rel(double, double);
+extern unsigned int jlt_rel(double, double);
 
 #endif
 /* end of avm.h */

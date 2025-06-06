@@ -36,7 +36,7 @@ typedef struct vmarg {
     unsigned val;
 } vmarg;
 
-typedef enum vmopcode {
+typedef enum vmopcode_t {
     OPC_ASSIGN,
     OPC_ADD, OPC_SUB, OPC_MUL, OPC_DIV, OPC_MOD,
     OPC_UMINUS,
@@ -46,10 +46,10 @@ typedef enum vmopcode {
     OPC_TABLECREATE, OPC_TABLEGETELEM, OPC_TABLESETELEM,
     OPC_JUMP,
     OPC_NOP
-} vmopcode;
+} vmopcode_t;
 
 typedef struct instruction {
-    vmopcode opcode;
+    vmopcode_t opcode;
     vmarg result;
     vmarg arg1;
     vmarg arg2;
@@ -113,10 +113,10 @@ extern void generate_TABLESETELEM(quad*);
 extern void generate_JUMP(quad*);
 extern void generate_NOP(quad*);
 
-void helper_generate_full(vmopcode op, quad* q);
-void helper_generate_relational(vmopcode op, quad* q);
-void helper_generate_arg1(vmopcode op, quad* q);
-void helper_generate_res(vmopcode op, quad* q);
+void helper_generate_full(vmopcode_t op, quad* q);
+void helper_generate_relational(vmopcode_t op, quad* q);
+void helper_generate_arg1(vmopcode_t op, quad* q);
+void helper_generate_res(vmopcode_t op, quad* q);
 void printTargetToFile(void);
 void write_binary(void);
 

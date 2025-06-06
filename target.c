@@ -25,21 +25,21 @@ generator_func_t generators[] = {
 };
 
 /* Globals */
-char** string_const=(char**)0;
-unsigned int total_str_const=0;
-unsigned int curr_str_const=0;
+char** string_const = NULL;
+unsigned int total_str_const = 0;
+unsigned int curr_str_const = 0;
 
-double* number_const=(double*)0;
-unsigned int total_num_const=0;
-unsigned int curr_num_const=0;
+double* number_const = NULL;
+unsigned int total_num_const = 0;
+unsigned int curr_num_const = 0;
 
-char** libfunc_const=(char**)0;
-unsigned int total_libfunc_const=0;
-unsigned int curr_libfunc_const=0;
+char** libfunc_const = NULL;
+unsigned int total_libfunc_const = 0;
+unsigned int curr_libfunc_const = 0;
 
-instruction* instructions=(instruction*)0;
-unsigned int total_instruction=0;
-unsigned int curr_instruction=0;
+instruction* instructions = NULL;
+unsigned int total_instruction = 0;
+unsigned int curr_instruction = 0;
 
 /*===============================================================================================*/
 /* CONSTANTS */
@@ -163,6 +163,7 @@ void generate_ASSIGN(quad* q) {
     make_operand(q->arg1, &(t.arg1));   
     t.arg2.type = ARG_UNDEFINED;     
     make_operand(q->result, &(t.result)); 
+    t.srcLine = q->line;
     emit_target(t);
 }
 
@@ -227,7 +228,7 @@ void generate_NOP(quad* q) { printf("ERROR. NOP Should not exist\n"); }
 
 /* Helpers */
 
-void helper_generate_full(vmopcode op, quad* q) {
+void helper_generate_full(vmopcode_t op, quad* q) {
     instruction t;
     t.opcode = op;
     make_operand(q->arg1, &(t.arg1));
@@ -237,7 +238,7 @@ void helper_generate_full(vmopcode op, quad* q) {
     emit_target(t);
 }
 
-void helper_generate_relational(vmopcode op, quad* q) {
+void helper_generate_relational(vmopcode_t op, quad* q) {
     instruction t;
     t.opcode = op;
     make_operand(q->arg1, &(t.arg1));
@@ -248,7 +249,7 @@ void helper_generate_relational(vmopcode op, quad* q) {
     emit_target(t);
 }
 
-void helper_generate_arg1(vmopcode op, quad* q) {
+void helper_generate_arg1(vmopcode_t op, quad* q) {
     instruction t;
     t.opcode = op;
     make_operand(q->arg1, &(t.arg1));
@@ -258,7 +259,7 @@ void helper_generate_arg1(vmopcode op, quad* q) {
     emit_target(t);
 }
 
-void helper_generate_res(vmopcode op, quad* q) {
+void helper_generate_res(vmopcode_t op, quad* q) {
     instruction t;
     t.opcode = op;
     t.arg1.type = ARG_UNDEFINED; 
@@ -278,7 +279,6 @@ void generateTarget(void) {
         consts_newlibfunc(is_Lib_Func(strdup(library_names[i]))->name);
     }
     for(unsigned i = 0; i < currquad; ++i) {
-        // printf("Generating quad %d\n", i+1);
         (*generators[quads[i].op])(quads + i);
     }
 }
@@ -327,7 +327,7 @@ void write_binary(void) {
 /*===============================================================================================*/
 /* Print */
 
-static const char* vmopcode_to_string(vmopcode op) {
+static const char* vmopcode_to_string(vmopcode_t op) {
     switch(op) {
         case OPC_ASSIGN: return "ASSIGN";
         case OPC_ADD: return "ADD";
@@ -360,7 +360,7 @@ static const char* vmopcode_to_string(vmopcode op) {
     }
 }
 
-static int is_jump_opcode(vmopcode op) {
+static int is_jump_opcode(vmopcode_t op) {
     switch(op) {
         case OPC_JEQ:
         case OPC_JNE:
@@ -401,8 +401,8 @@ static void print_vmarg_aligned(FILE* fp, vmarg* arg, int is_jump_target) {
 }
 
 void printTargetToFile(void) {
-    FILE* fp = fopen("target.output", "w");
-    if(!fp) { perror("Error opening target.output for writing\n"); return; }
+    FILE* fp = fopen("1_target.output", "w");
+    if(!fp) { perror("Error opening 1_target.output for writing\n"); return; }
 
     fprintf(fp, "Magic_number: 0x%X (%u)\n\n", magic_number, magic_number);
 
@@ -440,7 +440,7 @@ void printTargetToFile(void) {
     fprintf(fp, "\nTotal Program Variables: (%u)\n", int_to_Scope(0)->scopeOffset);
     
     fclose(fp);
-    printf("Target code written to target.output\n");
+    printf("Target code written to 1_target.output\n");
 }
 
 
