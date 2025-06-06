@@ -88,6 +88,7 @@ typedef struct memcell {
 		unsigned usrfunc_zoumi;
 		unsigned libfunc_zoumi;
 		struct AVM_table* table_zoumi;
+        unsigned stackval_zoumi;
 	} data;
 } memcell;
 
@@ -138,8 +139,8 @@ extern char* table_tostring(memcell*);
 extern char* userfunc_tostring(memcell*);
 extern char* libfunc_tostring(memcell*);
 extern char* nil_tostring(memcell*);
+extern char* stackval_tostring(memcell*);
 extern char* undef_tostring(memcell*);
-extern char* invalid_tostring(memcell*);
 
 /*===============================================================================================*/
 /* ToBoolFunc */
@@ -154,8 +155,8 @@ extern unsigned int table_tobool(memcell*);
 extern unsigned int userfunc_tobool(memcell*);
 extern unsigned int libfunc_tobool(memcell*);
 extern unsigned int nil_tobool(memcell*);
+extern unsigned int stackval_tobool(memcell*);
 extern unsigned int undef_tobool(memcell*);
-extern unsigned int invalid_tobool(memcell*);
 
 /*===============================================================================================*/
 /* Arithmetic */

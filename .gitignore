@@ -6,5 +6,5 @@ parser.c
 parser.h
 *.output
 calc
-avm
+alpha_avm
 chief.alpha
