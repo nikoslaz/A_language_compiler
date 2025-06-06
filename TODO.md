@@ -60,6 +60,7 @@ pali elegxoyme oti den bgainoyme ektos tou program total offset
 otan bgainoume apo synarthsh??
 pop ta locals
 restore to stack MAUL
+i must pop my own arguments (function that called be doesnt know when i return)
 pop to return address
 kane jump ekei pou epestrepse to pop
 

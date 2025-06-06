@@ -130,7 +130,7 @@ extern void execute_GETRETVAL(instruction*);
 /* ToStringFunc */
 
 typedef char* (*tostring_func_t)(memcell*);
-extern tostring_func_t to_string_func[];
+extern tostring_func_t to_string_funcs[];
 
 extern char* number_tostring(memcell*);
 extern char* string_tostring(memcell*);
@@ -146,7 +146,7 @@ extern char* undef_tostring(memcell*);
 /* ToBoolFunc */
 
 typedef unsigned int (*tobool_func_t)(memcell*);
-extern tobool_func_t to_bool_func[];
+extern tobool_func_t to_bool_funcs[];
 
 extern unsigned int number_tobool(memcell*);
 extern unsigned int string_tobool(memcell*);
@@ -162,7 +162,7 @@ extern unsigned int undef_tobool(memcell*);
 /* Arithmetic */
 
 typedef double (*arithmetic_func_t)(double, double);
-extern arithmetic_func_t arith_func[];
+extern arithmetic_func_t arith_funcs[];
 
 extern double add_arith(double, double);
 extern double sub_arith(double, double);
@@ -175,7 +175,7 @@ extern double uminus_arith(double, double);
 /* Relational */
 
 typedef unsigned int (*relational_func_t)(double, double);
-extern relational_func_t relat_func[];
+extern relational_func_t relat_funcs[];
 
 extern unsigned int jgt_rel(double, double);
 extern unsigned int jle_rel(double, double);

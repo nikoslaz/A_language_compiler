@@ -16,24 +16,24 @@ execute_func_t executors[] = {
     // execute_NOP
 };
 
-tostring_func_t to_string_func[] = {
+tostring_func_t to_string_funcs[] = {
     // number_tostring, string_tostring, bool_tostring,
     // table_tostring, userfunc_tostring, libfunc_tostring,
     // nil_tostring, stackval_tostring, undef_tostring
 };
 
-tobool_func_t to_bool_func[] = {
+tobool_func_t to_bool_funcs[] = {
     // number_tobool, string_tobool, bool_tobool,
     // table_tobool, userfunc_tobool, libfunc_tobool,
     // nil_tobool, stackval_tobool, undef_tobool
 };
 
-arithmetic_func_t arith_func[] = {
+arithmetic_func_t arith_funcs[] = {
     // add_arith, sub_arith, mul_arith,
     // div_arith, mod_arith, uminus_arith
 };
 
-relational_func_t relat_func[] = {
+relational_func_t relat_funcs[] = {
 	// jle_rel, jge_rel, jlt_rel, jgt_rel
 };
 
@@ -53,6 +53,7 @@ unsigned int succ_branch;
 unsigned int branch_label;
 unsigned int current_args_pushed;
 unsigned int program_counter;
+unsigned int execution_finished;
 
 memcell stack[AVM_STACKSIZE];
 unsigned int stack_top;  /* Points to top non-empty element */
@@ -211,7 +212,22 @@ memcell* avm_translate_operand(vmarg* arg, memcell* reg) {
 }
 
 /*===============================================================================================*/
-/* Main */
+/* Execution */
+
+void execute_cycle(void) {
+	if(execution_finished) { return; }
+	if(program_counter == total_instructions) {
+		execution_finished = 1;
+		return;
+	}
+	instruction* instr = &instructions[program_counter];
+	(*executors[instr->opcode])(instr);
+	if(succ_branch) {
+		succ_branch = 0;
+		program_counter = branch_label;
+	} else { program_counter++; }
+	return;
+}
 
 void avm_initialize(void) {
     initilize_stack();
@@ -234,13 +250,17 @@ void avm_initialize(void) {
 	for(int i=0; i<totalprogvar; i++) { push(cell); }
 	
 	/* Controls */
-    succ_branch = 0;
     current_args_pushed = 0;
-    program_counter = 0;
-
+	execution_finished = 0;
+    succ_branch = 0;
+    
+	program_counter = 0;
 	/* Start execution here */
 
 }
+
+/*===============================================================================================*/
+/* Main */
 
 int main(int argc, char** argv) {
     FILE* fin;
