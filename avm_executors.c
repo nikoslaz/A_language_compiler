@@ -8,8 +8,26 @@ void helper_assign(memcell* lv, memcell* rv) {
     if(lv == rv) { return; }
     /* check for tables */
     if(rv->type == MEM_UNDEF) { printf("Warning. Assignment of undef\n"); }
+    clear_memcell(lv);
     memcpy(lv, rv, sizeof(memcell));
     /* again tables */
+}
+
+void helper_arith(instruction* inst) {
+    memcell* lv = translate_operand(&inst->result, NULL);
+    if(!lv) { runtimeError("Null LVALUE"); }
+    memcell* arg1;
+    arg1 = translate_operand(&inst->arg1, arg1);
+    if(!arg1) { runtimeError("Null ARG1"); }
+    memcell* arg2;
+    arg2 = translate_operand(&inst->arg2, arg2);
+    if(!arg2) { runtimeError("Null ARG2"); }
+    if(arg1->type != MEM_NUMBER) { runtimeError("ARG1 is not a NUMBER"); }
+    if(arg2->type != MEM_NUMBER) { runtimeError("ARG2 is not a NUMBER"); }
+    memcell res;
+    res.type = MEM_NUMBER;
+    res.data.num_zoumi = (*arith_funcs[inst->opcode-OP_ADD])(arg1->data.num_zoumi, arg2->data.num_zoumi);
+    helper_assign(lv, &res);
 }
 
 void execute_ASSIGN(instruction* inst) {
@@ -21,53 +39,16 @@ void execute_ASSIGN(instruction* inst) {
     helper_assign(lv, rv);
 }
 
-void execute_ADD(instruction* inst) {
-    memcell* lv = translate_operand(&inst->result, NULL);
-    if(!lv) { runtimeError("Null LVALUE in ADD"); }
-    memcell* arg1;
-    arg1 = translate_operand(&inst->arg1, arg1);
-    if(!arg1) { runtimeError("Null ARG1 in ADD"); }
-    memcell* arg2;
-    arg2 = translate_operand(&inst->arg2, arg2);
-    if(!arg2) { runtimeError("Null ARG2 in ADD"); }
-    if(arg1->type != MEM_NUMBER) { runtimeError("ARG1 is not a NUMBER"); }
-    if(arg2->type != MEM_NUMBER) { runtimeError("ARG2 is not a NUMBER"); }
-    clear_memcell(lv);
-    lv->type = MEM_NUMBER;
-    lv->data.num_zoumi = (*arith_funcs[inst->opcode-OP_ADD])(arg1->data.num_zoumi, arg2->data.num_zoumi);
-}
+void execute_ADD(instruction* inst) { helper_arith(inst); }
+void execute_SUB(instruction* inst) { helper_arith(inst); }
+void execute_MUL(instruction* inst) { helper_arith(inst); }
+void execute_DIV(instruction* inst) { helper_arith(inst); }
+void execute_MOD(instruction* inst) { helper_arith(inst); }
 
-void execute_SUB(instruction* inst) {
-
-}
-
-void execute_MUL(instruction* inst) {
-
-}
-
-void execute_DIV(instruction* inst) {
-
-}
-
-void execute_MOD(instruction* inst) {
-
-}
-
-void execute_UMINUS(instruction* inst) {
-
-}
-
-void execute_AND(instruction* inst) {
-
-}
-
-void execute_OR(instruction* inst) {
-
-}
-
-void execute_NOT(instruction* inst) {
-
-}
+void execute_UMINUS(instruction* inst) { printf("UMINUS SHOULD NOT EXIST\n"); }
+void execute_AND(instruction* inst) { printf("AND SHOULD NOT EXIST\n"); }
+void execute_OR(instruction* inst) { printf("OR SHOULD NOT EXIST\n"); }
+void execute_NOT(instruction* inst) { printf("NOT SHOULD NOT EXIST\n"); }
 
 void execute_JUMP(instruction* inst) {
 
