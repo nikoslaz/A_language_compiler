@@ -23,9 +23,9 @@ tostring_func_t to_string_funcs[] = {
 };
 
 tobool_func_t to_bool_funcs[] = {
-    // number_tobool, string_tobool, bool_tobool,
-    // table_tobool, userfunc_tobool, libfunc_tobool,
-    // nil_tobool, stackval_tobool, undef_tobool
+    number_tobool, string_tobool, bool_tobool,
+    table_tobool, userfunc_tobool, libfunc_tobool,
+    nil_tobool, stackval_tobool, undef_tobool
 };
 
 arithmetic_func_t arith_funcs[] = {
@@ -34,7 +34,7 @@ arithmetic_func_t arith_funcs[] = {
 };
 
 relational_func_t relat_funcs[] = {
-	// jle_rel, jge_rel, jlt_rel, jgt_rel
+	jle_rel, jge_rel, jlt_rel, jgt_rel
 };
 
 /* Consts Globals */

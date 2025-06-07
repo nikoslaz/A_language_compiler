@@ -32,6 +32,26 @@ void helper_arith(instruction* inst) {
     helper_assign(lv, &res);
 }
 
+void helper_relational(instruction* inst) {
+    unsigned int lv = 0;
+    memcell* rv1 = (memcell*)malloc(sizeof(memcell));
+    if(!rv1) { MemoryFail(); }
+    memcell* rv2 = (memcell*)malloc(sizeof(memcell));
+    if(!rv2) { MemoryFail(); }
+    rv1 = translate_operand(&inst->arg1, rv1);
+    if (!rv1) { runtimeError("Null RV1"); }
+    rv2 = translate_operand(&inst->arg2, rv2);
+    if (!rv2) { runtimeError("Null RV2"); }
+    if(rv1->type != MEM_NUMBER) { runtimeError("RV1 is not a NUMBER in relational"); }
+    if(rv1->type != MEM_NUMBER) { runtimeError("RV2 is not a NUMBER in relational"); } 
+    relational_func_t op = relat_funcs[inst->opcode - OP_JLE];
+    lv = (*op)(rv1->data.num_zoumi, rv2->data.num_zoumi);
+    if (lv) {
+        succ_branch = 1;
+        branch_label = inst->result.val;
+    }
+}
+
 void execute_ASSIGN(instruction* inst) {
     memcell* lv = translate_operand(&inst->result, NULL);
     if(!lv) { runtimeError("Null LVALUE in assign"); }
@@ -59,28 +79,149 @@ void execute_JUMP(instruction* inst) {
 }
 
 void execute_JEQ(instruction* inst) {
+    unsigned int lv = 0;
+    memcell* rv1 = (memcell*)malloc(sizeof(memcell));
+    if(!rv1) { MemoryFail(); }
+    memcell* rv2 = (memcell*)malloc(sizeof(memcell));
+    if(!rv2) { MemoryFail(); }
+    rv1 = translate_operand(&inst->arg1, rv1);
+    if (!rv1) { runtimeError("Null RV1"); }
+    rv2 = translate_operand(&inst->arg2, rv2);
+    if (!rv2) { runtimeError("Null RV2"); }
+    
+    if(rv1->type == MEM_UNDEF || rv2->type == MEM_UNDEF) {
+        runtimeError("Undef in equality");
+    }
+    else if(rv1->type == MEM_NIL || rv2->type == MEM_NIL) {
+        lv = rv1->type == MEM_NIL && rv2->type == MEM_NIL;
+    }
+    else if(rv1->type == MEM_BOOL || rv2->type == MEM_BOOL) {
+        lv = bool_tobool(rv1) == bool_tobool(rv2);
+    }
+    else if(rv1->type != rv2->type) {
+        /* maybe better print ?*/
+        runtimeError("Illegal equality");
+    }
+    else {
+        switch(rv1->type){
+			case MEM_NUMBER:
+			{
+				lv = rv1->data.num_zoumi==rv2->data.num_zoumi;
+				break;
+			}	
+			case MEM_STRING:
+			{
+				if(!strcmp(rv1->data.string_zoumi,rv2->data.string_zoumi)){
+					lv = 1;
+				}
+				break;
+			}
+			case MEM_TABLE:
+			{
+				if(rv1->data.table_zoumi==rv2->data.table_zoumi){
+					lv=1;
+				}
+				break;
+			}
+			case MEM_USERFUNC:
+			{
+				if(!strcmp(userfunc_tostring(rv1),userfunc_tostring(rv2))){
+					lv = 1;
+				}
+				break;
+			}
+			case MEM_LIBFUNC:
+			{
+			
+				if(!strcmp(libfunc_tostring(rv1),libfunc_tostring(rv2))){
+					lv = 1;
+				}
+				break;
+			}
+			default: printf("Default in EQ\n");
+		}
+    }
 
+    if(lv) {
+        succ_branch = 1;
+        branch_label = inst->result.val;
+    }
 }
 
 void execute_JNE(instruction* inst) {
+    unsigned int lv = 0;
+    memcell* rv1 = (memcell*)malloc(sizeof(memcell));
+    if(!rv1) { MemoryFail(); }
+    memcell* rv2 = (memcell*)malloc(sizeof(memcell));
+    if(!rv2) { MemoryFail(); }
+    rv1 = translate_operand(&inst->arg1, rv1);
+    if (!rv1) { runtimeError("Null RV1"); }
+    rv2 = translate_operand(&inst->arg2, rv2);
+    if (!rv2) { runtimeError("Null RV2"); }
+    
+    if(rv1->type == MEM_UNDEF || rv2->type == MEM_UNDEF) {
+        runtimeError("Undef in no equality");
+    }
+    else if(rv1->type == MEM_NIL || rv2->type == MEM_NIL) {
+        lv = rv1->type == MEM_NIL != rv2->type == MEM_NIL;
+    }
+    else if(rv1->type == MEM_BOOL || rv2->type == MEM_BOOL) {
+        lv = bool_tobool(rv1) != bool_tobool(rv2);
+    }
+    else if(rv1->type != rv2->type) {
+        /* maybe better print ?*/
+        runtimeError("Illegal no equality");
+    }
+    else {
+        switch(rv1->type){
+			case MEM_NUMBER:
+			{
+				lv = rv1->data.num_zoumi!=rv2->data.num_zoumi;
+				break;
+			}	
+			case MEM_STRING:
+			{
+				if(strcmp(rv1->data.string_zoumi,rv2->data.string_zoumi)){
+					lv = 1;
+				}
+				break;
+			}
+			case MEM_TABLE:
+			{
+				if(rv1->data.table_zoumi!=rv2->data.table_zoumi){
+					lv=1;
+				}
+				break;
+			}
+			case MEM_USERFUNC:
+			{
+				if(strcmp(userfunc_tostring(rv1),userfunc_tostring(rv2))){
+					lv = 1;
+				}
+				break;
+			}
+			case MEM_LIBFUNC:
+			{
+			
+				if(strcmp(libfunc_tostring(rv1),libfunc_tostring(rv2))){
+					lv = 1;
+				}
+				break;
+			}
+			default: printf("Default in NEQ\n");
+		}
+    }
 
+    if(lv) {
+        succ_branch = 1;
+        branch_label = inst->result.val;
+    }
 }
 
-void execute_JLE(instruction* inst) {
-
-}
-
-void execute_JGE(instruction* inst) {
-
-}
-
-void execute_JLT(instruction* inst) {
-
-}
-
-void execute_JGT(instruction* inst) {
-
-}
+void execute_JLE(instruction* inst) { helper_relational(inst); }
+void execute_JGE(instruction* inst) { helper_relational(inst); }
+void execute_JLT(instruction* inst) { helper_relational(inst); }
+void execute_JGT(instruction* inst) { helper_relational(inst); }
 
 void execute_CALL(instruction* inst) {
     memcell* func = (memcell*)malloc(sizeof(memcell));
