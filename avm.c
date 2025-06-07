@@ -175,7 +175,7 @@ memcell pop(void) {
 /* AVM translate */
 
 /* NEEDS WORK */
-memcell* avm_translate_operand(vmarg* arg, memcell* reg) {
+memcell* translate_operand(vmarg* arg, memcell* reg) {
 	if(!arg) { printf("Error. Null vmarg in translate.\n"); return NULL; }
 	unsigned int index;
 	switch(arg->type) {

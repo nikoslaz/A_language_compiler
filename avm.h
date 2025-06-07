@@ -182,5 +182,18 @@ extern unsigned int jle_rel(double, double);
 extern unsigned int jge_rel(double, double);
 extern unsigned int jlt_rel(double, double);
 
+void clear_memcell(memcell* cell);
+void push(memcell val);
+memcell pop(void);
+memcell* translate_operand(vmarg* arg, memcell* reg);
+void stackError(char* input);
+void runtimeError(char* input);
+void MemoryFail(void);
+extern unsigned int succ_branch;
+extern unsigned int branch_label;
+extern unsigned int current_args_pushed;
+extern unsigned int execution_finished;
+extern memcell stack[AVM_STACKSIZE];
+
 #endif
 /* end of avm.h */
