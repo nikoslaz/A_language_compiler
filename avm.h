@@ -182,6 +182,22 @@ extern unsigned int jle_rel(double, double);
 extern unsigned int jge_rel(double, double);
 extern unsigned int jlt_rel(double, double);
 
+typedef void (*library_func_t)(void);
+extern library_func_t libFuncs[];
+
+extern void libfunc_print();
+extern void libfunc_input();
+extern void libfunc_objectmemberkeys();
+extern void libfunc_objecttotalmembers();
+extern void libfunc_objectcopy();
+extern void libfunc_totalarguments();
+extern void libfunc_argument();
+extern void libfunc_typeof();
+extern void libfunc_strtonum();
+extern void libfunc_sqrt();
+extern void libfunc_cos();
+extern void libfunc_sin();
+
 void clear_memcell(memcell* cell);
 void push(memcell val);
 memcell pop(void);

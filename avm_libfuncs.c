@@ -6,13 +6,29 @@
 
 unsigned libfuncs_total = 12;
 
-typedef void (*library_func_t)(void);
+library_func_t libFuncs[] = {
+
+    libfunc_print,
+    libfunc_input,
+    libfunc_objectmemberkeys,
+    libfunc_objecttotalmembers,
+    libfunc_objectcopy,
+    libfunc_totalarguments,
+    libfunc_argument,
+    libfunc_typeof,
+    libfunc_strtonum,
+    libfunc_sqrt,
+    libfunc_cos,
+    libfunc_sin
+
+};
 
 void libfunc_print() {
-
-	for(int i = 0; i < current_args_pushed; ++i) {
-		
-		memcell* tmp = &stack[stack_maul - 4 - i];
+    int totals = stack[stack_top].data.stackval_zoumi;
+	for(int i = 0; i < totals; ++i) {
+        printf("i=%d\n", i);
+        memcell* tmp = &stack[stack_top - 1 - i];
+        printf("Calling tostring with type %d\n", tmp->type);
 		char * s = strdup((*to_string_funcs[tmp->type])(tmp));
 		printf("%s",s );
 		free(s);
@@ -58,22 +74,6 @@ void libfunc_sin() {
 }
 
 
-library_func_t libFuncs[] = {
-
-    libfunc_print,
-    libfunc_input,
-    libfunc_objectmemberkeys,
-    libfunc_objecttotalmembers,
-    libfunc_objectcopy,
-    libfunc_totalarguments,
-    libfunc_argument,
-    libfunc_typeof,
-    libfunc_strtonum,
-    libfunc_sqrt,
-    libfunc_cos,
-    libfunc_sin
-
-};
 
 char * libfunc_names[] = {
     "print",

@@ -16,10 +16,12 @@ void helper_assign(memcell* lv, memcell* rv) {
 void helper_arith(instruction* inst) {
     memcell* lv = translate_operand(&inst->result, NULL);
     if(!lv) { runtimeError("Null LVALUE"); }
-    memcell* arg1;
+    memcell* arg1 = (memcell*)malloc(sizeof(memcell));
+    if(!arg1) { MemoryFail(); }
     arg1 = translate_operand(&inst->arg1, arg1);
     if(!arg1) { runtimeError("Null ARG1"); }
-    memcell* arg2;
+    memcell* arg2 = (memcell*)malloc(sizeof(memcell));
+    if(!arg2) { MemoryFail(); }
     arg2 = translate_operand(&inst->arg2, arg2);
     if(!arg2) { runtimeError("Null ARG2"); }
     if(arg1->type != MEM_NUMBER) { runtimeError("ARG1 is not a NUMBER"); }
@@ -33,7 +35,8 @@ void helper_arith(instruction* inst) {
 void execute_ASSIGN(instruction* inst) {
     memcell* lv = translate_operand(&inst->result, NULL);
     if(!lv) { runtimeError("Null LVALUE in assign"); }
-    memcell* rv;
+    memcell* rv = (memcell*)malloc(sizeof(memcell));
+    if(!rv) { MemoryFail(); }
     rv = translate_operand(&inst->arg1, rv);
     if(!rv) { runtimeError("Null RVALUE in assign"); }
     helper_assign(lv, rv);
@@ -79,7 +82,8 @@ void execute_JGT(instruction* inst) {
 }
 
 void execute_CALL(instruction* inst) {
-    memcell* func;
+    memcell* func = (memcell*)malloc(sizeof(memcell));
+    if(!func) { MemoryFail(); }
     func = translate_operand(&inst->arg1, func);
     if(!func) { runtimeError("Null memcell in call"); }
     /* Push total args */
@@ -90,12 +94,18 @@ void execute_CALL(instruction* inst) {
     push(totalargs);
     switch(func->type) {
         /* do j*b */
+        case MEM_LIBFUNC:
+            printf("Calling libfunc %d\n", func->data.libfunc_zoumi);
+            (*libFuncs[func->data.libfunc_zoumi])();
+            break;
+        default: printf("Hell naw bro\n");
     }
     /* kane kati */
 }
 
 void execute_PUSHARG(instruction* inst) {
-    memcell* res;
+    memcell* res = (memcell*)malloc(sizeof(memcell));
+    if(!res) { MemoryFail(); }
     res = translate_operand(&inst->arg1, res);
     if(!res) { runtimeError("Null memcell in param"); }
     push(*res);
@@ -164,12 +174,14 @@ char* table_tostring(memcell* mem){
 
 char* userfunc_tostring(memcell* mem){
     char* str = (char*)malloc(32);
-    sprintf(str, "%.3f", mem->data.usrfunc_zoumi);
+    sprintf(str, "%u", mem->data.usrfunc_zoumi);
     return str;
 }
 
 char* libfunc_tostring(memcell* mem){
-    return mem->data.libfunc_zoumi;
+    /* make it a string bro */
+    //return mem->data.libfunc_zoumi;
+    return NULL;
 }
 
 char* nil_tostring(memcell* mem){
@@ -178,7 +190,7 @@ char* nil_tostring(memcell* mem){
 
 char* stackval_tostring(memcell* mem){
     char* str = (char*)malloc(16);
-    sprintf(str, "%.3f", mem->data.stackval_zoumi);
+    sprintf(str, "%u", mem->data.stackval_zoumi);
     return str;
 }
 

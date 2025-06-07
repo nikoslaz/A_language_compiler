@@ -17,9 +17,9 @@ execute_func_t executors[] = {
 };
 
 tostring_func_t to_string_funcs[] = {
-    // number_tostring, string_tostring, bool_tostring,
-    // table_tostring, userfunc_tostring, libfunc_tostring,
-    // nil_tostring, stackval_tostring, undef_tostring
+    number_tostring, string_tostring, bool_tostring,
+    table_tostring, userfunc_tostring, libfunc_tostring,
+    nil_tostring, stackval_tostring, undef_tostring
 };
 
 tobool_func_t to_bool_funcs[] = {
@@ -247,7 +247,8 @@ void execute_cycle(void) {
 	}
 	instruction* instr = &instructions[program_counter];
 	curr_line = instr->srcLine;
-	// (*executors[instr->opcode])(instr);
+	printf("Executing Instr: %d\n", program_counter);
+	(*executors[instr->opcode])(instr);
 	if(succ_branch) {
 		succ_branch = 0;
 		program_counter = branch_label;
@@ -256,6 +257,7 @@ void execute_cycle(void) {
 }
 
 void begin_execution(void) {
+	program_counter = 0;
 	while(1) {
 		execute_cycle();
 		if(execution_finished) { break; }
@@ -283,7 +285,6 @@ void avm_initialize(void) {
     succ_branch = 0;
     
 	/* Execute Instructions */
-	program_counter = 0;
 	begin_execution();
 }
 
