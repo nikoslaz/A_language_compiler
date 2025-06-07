@@ -5,15 +5,15 @@
 #include "avm.h"
 
 execute_func_t executors[] = {
-    // execute_ASSIGN,
-    // execute_ADD, execute_SUB, execute_MUL, execute_DIV, execute_MOD,
-    // execute_UMINUS,
-    // execute_AND, execute_OR, execute_NOT,    
-    // execute_JEQ, execute_JNE, execute_JLE, execute_JGE, execute_JLT, execute_JGT,      
-    // execute_CALL, execute_PUSHARG, execute_RET, execute_GETRETVAL, execute_FUNCENTER, execute_FUNCEXIT,
-    // execute_NEWTABLE, execute_TABLEGETELEM, execute_TABLESETELEM,
-    // execute_JUMP,
-    // execute_NOP
+    execute_ASSIGN,
+    execute_ADD, execute_SUB, execute_MUL, execute_DIV, execute_MOD,
+    execute_UMINUS,
+    execute_AND, execute_OR, execute_NOT,    
+    execute_JEQ, execute_JNE, execute_JLE, execute_JGE, execute_JLT, execute_JGT,      
+    execute_CALL, execute_PUSHARG, execute_RET, execute_GETRETVAL, execute_FUNCENTER, execute_FUNCEXIT,
+    execute_NEWTABLE, execute_TABLEGETELEM, execute_TABLESETELEM,
+    execute_JUMP,
+    execute_NOP
 };
 
 tostring_func_t to_string_funcs[] = {
@@ -285,7 +285,6 @@ void avm_initialize(void) {
 	/* Execute Instructions */
 	program_counter = 0;
 	begin_execution();
-	
 }
 
 /*===============================================================================================*/

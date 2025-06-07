@@ -13,6 +13,7 @@ SCANNER = scanner
 AVMTARGET = alpha_avm
 AVM = avm
 AVM_PRINTS = avm_prints
+AVM_EXEC = avm_executors
 
 CC = gcc
 # Compile all
@@ -23,7 +24,7 @@ $(TARGET): $(SCANNER).o $(PARSER).o $(LIST).o $(TABLE).o $(QUADS).o $(TCODE).o
 	$(CC) -o $@ $^
 
 # AVM Executable
-$(AVMTARGET): $(AVM).o $(AVM_PRINTS).o
+$(AVMTARGET): $(AVM).o $(AVM_PRINTS).o $(AVM_EXEC).o
 	$(CC) -o $@ $^
 
 # Object Files
