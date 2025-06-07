@@ -179,9 +179,9 @@ char* userfunc_tostring(memcell* mem){
 }
 
 char* libfunc_tostring(memcell* mem){
-    /* make it a string bro */
-    //return mem->data.libfunc_zoumi;
-    return NULL;
+    char* str = (char*)malloc(16);
+    sprintf(str, "%u", mem->data.libfunc_zoumi);
+    return str;
 }
 
 char* nil_tostring(memcell* mem){
