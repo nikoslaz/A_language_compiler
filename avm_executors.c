@@ -143,4 +143,49 @@ void execute_GETRETVAL(instruction* inst) {
     helper_assign(lv, &stack[0]);
 }
 
+/*===============================================================================================*/
+/* ToStringFunc */
+
+char* number_tostring(memcell* mem){
+
+}
+
+char* string_tostring(memcell* mem){
+
+}
+
+char* bool_tostring(memcell* mem){
+
+}
+
+char* table_tostring(memcell* mem){
+
+}
+
+char* userfunc_tostring(memcell* mem){
+
+}
+
+char* libfunc_tostring(memcell* mem){
+
+}
+
+char* nil_tostring(memcell* mem){
+
+}
+
+char* stackval_tostring(memcell* mem){
+
+}
+
+char* undef_tostring(memcell* mem){
+
+}
+
+
+/*===============================================================================================*/
+/* Arith */
+
+/*===============================================================================================*/
+
 /* end of avm_executors.c */
