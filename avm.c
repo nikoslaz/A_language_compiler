@@ -10,7 +10,7 @@ execute_func_t executors[] = {
     execute_UMINUS,
     execute_AND, execute_OR, execute_NOT,    
     execute_JEQ, execute_JNE, execute_JLE, execute_JGE, execute_JLT, execute_JGT,      
-    execute_CALL, execute_PUSHARG, execute_RET, execute_GETRETVAL, execute_FUNCENTER, execute_FUNCEXIT,
+    execute_CALL, execute_PARAM, execute_RETURN, execute_GETRETVAL, execute_FUNCSTART, execute_FUNCEND,
     execute_NEWTABLE, execute_TABLEGETELEM, execute_TABLESETELEM,
     execute_JUMP,
     execute_NOP
@@ -59,6 +59,7 @@ unsigned int curr_line;
 memcell stack[AVM_STACKSIZE];
 unsigned int stack_top;  /* Points to top non-empty element */
 unsigned int stack_maul; /* Splits the activations in half */
+FILE* avm_log;
 
 /*===============================================================================================*/
 /* Read Binary */
@@ -129,16 +130,19 @@ void read_binary(FILE* fd) {
 /* Stack */
 
 void stackError(char* input) {
-	printf("Fatal Stack Error. %s.\n", input);
+	fprintf(avm_log, "Fatal Stack Error. %s.\n", input);
+	printf("\nFatal Stack Error. %s.\n", input);
 	exit(-1);
 }
 
 void runtimeError(char* input) {
-	printf("Runtime Error in line %d. %s.\n", curr_line, input);
+	fprintf(avm_log, "Runtime Error in line %d. %s.\n", curr_line, input);
+	printf("\nRuntime Error in line %d. %s.\n", curr_line, input);
 	exit(-1);
 }
 
 void initilize_stack(void) {
+	fprintf(avm_log, "Initializing Stack\n");
     for(int i=0; i<AVM_STACKSIZE; i++){
         memset(&stack[i], 0, sizeof(memcell));
         stack[i].type = MEM_UNDEF;
@@ -247,7 +251,7 @@ void execute_cycle(void) {
 	}
 	instruction* instr = &instructions[program_counter];
 	curr_line = instr->srcLine;
-	printf("Executing Instr: %d\n", program_counter);
+	fprintf(avm_log, "Executing Instr: %d\n", program_counter);
 	(*executors[instr->opcode])(instr);
 	if(succ_branch) {
 		succ_branch = 0;
@@ -262,7 +266,8 @@ void begin_execution(void) {
 		execute_cycle();
 		if(execution_finished) { break; }
 	}
-	printf("Execution Finished\n");
+	fprintf(avm_log, "Execution Finished\n");
+	printf("\nExecution Finished\n");
 }
 
 void avm_initialize(void) {
@@ -274,9 +279,13 @@ void avm_initialize(void) {
 	cell.type = MEM_UNDEF;
 	
 	/* Push Ret Val */
+	fprintf(avm_log, "Pushing RetVal\n");
 	push(cell);
 	/* Push Locals */
-	for(int i=0; i<totalprogvar; i++) { push(cell); }
+	for(int i=0; i<totalprogvar; i++) {
+		fprintf(avm_log, "Pushing programvar %d\n", i);
+		push(cell);
+	}
 	stack_maul = 1;
 	
 	/* Controls */
@@ -285,6 +294,7 @@ void avm_initialize(void) {
     succ_branch = 0;
     
 	/* Execute Instructions */
+	fprintf(avm_log, "Beginning execution\n");
 	begin_execution();
 }
 
@@ -301,6 +311,8 @@ int main(int argc, char** argv) {
     } else { printf("Error. File not supplied\n"); return 1; }
     read_binary(fin);
     printReadTargetToFile();
+	avm_log = fopen("3_log.output", "w");
+	if(!avm_log) { perror("Error opening 3_log.output for writing\n"); return 1; }
     avm_initialize();
     return 0;
 }

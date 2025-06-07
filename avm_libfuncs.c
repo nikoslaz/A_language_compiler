@@ -43,9 +43,8 @@ static const char* typeStrings[] = {
 void libfunc_print() {
     int totals = stack[stack_top].data.stackval_zoumi;
 	for(int i = 0; i < totals; ++i) {
-        printf("i=%d\n", i);
+        fprintf(avm_log, "Printing arg %d\n", i);
         memcell* tmp = &stack[stack_top - 1 - i];
-        printf("Calling tostring with type %d\n", tmp->type);
 		char * s = strdup((*to_string_funcs[tmp->type])(tmp));
 		printf("%s",s );
 		free(s);
@@ -188,7 +187,6 @@ char * libfunc_names[] = {
     "sqrt",
     "cos",
     "sin"
-    
 };
 
 

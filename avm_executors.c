@@ -49,12 +49,13 @@ void execute_DIV(instruction* inst) { helper_arith(inst); }
 void execute_MOD(instruction* inst) { helper_arith(inst); }
 
 void execute_UMINUS(instruction* inst) { printf("UMINUS SHOULD NOT EXIST\n"); }
-void execute_AND(instruction* inst) { printf("AND SHOULD NOT EXIST\n"); }
-void execute_OR(instruction* inst) { printf("OR SHOULD NOT EXIST\n"); }
-void execute_NOT(instruction* inst) { printf("NOT SHOULD NOT EXIST\n"); }
+void execute_AND(instruction* inst)    { printf("AND SHOULD NOT EXIST\n"); }
+void execute_OR(instruction* inst)     { printf("OR SHOULD NOT EXIST\n"); }
+void execute_NOT(instruction* inst)    { printf("NOT SHOULD NOT EXIST\n"); }
 
 void execute_JUMP(instruction* inst) {
-
+    succ_branch = 1;
+    branch_label = inst->result.val;
 }
 
 void execute_JEQ(instruction* inst) {
@@ -91,19 +92,33 @@ void execute_CALL(instruction* inst) {
     totalargs.type = MEM_STACKVAL;
     totalargs.data.stackval_zoumi = current_args_pushed;
     current_args_pushed=0;
+    clear_memcell(&stack[0]);
+    stack[0].type = MEM_NIL;
+    fprintf(avm_log, "Pushing current_args_pushed\n");
     push(totalargs);
     switch(func->type) {
         /* do j*b */
         case MEM_LIBFUNC:
-            printf("Calling libfunc %d\n", func->data.libfunc_zoumi);
+            fprintf(avm_log, "Calling libfunc %d\n", func->data.libfunc_zoumi);
             (*libFuncs[func->data.libfunc_zoumi])();
+            /* pop arguments */
+            int totals = pop().data.stackval_zoumi;
+            fprintf(avm_log, "Popping %d params\n", totals);
+            for(int i=0; i<totals; i++) { pop(); }
             break;
-        default: printf("Hell naw bro\n");
+        case MEM_USERFUNC:
+            totalargs.data.stackval_zoumi = program_counter + 1;
+            fprintf(avm_log, "Pushing Return Address %d\n", program_counter+2);
+            push(totalargs);
+            fprintf(avm_log, "Branching to userfunc at %d\n", func->data.usrfunc_zoumi+1);
+            succ_branch = 1;
+            branch_label = func->data.usrfunc_zoumi;
+            break;
+        default: runtimeError("Argument is not a function");
     }
-    /* kane kati */
 }
 
-void execute_PUSHARG(instruction* inst) {
+void execute_PARAM(instruction* inst) {
     memcell* res = (memcell*)malloc(sizeof(memcell));
     if(!res) { MemoryFail(); }
     res = translate_operand(&inst->arg1, res);
@@ -112,12 +127,36 @@ void execute_PUSHARG(instruction* inst) {
     current_args_pushed++;
 }
 
-void execute_FUNCENTER(instruction* inst) {
-
+void execute_FUNCSTART(instruction* inst) {
+    memcell oldmaul;
+    oldmaul.type = AVM_STACKSIZE;
+    oldmaul.data.stackval_zoumi = stack_maul;
+    fprintf(avm_log, "Pushing old DARTH MAUL\n");
+    push(oldmaul);
+    stack_maul = stack_top+1;
+    int locals = inst->arg2.val;
+    memcell tmp_local;
+    clear_memcell(&tmp_local);
+    fprintf(avm_log, "Pushing %d locals\n", locals);
+    for(int i=0; i<locals; i++) { push(tmp_local); }
+    fprintf(avm_log, "Begin Function Execution\n");
 }
 
-void execute_FUNCEXIT(instruction* inst) {
-
+void execute_FUNCEND(instruction* inst) {
+    int locals = stack[stack_maul-3].data.stackval_zoumi;
+    fprintf(avm_log, "Popping %d locals\n", locals);
+    for(int i=0; i<locals; i++) { pop(); }
+    fprintf(avm_log, "Restore old DARTH MAUL\n");
+    stack_maul = pop().data.stackval_zoumi;
+    fprintf(avm_log, "Pop return address\n");
+    int retaddr = pop().data.stackval_zoumi;
+    fprintf(avm_log, "Pop total params\n");
+    int params = pop().data.stackval_zoumi;
+    fprintf(avm_log, "Popping %d params\n", params);
+    for(int i=0; i<params; i++) { pop(); }
+    fprintf(avm_log, "Branch to return address %d\n", retaddr+1);
+    succ_branch = 1;
+    branch_label = retaddr;
 }
 
 void execute_NEWTABLE(instruction* inst) {
@@ -136,7 +175,7 @@ void execute_NOP(instruction* inst) {
 
 }
 
-void execute_RET(instruction* inst) {
+void execute_RETURN(instruction* inst) {
 
 }
 

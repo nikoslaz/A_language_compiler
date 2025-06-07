@@ -73,8 +73,10 @@ Kanoume prwta push ta args
 
 kanoume push ton ari8mo twn current args (current_args_pushed)
 mhdenizoyme to current_args_pushed
-meta kanoume push to return address
 mhdenizoume to ret_val
+
+/* Ean einai usrfunc */
+meta kanoume push to return address
 kanoume branch sthn diey8ynsh ths synarthshs
 
 H synarthsh apo8hkeuei to prohgoymeno stack MAUL

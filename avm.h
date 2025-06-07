@@ -116,14 +116,14 @@ extern void execute_JGE(instruction*);
 extern void execute_JLT(instruction*);
 extern void execute_JGT(instruction*);
 extern void execute_CALL(instruction*);
-extern void execute_PUSHARG(instruction*);
-extern void execute_FUNCENTER(instruction*);
-extern void execute_FUNCEXIT(instruction*);
+extern void execute_PARAM(instruction*);
+extern void execute_FUNCSTART(instruction*);
+extern void execute_FUNCEND(instruction*);
 extern void execute_NEWTABLE(instruction*);
 extern void execute_TABLEGETELEM(instruction*);
 extern void execute_TABLESETELEM(instruction*);
 extern void execute_NOP(instruction*);
-extern void execute_RET(instruction*);
+extern void execute_RETURN(instruction*);
 extern void execute_GETRETVAL(instruction*);
 
 /*===============================================================================================*/
@@ -208,10 +208,12 @@ void MemoryFail(void);
 extern unsigned int succ_branch;
 extern unsigned int branch_label;
 extern unsigned int current_args_pushed;
+extern unsigned int program_counter;
 extern unsigned int execution_finished;
 extern memcell stack[AVM_STACKSIZE];
 extern unsigned int stack_top;
 extern unsigned int stack_maul;
+extern FILE* avm_log;
 
 #endif
 /* end of avm.h */
