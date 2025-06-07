@@ -200,41 +200,15 @@ double uminus_arith(double x, double y) { runtimeError("UMINUS SHOULD NOT EXIST"
 /*===============================================================================================*/
 /* To Bool */
 
-unsigned int number_tobool(memcell* mem) {
-    return mem->data.stackval_zoumi != 0;
-}
-
-unsigned int string_tobool(memcell* mem) {
-    return mem->data.string_zoumi[0] != 0;
-}
-
-unsigned int bool_tobool(memcell* mem) {
-    return mem->data.bool_zoumi;
-}
-
-unsigned int table_tobool(memcell* mem) {
-    return 1;
-}
-
-unsigned int userfunc_tobool(memcell* mem) {
-    return 1;
-}
-
-unsigned int libfunc_tobool(memcell* mem) {
-    return 1;
-}
-
-unsigned int nil_tobool(memcell* mem) {
-    return 0;
-}
-
-unsigned int stackval_tobool(memcell* mem) {
-    return 1;
-}
-
-unsigned int undef_tobool(memcell* mem) {
-    return 0;
-}
+unsigned int number_tobool(memcell* mem)   { return mem->data.num_zoumi != 0; }
+unsigned int string_tobool(memcell* mem)   { return mem->data.string_zoumi[0] != 0; }
+unsigned int bool_tobool(memcell* mem)     { return mem->data.bool_zoumi; }
+unsigned int table_tobool(memcell* mem)    { return 1; }
+unsigned int userfunc_tobool(memcell* mem) { return 1; }
+unsigned int libfunc_tobool(memcell* mem)  { return 1; }
+unsigned int nil_tobool(memcell* mem)      { return 0; }
+unsigned int stackval_tobool(memcell* mem) { return 1; }
+unsigned int undef_tobool(memcell* mem)    { return 0; }
 
 /*===============================================================================================*/
 /* Relational */
