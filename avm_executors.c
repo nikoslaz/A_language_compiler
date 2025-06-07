@@ -22,7 +22,19 @@ void execute_ASSIGN(instruction* inst) {
 }
 
 void execute_ADD(instruction* inst) {
-
+    memcell* lv = translate_operand(&inst->result, NULL);
+    if(!lv) { runtimeError("Null LVALUE in ADD"); }
+    memcell* arg1;
+    arg1 = translate_operand(&inst->arg1, arg1);
+    if(!arg1) { runtimeError("Null ARG1 in ADD"); }
+    memcell* arg2;
+    arg2 = translate_operand(&inst->arg2, arg2);
+    if(!arg2) { runtimeError("Null ARG2 in ADD"); }
+    if(arg1->type != MEM_NUMBER) { runtimeError("ARG1 is not a NUMBER"); }
+    if(arg2->type != MEM_NUMBER) { runtimeError("ARG2 is not a NUMBER"); }
+    clear_memcell(lv);
+    lv->type = MEM_NUMBER;
+    lv->data.num_zoumi = (*arith_funcs[inst->opcode-OP_ADD])(arg1->data.num_zoumi, arg2->data.num_zoumi);
 }
 
 void execute_SUB(instruction* inst) {
@@ -185,6 +197,14 @@ char* undef_tostring(memcell* mem){
 
 /*===============================================================================================*/
 /* Arith */
+
+double add_arith(double x, double y) { return (double)(x+y); }
+double sub_arith(double x, double y) { return (double)(x-y); }
+double mul_arith(double x, double y) { return (double)(x*y); }
+double div_arith(double x, double y) { return (double)(x/y); }
+double mod_arith(double x, double y) { return (double)(((unsigned)x)%((unsigned)y)); }
+double uminus_arith(double x, double y) { runtimeError("UMINUS SHOULD NOT EXIST"); return 0; }
+
 
 /*===============================================================================================*/
 

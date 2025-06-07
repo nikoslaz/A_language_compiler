@@ -29,8 +29,8 @@ tobool_func_t to_bool_funcs[] = {
 };
 
 arithmetic_func_t arith_funcs[] = {
-    // add_arith, sub_arith, mul_arith,
-    // div_arith, mod_arith, uminus_arith
+    add_arith, sub_arith, mul_arith,
+    div_arith, mod_arith, uminus_arith
 };
 
 relational_func_t relat_funcs[] = {
