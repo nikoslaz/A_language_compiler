@@ -159,41 +159,51 @@ void execute_GETRETVAL(instruction* inst) {
 /* ToStringFunc */
 
 char* number_tostring(memcell* mem){
-
+    char* str = (char*)malloc(16);
+    sprintf(str, "%.3f", mem->data.num_zoumi);
+    return str;
 }
 
 char* string_tostring(memcell* mem){
-
+    return mem->data.string_zoumi;
 }
 
 char* bool_tostring(memcell* mem){
-
+    if (mem->data.bool_zoumi) {
+        return "true";
+    }
+    else {
+        return "false";
+    }
 }
 
 char* table_tostring(memcell* mem){
-
+    /* j*b */
 }
 
 char* userfunc_tostring(memcell* mem){
-
+    char* str = (char*)malloc(32);
+    sprintf(str, "%.3f", mem->data.usrfunc_zoumi);
+    return str;
 }
 
 char* libfunc_tostring(memcell* mem){
-
+    return mem->data.libfunc_zoumi;
 }
 
 char* nil_tostring(memcell* mem){
-
+    return "nil";
 }
 
 char* stackval_tostring(memcell* mem){
-
+    char* str = (char*)malloc(16);
+    sprintf(str, "%.3f", mem->data.stackval_zoumi);
+    return str;
 }
 
 char* undef_tostring(memcell* mem){
-
+    return "undef";
 }
-
 
 /*===============================================================================================*/
 /* Arith */
