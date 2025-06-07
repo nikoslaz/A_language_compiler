@@ -194,6 +194,8 @@ extern unsigned int branch_label;
 extern unsigned int current_args_pushed;
 extern unsigned int execution_finished;
 extern memcell stack[AVM_STACKSIZE];
+extern unsigned int stack_top;
+extern unsigned int stack_maul;
 
 #endif
 /* end of avm.h */
