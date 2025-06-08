@@ -129,47 +129,110 @@ void libfunc_typeof(void) {
     }
 }
 
-
-void libfunc_strtonum() {
-
-}
-void libfunc_sqrt() {
-
-}
-
-static void single_arg_math_handler(const char* func_name, double (*math_op)(double)) {
+void libfunc_strtonum(void) {
     unsigned int num_args = stack[stack_top].data.stackval_zoumi;
-
     if (num_args != 1) {
-        snprintf(error_buffer, sizeof(error_buffer), "Error: '%s' expects 1 argument, but received %u.", func_name, num_args);
+        snprintf(error_buffer, sizeof(error_buffer), "Error: 'strtonum' expects 1 argument, but received %u.", num_args);
         runtimeError(error_buffer);
         clear_memcell(&stack[0]);
         stack[0].type = MEM_NIL;
         return;
     }
+    memcell* arg = &stack[stack_top - 1];
+    clear_memcell(&stack[0]);
+    if (arg->type == MEM_STRING) {
+        const char* input_string = arg->data.string_zoumi;
+        char* end = NULL;
 
+        double num = strtod(input_string, &end);
+        if (end != input_string && *end == '\0') {
+            // Success! The whole string was a valid number.
+            stack[0].type = MEM_NUMBER;
+            stack[0].data.num_zoumi = num;
+        } else {
+            stack[0].type = MEM_NIL;
+        }
+    } else {
+        stack[0].type = MEM_NIL;
+    }
+}
+
+
+void libfunc_sqrt(void) {
+
+    unsigned int num_args = stack[stack_top].data.stackval_zoumi;
+    if (num_args != 1) {
+        snprintf(error_buffer, sizeof(error_buffer), "Error: 'sqrt' expects 1 argument, but received %u.", num_args);
+        runtimeError(error_buffer);
+        clear_memcell(&stack[0]);
+        stack[0].type = MEM_NIL;
+        return;
+    }
     memcell* arg = &stack[stack_top - 1];
     clear_memcell(&stack[0]);
 
     if (arg->type == MEM_NUMBER) {
-        double degrees = arg->data.num_zoumi;
-        double radians = degrees * (PI / 180.0);
-        
-        stack[0].type = MEM_NUMBER;
-        stack[0].data.num_zoumi = (*math_op)(radians); //cos or sin
+        double value = arg->data.num_zoumi;
+        if (value >= 0) {
+            stack[0].type = MEM_NUMBER;
+            stack[0].data.num_zoumi = sqrt(value);
+        } else {
+            snprintf(error_buffer, sizeof(error_buffer), "Warning: 'sqrt' received negative number %f, returning nil.", value);
+            runtimeError(error_buffer);
+            stack[0].type = MEM_NIL;
+        }
     } else {
-        snprintf(error_buffer, sizeof(error_buffer), "Error: '%s' argument must be a number, not a %s.", func_name, typeStrings[arg->type]);
+        snprintf(error_buffer, sizeof(error_buffer), "Error: 'sqrt' argument must be a number, not a %s.", typeStrings[arg->type]);
         runtimeError(error_buffer);
         stack[0].type = MEM_NIL;
     }
 }
 
 void libfunc_cos(void) {
-    single_arg_math_handler("cos", cos);
+    unsigned int num_args = stack[stack_top].data.stackval_zoumi;
+    if (num_args != 1) {
+        snprintf(error_buffer, sizeof(error_buffer), "Error: 'cos' expects 1 argument, but received %u.", num_args);
+        runtimeError(error_buffer);
+        clear_memcell(&stack[0]);
+        stack[0].type = MEM_NIL;
+        return;
+    }
+    memcell* arg = &stack[stack_top - 1];
+    clear_memcell(&stack[0]);
+    if (arg->type == MEM_NUMBER) {
+        double degrees = arg->data.num_zoumi;
+        double radians = degrees * (PI / 180.0);
+        stack[0].type = MEM_NUMBER;
+        stack[0].data.num_zoumi = cos(radians);
+    } else {
+        snprintf(error_buffer, sizeof(error_buffer), "Error: 'cos' argument must be a number, not a %s.", typeStrings[arg->type]);
+        runtimeError(error_buffer);
+        stack[0].type = MEM_NIL;
+    }
 }
 
-void libfunc_sin() {
-    single_arg_math_handler("sin", sin);
+
+void libfunc_sin(void) {
+    unsigned int num_args = stack[stack_top].data.stackval_zoumi;
+    if (num_args != 1) {
+        snprintf(error_buffer, sizeof(error_buffer), "Error: 'sin' expects 1 argument, but received %u.", num_args);
+        runtimeError(error_buffer);
+        clear_memcell(&stack[0]);
+        stack[0].type = MEM_NIL;
+        return;
+    }
+    memcell* arg = &stack[stack_top - 1];
+    clear_memcell(&stack[0]);
+    if (arg->type == MEM_NUMBER) {
+        double degrees = arg->data.num_zoumi;
+        double radians = degrees * (PI / 180.0);
+        stack[0].type = MEM_NUMBER;
+        stack[0].data.num_zoumi = sin(radians);
+    } else {
+        snprintf(error_buffer, sizeof(error_buffer), "Error: 'sin' argument must be a number, not a %s.", typeStrings[arg->type]);
+        runtimeError(error_buffer);
+        stack[0].type = MEM_NIL;
+    }
 }
 
 
