@@ -6,6 +6,10 @@
 #include <math.h>
 
 #define PI 3.14159265
+#define AVM_SAVED_MAUL_OFFSET   -1
+#define AVM_RET_ADDR_OFFSET     -2
+#define AVM_NUM_ARGS_OFFSET     -3
+#define AVM_FIRST_ARG_OFFSET    -4
 
 static char error_buffer[256];
 unsigned libfuncs_total = 12;
@@ -93,21 +97,78 @@ void libfunc_input(void) {
 }
 
 void libfunc_objectmemberkeys() {
+    /* To be implemented with tables */
 
 }
 
 void libfunc_objecttotalmembers() {
+    /* To be implemented with tables */
 
 }
 
 void libfunc_objectcopy() {
+    /* To be implemented with tables */
 
 }
-void libfunc_totalarguments() {
 
+void libfunc_totalarguments(void) {
+    // From your reference: `p_topsp = avm_get_envvalue(topsp + AVM_SAVEDTOPSP_OFFSET)`
+    // This translates to finding the caller's frame pointer ('maul'), which is
+    // stored at an offset of -1 from the current 'maul'.
+    unsigned int caller_maul = stack[stack_maul + AVM_SAVED_MAUL_OFFSET].data.stackval_zoumi;
+    clear_memcell(&stack[0]);
+    if (caller_maul == 0) {
+        runtimeError("'totalarguments' called outside of a function.");
+        stack[0].type = MEM_NIL;
+        return;
+    }
+    memcell* num_args_cell = &stack[caller_maul + AVM_NUM_ARGS_OFFSET];
+    stack[0].type = MEM_NUMBER;
+    stack[0].data.num_zoumi = num_args_cell->data.stackval_zoumi;
 }
-void libfunc_argument() {
 
+void libfunc_argument(void) {
+    // === Part 1: Validate this library function's own arguments ===
+    unsigned int num_args = stack[stack_top].data.stackval_zoumi;
+    if (num_args != 1) {
+        snprintf(error_buffer, sizeof(error_buffer), "Error: 'argument' expects 1 argument (the index), but received %u.", num_args);
+        runtimeError(error_buffer);
+        clear_memcell(&stack[0]);
+        stack[0].type = MEM_NIL;
+        return;
+    }
+    memcell* index_arg = &stack[stack_top - 1];
+    if (index_arg->type != MEM_NUMBER) {
+        runtimeError("Error: 'argument' expects a number as its argument.");
+        clear_memcell(&stack[0]);
+        stack[0].type = MEM_NIL;
+        return;
+    }
+    unsigned int i = (unsigned int)index_arg->data.num_zoumi;
+
+    // === Part 2: Find and validate the CALLER's stack frame ===
+    unsigned int caller_maul = stack[stack_maul + AVM_SAVED_MAUL_OFFSET].data.stackval_zoumi;
+    clear_memcell(&stack[0]);
+    if (caller_maul == 0) {
+        runtimeError("'argument' called outside of a function.");
+        stack[0].type = MEM_NIL;
+        return;
+    }
+    unsigned int total_caller_args = stack[caller_maul + AVM_NUM_ARGS_OFFSET].data.stackval_zoumi;
+
+    // === Part 3: Retrieve the argument and set the return value ===
+    if (i >= total_caller_args) {
+        snprintf(error_buffer, sizeof(error_buffer), "Error: index %u out of bounds for 'argument'. Caller has %u arguments.", i, total_caller_args);
+        runtimeError(error_buffer);
+        stack[0].type = MEM_NIL;
+        return;
+    }
+    memcell* target_arg = &stack[caller_maul + AVM_FIRST_ARG_OFFSET - i];
+    stack[0] = *target_arg;
+    if (target_arg->type == MEM_STRING) {
+        stack[0].data.string_zoumi = strdup(target_arg->data.string_zoumi);
+    } else if (target_arg->type == MEM_TABLE) {
+    }
 }
 
 void libfunc_typeof(void) {
