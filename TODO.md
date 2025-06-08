@@ -96,11 +96,7 @@ opws kai to to_bool, to_string, arithmetic_opcodes, relational_opcodes
 ---------------------------------------------------------------------------------
 - HARD
 
-<<<<<<< Updated upstream
-<!-- SOMEHOW implement libfuncs -->
-=======
 SOMEHOW implement libfuncs SOSOSOS: FIX TOTALARGS AND ARGUMENT!!!   
->>>>>>> Stashed changes
 TABLES ??????????????????????????????????????
 
 -> HASHTABLE STRING KEYS
