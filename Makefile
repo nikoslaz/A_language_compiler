@@ -45,7 +45,7 @@ clean:
 
 run:
 	make
-	./calc test.txt
+	./calc $(path)
 	./alpha_avm chief.alpha
 
 # End of Makefile
