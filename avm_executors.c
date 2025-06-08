@@ -4,390 +4,10 @@
  */
 #include "avm.h"
 
-void helper_assign(memcell* lv, memcell* rv) {
-    if(lv == rv) { return; }
-    /* check for tables */
-    if(rv->type == MEM_UNDEF) { printf("Warning. Assignment of undef\n"); }
-    clear_memcell(lv);
-    memcpy(lv, rv, sizeof(memcell));
-    /* again tables */
-}
-
-void helper_arith(instruction* inst) {
-    memcell* lv = translate_operand(&inst->result, NULL);
-    if(!lv) { runtimeError("Null LVALUE"); }
-    memcell* arg1 = (memcell*)malloc(sizeof(memcell));
-    if(!arg1) { MemoryFail(); }
-    arg1 = translate_operand(&inst->arg1, arg1);
-    if(!arg1) { runtimeError("Null ARG1"); }
-    memcell* arg2 = (memcell*)malloc(sizeof(memcell));
-    if(!arg2) { MemoryFail(); }
-    arg2 = translate_operand(&inst->arg2, arg2);
-    if(!arg2) { runtimeError("Null ARG2"); }
-    if(arg1->type != MEM_NUMBER) { runtimeError("ARG1 is not a NUMBER"); }
-    if(arg2->type != MEM_NUMBER) { runtimeError("ARG2 is not a NUMBER"); }
-    memcell res;
-    res.type = MEM_NUMBER;
-    res.data.num_zoumi = (*arith_funcs[inst->opcode-OP_ADD])(arg1->data.num_zoumi, arg2->data.num_zoumi);
-    helper_assign(lv, &res);
-}
-
-void helper_relational(instruction* inst) {
-    unsigned int lv = 0;
-    memcell* rv1 = (memcell*)malloc(sizeof(memcell));
-    if(!rv1) { MemoryFail(); }
-    memcell* rv2 = (memcell*)malloc(sizeof(memcell));
-    if(!rv2) { MemoryFail(); }
-    rv1 = translate_operand(&inst->arg1, rv1);
-    if (!rv1) { runtimeError("Null RV1"); }
-    rv2 = translate_operand(&inst->arg2, rv2);
-    if (!rv2) { runtimeError("Null RV2"); }
-    if(rv1->type != MEM_NUMBER) { runtimeError("RV1 is not a NUMBER in relational"); }
-    if(rv1->type != MEM_NUMBER) { runtimeError("RV2 is not a NUMBER in relational"); } 
-    relational_func_t op = relat_funcs[inst->opcode - OP_JLE];
-    lv = (*op)(rv1->data.num_zoumi, rv2->data.num_zoumi);
-    if (lv) {
-        succ_branch = 1;
-        branch_label = inst->result.val;
-    }
-}
-
-/*===============================================================================================*/
-/* Executors */
-
-void execute_ASSIGN(instruction* inst) {
-    memcell* lv = translate_operand(&inst->result, NULL);
-    if(!lv) { runtimeError("Null LVALUE in assign"); }
-    memcell* rv = (memcell*)malloc(sizeof(memcell));
-    if(!rv) { MemoryFail(); }
-    rv = translate_operand(&inst->arg1, rv);
-    if(!rv) { runtimeError("Null RVALUE in assign"); }
-    helper_assign(lv, rv);
-}
-
-void execute_ADD(instruction* inst) { helper_arith(inst); }
-void execute_SUB(instruction* inst) { helper_arith(inst); }
-void execute_MUL(instruction* inst) { helper_arith(inst); }
-void execute_DIV(instruction* inst) { helper_arith(inst); }
-void execute_MOD(instruction* inst) { helper_arith(inst); }
-
-void execute_UMINUS(instruction* inst) { printf("UMINUS SHOULD NOT EXIST\n"); }
-void execute_AND(instruction* inst)    { printf("AND SHOULD NOT EXIST\n"); }
-void execute_OR(instruction* inst)     { printf("OR SHOULD NOT EXIST\n"); }
-void execute_NOT(instruction* inst)    { printf("NOT SHOULD NOT EXIST\n"); }
-
-void execute_JUMP(instruction* inst) {
-    succ_branch = 1;
-    branch_label = inst->result.val;
-}
-
-void execute_JEQ(instruction* inst) {
-    unsigned int lv = 0;
-    memcell* rv1 = (memcell*)malloc(sizeof(memcell));
-    if(!rv1) { MemoryFail(); }
-    memcell* rv2 = (memcell*)malloc(sizeof(memcell));
-    if(!rv2) { MemoryFail(); }
-    rv1 = translate_operand(&inst->arg1, rv1);
-    if (!rv1) { runtimeError("Null RV1"); }
-    rv2 = translate_operand(&inst->arg2, rv2);
-    if (!rv2) { runtimeError("Null RV2"); }
-    
-    if(rv1->type == MEM_UNDEF || rv2->type == MEM_UNDEF) {
-        runtimeError("Undef in equality");
-    }
-    else if(rv1->type == MEM_NIL || rv2->type == MEM_NIL) {
-        lv = rv1->type == MEM_NIL && rv2->type == MEM_NIL;
-    }
-    else if(rv1->type == MEM_BOOL || rv2->type == MEM_BOOL) {
-        lv = bool_tobool(rv1) == bool_tobool(rv2);
-    }
-    else if(rv1->type != rv2->type) {
-        /* maybe better print ?*/
-        runtimeError("Illegal equality");
-    }
-    else {
-        switch(rv1->type){
-			case MEM_NUMBER:
-			{
-				lv = rv1->data.num_zoumi==rv2->data.num_zoumi;
-				break;
-			}	
-			case MEM_STRING:
-			{
-				if(!strcmp(rv1->data.string_zoumi,rv2->data.string_zoumi)){
-					lv = 1;
-				}
-				break;
-			}
-			case MEM_TABLE:
-			{
-				if(rv1->data.table_zoumi==rv2->data.table_zoumi){
-					lv=1;
-				}
-				break;
-			}
-			case MEM_USERFUNC:
-			{
-				if(!strcmp(userfunc_tostring(rv1),userfunc_tostring(rv2))){
-					lv = 1;
-				}
-				break;
-			}
-			case MEM_LIBFUNC:
-			{
-			
-				if(!strcmp(libfunc_tostring(rv1),libfunc_tostring(rv2))){
-					lv = 1;
-				}
-				break;
-			}
-			default: printf("Default in EQ\n");
-		}
-    }
-
-    if(lv) {
-        succ_branch = 1;
-        branch_label = inst->result.val;
-    }
-}
-
-void execute_JNE(instruction* inst) {
-    unsigned int lv = 0;
-    memcell* rv1 = (memcell*)malloc(sizeof(memcell));
-    if(!rv1) { MemoryFail(); }
-    memcell* rv2 = (memcell*)malloc(sizeof(memcell));
-    if(!rv2) { MemoryFail(); }
-    rv1 = translate_operand(&inst->arg1, rv1);
-    if (!rv1) { runtimeError("Null RV1"); }
-    rv2 = translate_operand(&inst->arg2, rv2);
-    if (!rv2) { runtimeError("Null RV2"); }
-    
-    if(rv1->type == MEM_UNDEF || rv2->type == MEM_UNDEF) {
-        runtimeError("Undef in no equality");
-    }
-    else if(rv1->type == MEM_NIL || rv2->type == MEM_NIL) {
-        lv = rv1->type == MEM_NIL != rv2->type == MEM_NIL;
-    }
-    else if(rv1->type == MEM_BOOL || rv2->type == MEM_BOOL) {
-        lv = bool_tobool(rv1) != bool_tobool(rv2);
-    }
-    else if(rv1->type != rv2->type) {
-        /* maybe better print ?*/
-        runtimeError("Illegal no equality");
-    }
-    else {
-        switch(rv1->type){
-			case MEM_NUMBER:
-			{
-				lv = rv1->data.num_zoumi!=rv2->data.num_zoumi;
-				break;
-			}	
-			case MEM_STRING:
-			{
-				if(strcmp(rv1->data.string_zoumi,rv2->data.string_zoumi)){
-					lv = 1;
-				}
-				break;
-			}
-			case MEM_TABLE:
-			{
-				if(rv1->data.table_zoumi!=rv2->data.table_zoumi){
-					lv=1;
-				}
-				break;
-			}
-			case MEM_USERFUNC:
-			{
-				if(strcmp(userfunc_tostring(rv1),userfunc_tostring(rv2))){
-					lv = 1;
-				}
-				break;
-			}
-			case MEM_LIBFUNC:
-			{
-			
-				if(strcmp(libfunc_tostring(rv1),libfunc_tostring(rv2))){
-					lv = 1;
-				}
-				break;
-			}
-			default: printf("Default in NEQ\n");
-		}
-    }
-
-    if(lv) {
-        succ_branch = 1;
-        branch_label = inst->result.val;
-    }
-}
-
-void execute_JLE(instruction* inst) { helper_relational(inst); }
-void execute_JGE(instruction* inst) { helper_relational(inst); }
-void execute_JLT(instruction* inst) { helper_relational(inst); }
-void execute_JGT(instruction* inst) { helper_relational(inst); }
-
-void execute_CALL(instruction* inst) {
-    memcell* func = (memcell*)malloc(sizeof(memcell));
-    if(!func) { MemoryFail(); }
-    func = translate_operand(&inst->arg1, func);
-    if(!func) { runtimeError("Null memcell in call"); }
-    /* Push total args */
-    memcell totalargs;
-    clear_memcell(&totalargs);
-    totalargs.type = MEM_STACKVAL;
-    totalargs.data.stackval_zoumi = current_args_pushed;
-    current_args_pushed=0;
-    clear_memcell(&stack[0]);
-    stack[0].type = MEM_NIL;
-    console_log("Pushing current_args_pushed");
-    push(totalargs);
-    switch(func->type) {
-        /* do j*b */
-        case MEM_LIBFUNC:
-            console_log("Calling libfunc %d", func->data.libfunc_zoumi);
-            (*libFuncs[func->data.libfunc_zoumi])();
-            /* Pop arguments */
-            int totals = pop().data.stackval_zoumi;
-            console_log("Popping %d params", totals);
-            for(int i=0; i<totals; i++) { pop(); }
-            break;
-        case MEM_USERFUNC:
-            totalargs.data.stackval_zoumi = program_counter + 1;
-            console_log("Pushing Return Address %d", program_counter+2);
-            push(totalargs);
-            console_log("Branching to userfunc at %d", func->data.usrfunc_zoumi+1);
-            succ_branch = 1;
-            branch_label = func->data.usrfunc_zoumi;
-            break;
-        default: runtimeError("Argument is not a function");
-    }
-}
-
-void execute_PARAM(instruction* inst) {
-    memcell* res = (memcell*)malloc(sizeof(memcell));
-    if(!res) { MemoryFail(); }
-    res = translate_operand(&inst->arg1, res);
-    if(!res) { runtimeError("Null memcell in param"); }
-    console_log("Pushing param");
-    push(*res);
-    current_args_pushed++;
-}
-
-void execute_FUNCSTART(instruction* inst) {
-    memcell oldmaul;
-    oldmaul.type = AVM_STACKSIZE;
-    oldmaul.data.stackval_zoumi = stack_maul;
-    console_log("Pushing old DARTH MAUL");
-    push(oldmaul);
-    stack_maul = stack_top+1;
-    int locals = inst->arg2.val;
-    memcell tmp_local;
-    clear_memcell(&tmp_local);
-    console_log("Pushing %d locals", locals);
-    for(int i=0; i<locals; i++) { push(tmp_local); }
-    console_log("Begin Function Execution");
-}
-
-void execute_FUNCEND(instruction* inst) {
-    int locals = (stack_top < stack_maul) ? 0 : (stack_top - stack_maul + 1);
-    console_log("Popping %d locals", locals);
-    for(int i=0; i<locals; i++) { pop(); }
-    console_log("Restore old DARTH MAUL");
-    stack_maul = pop().data.stackval_zoumi;
-    console_log("Pop return address");
-    int retaddr = pop().data.stackval_zoumi;
-    console_log("Pop total params");
-    int params = pop().data.stackval_zoumi;
-    console_log("Popping %d params", params);
-    for(int i=0; i<params; i++) { pop(); }
-    console_log("Branch to return address %d", retaddr+1);
-    succ_branch = 1;
-    branch_label = retaddr;
-}
-
-void execute_NEWTABLE(instruction* inst) {
-
-}
-
-void execute_TABLEGETELEM(instruction* inst) {
-
-}
-
-void execute_TABLESETELEM(instruction* inst) {
-
-}
-
-void execute_NOP(instruction* inst) {
-    runtimeError("NOP SHOULD NOT EXIST");
-}
-
-void execute_RETURN(instruction* inst) {
-    memcell* res = (memcell*)malloc(sizeof(memcell));
-    if(!res) { MemoryFail(); }
-    res = translate_operand(&inst->result, res);
-    helper_assign(&stack[0], res);
-}
-
-void execute_GETRETVAL(instruction* inst) {
-    memcell* lv = translate_operand(&inst->result, NULL);
-    if(!lv) { runtimeError("Null memcell in getretval"); }
-    helper_assign(lv, &stack[0]);
-}
-
-/*===============================================================================================*/
-/* ToStringFunc */
-
-char* number_tostring(memcell* mem){
-    char* str = (char*)malloc(16);
-    sprintf(str, "%.3f", mem->data.num_zoumi);
-    return str;
-}
-
-char* string_tostring(memcell* mem){
-    return mem->data.string_zoumi;
-}
-
-char* bool_tostring(memcell* mem){
-    if (mem->data.bool_zoumi) {
-        return "true";
-    }
-    else {
-        return "false";
-    }
-}
-
-char* table_tostring(memcell* mem){
-    /* j*b */
-}
-
-char* userfunc_tostring(memcell* mem){
-    char* str = (char*)malloc(32);
-    sprintf(str, "%u", mem->data.usrfunc_zoumi);
-    return str;
-}
-
-char* libfunc_tostring(memcell* mem){
-    char* str = (char*)malloc(16);
-    sprintf(str, "%u", mem->data.libfunc_zoumi);
-    return str;
-}
-
-char* nil_tostring(memcell* mem){
-    return "nil";
-}
-
-char* stackval_tostring(memcell* mem){
-    char* str = (char*)malloc(16);
-    sprintf(str, "%u", mem->data.stackval_zoumi);
-    return str;
-}
-
-char* undef_tostring(memcell* mem){
-    return "undef";
-}
-
-/*===============================================================================================*/
-/* Arith */
+arithmetic_func_t arith_funcs[] = {
+    add_arith, sub_arith, mul_arith,
+    div_arith, mod_arith, uminus_arith
+};
 
 double add_arith(double x, double y) { return (double)(x+y); }
 double sub_arith(double x, double y) { return (double)(x-y); }
@@ -396,9 +16,20 @@ double div_arith(double x, double y) { return (double)(x/y); }
 double mod_arith(double x, double y) { return (double)(((unsigned)x)%((unsigned)y)); }
 double uminus_arith(double x, double y) { runtimeError("UMINUS SHOULD NOT EXIST"); }
 
+relational_func_t relat_funcs[] = {
+	jle_rel, jge_rel, jlt_rel, jgt_rel
+};
 
-/*===============================================================================================*/
-/* To Bool */
+unsigned int jgt_rel(double x, double y) { return x > y; }
+unsigned int jle_rel(double x, double y) { return x <= y; }
+unsigned int jge_rel(double x, double y) { return x >= y; }
+unsigned int jlt_rel(double x, double y) { return x < y; }
+
+tobool_func_t to_bool_funcs[] = {
+    number_tobool, string_tobool, bool_tobool,
+    table_tobool, userfunc_tobool, libfunc_tobool,
+    nil_tobool, stackval_tobool, undef_tobool
+};
 
 unsigned int number_tobool(memcell* mem)   { return mem->data.num_zoumi != 0; }
 unsigned int string_tobool(memcell* mem)   { return mem->data.string_zoumi[0] != 0; }
@@ -411,13 +42,406 @@ unsigned int stackval_tobool(memcell* mem) { return 1; }
 unsigned int undef_tobool(memcell* mem)    { return 0; }
 
 /*===============================================================================================*/
-/* Relational */
+/* Helpers */
 
-unsigned int jgt_rel(double x, double y) { return x > y; }
-unsigned int jle_rel(double x, double y) { return x <= y; }
-unsigned int jge_rel(double x, double y) { return x >= y; }
-unsigned int jlt_rel(double x, double y) { return x < y; }
+void helper_assign(memcell* lv, memcell* rv) {
+    if(lv == rv) { return; }
+    /* TODO check for tables */
+    if(rv->type == MEM_UNDEF) { console_log("Warning. Assignment of undef in line %d\n", curr_line); }
+    clear_memcell(lv);
+    memcpy(lv, rv, sizeof(memcell));
+    /* TODO again check tables */
+}
+
+void helper_arith(instruction* inst) {
+    /* Translate LValue */
+    memcell* lv = translate_operand(&inst->result, NULL);
+    if(!lv) { runtimeError("Null LVALUE"); }
+    /* Translate Arg1 */
+    memcell* arg1 = (memcell*)malloc(sizeof(memcell));
+    if(!arg1) { MemoryFail(); }
+    arg1 = translate_operand(&inst->arg1, arg1);
+    if(!arg1) { runtimeError("Null ARG1"); }
+    /* Translate Arg2 */
+    memcell* arg2 = (memcell*)malloc(sizeof(memcell));
+    if(!arg2) { MemoryFail(); }
+    arg2 = translate_operand(&inst->arg2, arg2);
+    if(!arg2) { runtimeError("Null ARG2"); }
+    /* Do j*b */
+    if(arg1->type != MEM_NUMBER) { runtimeError("ARG1 is not a NUMBER"); }
+    if(arg2->type != MEM_NUMBER) { runtimeError("ARG2 is not a NUMBER"); }
+    memcell res;
+    res.type = MEM_NUMBER;
+    res.data.num_zoumi = (*arith_funcs[inst->opcode-OP_ADD])(arg1->data.num_zoumi, arg2->data.num_zoumi);
+    helper_assign(lv, &res);
+}
+
+void helper_relational(instruction* inst) {
+    /* Translate Arg1 */
+    memcell* rv1 = (memcell*)malloc(sizeof(memcell));
+    if(!rv1) { MemoryFail(); }
+    rv1 = translate_operand(&inst->arg1, rv1);
+    if(!rv1) { runtimeError("Null RV1"); }
+    /* Translate Arg2 */
+    memcell* rv2 = (memcell*)malloc(sizeof(memcell));
+    if(!rv2) { MemoryFail(); }
+    rv2 = translate_operand(&inst->arg2, rv2);
+    if(!rv2) { runtimeError("Null RV2"); }
+    /* Do j*b */
+    if(rv1->type != MEM_NUMBER) { runtimeError("ARG1 is not a NUMBER"); }
+    if(rv1->type != MEM_NUMBER) { runtimeError("ARG2 is not a NUMBER"); } 
+    unsigned int res = 0;
+    res = (*relat_funcs[inst->opcode - OP_JLE])(rv1->data.num_zoumi, rv2->data.num_zoumi);
+    if(res) {
+        succ_branch = 1;
+        branch_label = inst->result.val;
+    }
+}
 
 /*===============================================================================================*/
+/* Executors */
+
+execute_func_t executors[] = {
+    execute_ASSIGN,
+    execute_ADD, execute_SUB, execute_MUL, execute_DIV, execute_MOD,
+    execute_UMINUS,
+    execute_AND, execute_OR, execute_NOT,    
+    execute_JEQ, execute_JNE, execute_JLE, execute_JGE, execute_JLT, execute_JGT,      
+    execute_CALL, execute_PARAM, execute_RETURN, execute_GETRETVAL, execute_FUNCSTART, execute_FUNCEND,
+    execute_NEWTABLE, execute_TABLEGETELEM, execute_TABLESETELEM,
+    execute_JUMP,
+    execute_NOP
+};
+
+void execute_UMINUS(instruction* inst) { printf("UMINUS SHOULD NOT EXIST\n"); }
+void execute_AND(instruction* inst)    { printf("AND SHOULD NOT EXIST\n"); }
+void execute_OR(instruction* inst)     { printf("OR SHOULD NOT EXIST\n"); }
+void execute_NOT(instruction* inst)    { printf("NOT SHOULD NOT EXIST\n"); }
+void execute_NOP(instruction* inst)    { printf("NOP SHOULD NOT EXIST\n"); }
+
+/*===============================================================================================*/
+/* Assigns */
+
+void execute_ASSIGN(instruction* inst) {
+    /* Translate LValue */
+    memcell* lv = translate_operand(&inst->result, NULL);
+    if(!lv) { runtimeError("Null LVALUE in assign"); }
+    /* Translate RValue */
+    memcell* rv = (memcell*)malloc(sizeof(memcell));
+    if(!rv) { MemoryFail(); }
+    rv = translate_operand(&inst->arg1, rv);
+    if(!rv) { runtimeError("Null RVALUE in assign"); }
+    /* do j*b */
+    helper_assign(lv, rv);
+}
+
+void execute_RETURN(instruction* inst) {
+    /* Translate Result */
+    memcell* res = (memcell*)malloc(sizeof(memcell));
+    if(!res) { MemoryFail(); }
+    res = translate_operand(&inst->result, res);
+    if(!res) { runtimeError("Null RVALUE in return"); }
+    /* do j*b */
+    helper_assign(&stack[0], res);
+}
+
+void execute_GETRETVAL(instruction* inst) {
+    /* Translate LValue */
+    memcell* lv = translate_operand(&inst->result, NULL);
+    if(!lv) { runtimeError("Null LVALUE in getretval"); }
+    /* to j*b */
+    helper_assign(lv, &stack[0]);
+}
+
+/*===============================================================================================*/
+/* Arith */
+
+void execute_ADD(instruction* inst) { helper_arith(inst); }
+void execute_SUB(instruction* inst) { helper_arith(inst); }
+void execute_MUL(instruction* inst) { helper_arith(inst); }
+void execute_DIV(instruction* inst) { helper_arith(inst); }
+void execute_MOD(instruction* inst) { helper_arith(inst); }
+
+/*===============================================================================================*/
+/* Jumps */
+
+void execute_JUMP(instruction* inst) {
+    succ_branch = 1;
+    branch_label = inst->result.val;
+}
+
+void execute_JEQ(instruction* inst) {
+    /* Translate Arg1 */
+    memcell* rv1 = (memcell*)malloc(sizeof(memcell));
+    if(!rv1) { MemoryFail(); }
+    rv1 = translate_operand(&inst->arg1, rv1);
+    if (!rv1) { runtimeError("Null RV1"); }
+    /* Translate Arg2 */
+    memcell* rv2 = (memcell*)malloc(sizeof(memcell));
+    if(!rv2) { MemoryFail(); }
+    rv2 = translate_operand(&inst->arg2, rv2);
+    if(!rv2) { runtimeError("Null RV2"); }
+    /* do j*b */
+    unsigned int res = 0;
+    if(rv1->type == MEM_UNDEF || rv2->type == MEM_UNDEF) {
+        runtimeError("Undef in equality");
+    } else if(rv1->type == MEM_NIL || rv2->type == MEM_NIL) {
+        res = ((rv1->type == MEM_NIL) && (rv2->type == MEM_NIL));
+    } else if(rv1->type == MEM_BOOL || rv2->type == MEM_BOOL) {
+        res = (bool_tobool(rv1) == bool_tobool(rv2));
+    } else if(rv1->type != rv2->type) {
+        runtimeError("Illegal equality");
+    } else {
+        switch(rv1->type) {
+			case MEM_NUMBER:
+				res = rv1->data.num_zoumi==rv2->data.num_zoumi;
+				break;
+			case MEM_STRING:
+				if(!strcmp(rv1->data.string_zoumi,rv2->data.string_zoumi)) {
+					res = 1;
+				}
+				break;
+			case MEM_TABLE:
+				if(rv1->data.table_zoumi==rv2->data.table_zoumi){
+					res=1;
+				}
+				break;
+			case MEM_USERFUNC:
+				if(!strcmp(userfunc_tostring(rv1),userfunc_tostring(rv2))){
+					res = 1;
+				}
+				break;
+			case MEM_LIBFUNC:
+				if(!strcmp(libfunc_tostring(rv1),libfunc_tostring(rv2))){
+					res = 1;
+				}
+				break;
+			default: runtimeError("Default in EQ");
+		}
+    }
+    if(res) {
+        succ_branch = 1;
+        branch_label = inst->result.val;
+    }
+}
+
+void execute_JNE(instruction* inst) {
+    /* Translate Arg1 */
+    memcell* rv1 = (memcell*)malloc(sizeof(memcell));
+    if(!rv1) { MemoryFail(); }
+    rv1 = translate_operand(&inst->arg1, rv1);
+    if (!rv1) { runtimeError("Null RV1"); }
+    /* Translate Arg2 */
+    memcell* rv2 = (memcell*)malloc(sizeof(memcell));
+    if(!rv2) { MemoryFail(); }
+    rv2 = translate_operand(&inst->arg2, rv2);
+    if (!rv2) { runtimeError("Null RV2"); }
+    /* do j*b */
+    unsigned int res = 0;
+    if(rv1->type == MEM_UNDEF || rv2->type == MEM_UNDEF) {
+        runtimeError("Undef in no equality");
+    } else if(rv1->type == MEM_NIL || rv2->type == MEM_NIL) {
+        res = rv1->type == MEM_NIL != rv2->type == MEM_NIL;
+    } else if(rv1->type == MEM_BOOL || rv2->type == MEM_BOOL) {
+        res = bool_tobool(rv1) != bool_tobool(rv2);
+    } else if(rv1->type != rv2->type) {
+        runtimeError("Illegal no equality");
+    } else {
+        switch(rv1->type) {
+			case MEM_NUMBER:
+				res = rv1->data.num_zoumi!=rv2->data.num_zoumi;
+				break;
+			case MEM_STRING:
+				if(strcmp(rv1->data.string_zoumi,rv2->data.string_zoumi)){
+					res = 1;
+				}
+				break;
+			case MEM_TABLE:
+				if(rv1->data.table_zoumi!=rv2->data.table_zoumi){
+					res=1;
+				}
+				break;
+			case MEM_USERFUNC:
+				if(strcmp(userfunc_tostring(rv1),userfunc_tostring(rv2))){
+					res = 1;
+				}
+				break;
+			case MEM_LIBFUNC:
+				if(strcmp(libfunc_tostring(rv1),libfunc_tostring(rv2))){
+					res = 1;
+				}
+				break;
+			default: runtimeError("Default in NEQ\n");
+		}
+    }
+    if(res) {
+        succ_branch = 1;
+        branch_label = inst->result.val;
+    }
+}
+
+void execute_JLE(instruction* inst) { helper_relational(inst); }
+void execute_JGE(instruction* inst) { helper_relational(inst); }
+void execute_JLT(instruction* inst) { helper_relational(inst); }
+void execute_JGT(instruction* inst) { helper_relational(inst); }
+
+/*===============================================================================================*/
+/* Functions */
+
+void execute_PARAM(instruction* inst) {
+    /* Translate Result */
+    memcell* res = (memcell*)malloc(sizeof(memcell));
+    if(!res) { MemoryFail(); }
+    res = translate_operand(&inst->arg1, res);
+    if(!res) { runtimeError("Null memcell in param"); }
+    /* do j*b */
+    console_log("Pushing param");
+    push(*res);
+    current_args_pushed++;
+}
+
+void execute_CALL(instruction* inst) {
+    /* Translate Function Address */
+    memcell* func = (memcell*)malloc(sizeof(memcell));
+    if(!func) { MemoryFail(); }
+    func = translate_operand(&inst->arg1, func);
+    if(!func) { runtimeError("Null memcell in call"); }
+    /* Push total args */
+    memcell totalargs;
+    clear_memcell(&totalargs);
+    totalargs.type = MEM_STACKVAL;
+    totalargs.data.stackval_zoumi = current_args_pushed;
+    console_log("Pushing current_args_pushed");
+    push(totalargs);
+    current_args_pushed=0;
+    /* Prepare retval */
+    clear_memcell(&stack[0]);
+    stack[0].type = MEM_NIL;
+    /* do j*b */
+    switch(func->type) {
+        case MEM_LIBFUNC:
+            console_log("Calling libfunc %d", func->data.libfunc_zoumi);
+            (*libFuncs[func->data.libfunc_zoumi])();
+            /* Pop arguments */
+            int totals = pop().data.stackval_zoumi;
+            console_log("Popping %d params", totals);
+            for(int i=0; i<totals; i++) { pop(); }
+            break;
+        case MEM_USERFUNC:
+            /* Push Return Address */
+            totalargs.data.stackval_zoumi = program_counter + 1;
+            console_log("Pushing Return Address %d", program_counter+2);
+            push(totalargs);
+            /* Branch to Function Address */
+            console_log("Branching to userfunc at %d", func->data.usrfunc_zoumi+1);
+            succ_branch = 1;
+            branch_label = func->data.usrfunc_zoumi;
+            break;
+        default: runtimeError("Argument is not a function");
+    }
+}
+
+void execute_FUNCSTART(instruction* inst) {
+    /* Push Old DARTH MAUL */
+    memcell oldmaul;
+    oldmaul.type = AVM_STACKSIZE;
+    oldmaul.data.stackval_zoumi = stack_maul;
+    console_log("Pushing old DARTH MAUL");
+    push(oldmaul);
+    /* Create new local environment */
+    stack_maul = stack_top+1;
+    int locals = inst->arg2.val;
+    memcell tmp_local;
+    clear_memcell(&tmp_local);
+    console_log("Pushing %d locals", locals);
+    for(int i=0; i<locals; i++) { push(tmp_local); }
+    console_log("Begin Function Execution");
+}
+
+void execute_FUNCEND(instruction* inst) {
+    /* Pop my locals */
+    int locals = (stack_top < stack_maul) ? 0 : (stack_top - stack_maul + 1);
+    console_log("Popping %d locals", locals);
+    for(int i=0; i<locals; i++) { pop(); }
+    /* Pop and Restore old DARTH MAUL */
+    console_log("Restore old DARTH MAUL");
+    stack_maul = pop().data.stackval_zoumi;
+    /* Pop and save return address */
+    console_log("Pop return address");
+    int retaddr = pop().data.stackval_zoumi;
+    /* Pop total params number */
+    console_log("Pop total params");
+    int params = pop().data.stackval_zoumi;
+    /* Pop that many params */
+    console_log("Popping %d params", params);
+    for(int i=0; i<params; i++) { pop(); }
+    /* Branch to return address */
+    console_log("Branch to return address %d", retaddr+1);
+    succ_branch = 1;
+    branch_label = retaddr;
+}
+
+/*===============================================================================================*/
+/* Tables */
+
+/* TODO */
+
+void execute_NEWTABLE(instruction* inst) {
+    runtimeError("NEWTABLE NOT IMPLEMENTED YET");
+}
+
+void execute_TABLEGETELEM(instruction* inst) {
+    runtimeError("TABLEGET NOT IMPLEMENTED YET");
+}
+
+void execute_TABLESETELEM(instruction* inst) {
+    runtimeError("TABLESET NOT IMPLEMENTED YET");
+}
+
+/*===============================================================================================*/
+/* ToString */
+
+tostring_func_t to_string_funcs[] = {
+    number_tostring, string_tostring, bool_tostring,
+    table_tostring, userfunc_tostring, libfunc_tostring,
+    nil_tostring, stackval_tostring, undef_tostring
+};
+
+char* number_tostring(memcell* mem) {
+    char* str = (char*)malloc(1024);
+    sprintf(str, "%.3f", mem->data.num_zoumi);
+    return str;
+}
+
+char* string_tostring(memcell* mem) { return mem->data.string_zoumi; }
+
+char* bool_tostring(memcell* mem) {
+    if(mem->data.bool_zoumi) { return "true"; }
+    else { return "false"; }
+}
+
+char* table_tostring(memcell* mem) { /* j*b */ }
+
+char* userfunc_tostring(memcell* mem){
+    char* str = (char*)malloc(32);
+    sprintf(str, "%u", mem->data.usrfunc_zoumi);
+    return str;
+}
+
+char* libfunc_tostring(memcell* mem) {
+    char* str = (char*)malloc(1024);
+    sprintf(str, "%u", mem->data.libfunc_zoumi);
+    return str;
+}
+
+char* nil_tostring(memcell* mem){ return "nil"; }
+
+char* stackval_tostring(memcell* mem){
+    char* str = (char*)malloc(1024);
+    sprintf(str, "%u", mem->data.stackval_zoumi);
+    return str;
+}
+
+char* undef_tostring(memcell* mem){ return "undef"; }
 
 /* end of avm_executors.c */

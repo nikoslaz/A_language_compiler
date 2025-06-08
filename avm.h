@@ -54,6 +54,7 @@ typedef struct instruction {
     unsigned int srcLine;
 } instruction;
 
+/* Consts Globals */
 extern char** string_const;
 extern unsigned int total_str_const;
 extern double* number_const;
@@ -93,7 +94,30 @@ typedef struct memcell {
 } memcell;
 
 /*===============================================================================================*/
-/* Executor */
+/* AVM functions & globals */
+
+void clear_memcell(memcell* cell);
+void push(memcell val);
+memcell pop(void);
+memcell* translate_operand(vmarg* arg, memcell* reg);
+void MemoryFail(void);
+void stackError(char* input);
+void runtimeError(char* input);
+void console_log(char* input, ...);
+
+extern unsigned int succ_branch;
+extern unsigned int branch_label;
+extern unsigned int current_args_pushed;
+extern unsigned int program_counter;
+extern unsigned int execution_finished;
+extern unsigned int curr_line;
+extern memcell stack[AVM_STACKSIZE];
+extern unsigned int stack_top;
+extern unsigned int stack_maul;
+extern FILE* avm_log;
+
+/*===============================================================================================*/
+/* Executors */
 
 typedef void (*execute_func_t)(instruction*);
 extern execute_func_t executors[];
@@ -182,6 +206,9 @@ extern unsigned int jle_rel(double, double);
 extern unsigned int jge_rel(double, double);
 extern unsigned int jlt_rel(double, double);
 
+/*===============================================================================================*/
+/* Library Function */
+
 typedef void (*library_func_t)(void);
 extern library_func_t libFuncs[];
 
@@ -197,24 +224,6 @@ extern void libfunc_strtonum();
 extern void libfunc_sqrt();
 extern void libfunc_cos();
 extern void libfunc_sin();
-
-void clear_memcell(memcell* cell);
-void push(memcell val);
-memcell pop(void);
-memcell* translate_operand(vmarg* arg, memcell* reg);
-void MemoryFail(void);
-void stackError(char* input);
-void runtimeError(char* input);
-void console_log(char* input, ...);
-extern unsigned int succ_branch;
-extern unsigned int branch_label;
-extern unsigned int current_args_pushed;
-extern unsigned int program_counter;
-extern unsigned int execution_finished;
-extern memcell stack[AVM_STACKSIZE];
-extern unsigned int stack_top;
-extern unsigned int stack_maul;
-extern FILE* avm_log;
 
 #endif
 /* end of avm.h */
