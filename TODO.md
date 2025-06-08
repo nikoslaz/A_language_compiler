@@ -96,9 +96,29 @@ opws kai to to_bool, to_string, arithmetic_opcodes, relational_opcodes
 ---------------------------------------------------------------------------------
 - HARD
 
-SOMEHOW implement libfuncs
+<!-- SOMEHOW implement libfuncs -->
 TABLES ??????????????????????????????????????
 
+-> HASHTABLE STRING KEYS
+-> HASHTABLE NUMBER KEYS
+
+TABLE BUCKET:
+    memcell key
+    memcell value
+    next*
+
+AVM TABLE :
+    unsinged refcounter
+    hash string
+    hash num
+    unsinged total
+
+FREE BUCKETS kai FREE TABLES
+
+- OTAN REFCOUNTER -> 0 KATASTREFOUME PINAKA !!!
+    RV TABLE: REFCOUNTER ++
+- OTAN ASSIGN SE KATI POU ITAN PINAKAS MEIONOUME TO REFCOUNTER
+    LV TABLE: REFCOUNTER --
 
 ---------------------------------------------------------------------------------
 - TESTS
