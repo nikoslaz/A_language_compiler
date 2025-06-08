@@ -15,6 +15,7 @@ AVM = avm
 AVM_PRINTS = avm_prints
 AVM_EXEC = avm_executors
 AVM_LIB = avm_libfuncs
+MATH = lm
 
 CC = gcc
 # Compile all
@@ -25,7 +26,7 @@ $(TARGET): $(SCANNER).o $(PARSER).o $(LIST).o $(TABLE).o $(QUADS).o $(TCODE).o
 	$(CC) -o $@ $^
 
 # AVM Executable
-$(AVMTARGET): $(AVM).o $(AVM_PRINTS).o $(AVM_EXEC).o $(AVM_LIB).o
+$(AVMTARGET): $(AVM).o $(AVM_PRINTS).o $(AVM_EXEC).o $(AVM_LIB).o -$(MATH)
 	$(CC) -o $@ $^
 
 # Object Files
