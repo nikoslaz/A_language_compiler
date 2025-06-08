@@ -239,23 +239,23 @@ void execute_CALL(instruction* inst) {
     current_args_pushed=0;
     clear_memcell(&stack[0]);
     stack[0].type = MEM_NIL;
-    fprintf(avm_log, "Pushing current_args_pushed\n");
+    console_log("Pushing current_args_pushed");
     push(totalargs);
     switch(func->type) {
         /* do j*b */
         case MEM_LIBFUNC:
-            fprintf(avm_log, "Calling libfunc %d\n", func->data.libfunc_zoumi);
+            console_log("Calling libfunc %d", func->data.libfunc_zoumi);
             (*libFuncs[func->data.libfunc_zoumi])();
             /* Pop arguments */
             int totals = pop().data.stackval_zoumi;
-            fprintf(avm_log, "Popping %d params\n", totals);
+            console_log("Popping %d params", totals);
             for(int i=0; i<totals; i++) { pop(); }
             break;
         case MEM_USERFUNC:
             totalargs.data.stackval_zoumi = program_counter + 1;
-            fprintf(avm_log, "Pushing Return Address %d\n", program_counter+2);
+            console_log("Pushing Return Address %d", program_counter+2);
             push(totalargs);
-            fprintf(avm_log, "Branching to userfunc at %d\n", func->data.usrfunc_zoumi+1);
+            console_log("Branching to userfunc at %d", func->data.usrfunc_zoumi+1);
             succ_branch = 1;
             branch_label = func->data.usrfunc_zoumi;
             break;
@@ -268,7 +268,7 @@ void execute_PARAM(instruction* inst) {
     if(!res) { MemoryFail(); }
     res = translate_operand(&inst->arg1, res);
     if(!res) { runtimeError("Null memcell in param"); }
-    fprintf(avm_log, "Pushing param\n");
+    console_log("Pushing param");
     push(*res);
     current_args_pushed++;
 }
@@ -277,30 +277,30 @@ void execute_FUNCSTART(instruction* inst) {
     memcell oldmaul;
     oldmaul.type = AVM_STACKSIZE;
     oldmaul.data.stackval_zoumi = stack_maul;
-    fprintf(avm_log, "Pushing old DARTH MAUL\n");
+    console_log("Pushing old DARTH MAUL");
     push(oldmaul);
     stack_maul = stack_top+1;
     int locals = inst->arg2.val;
     memcell tmp_local;
     clear_memcell(&tmp_local);
-    fprintf(avm_log, "Pushing %d locals\n", locals);
+    console_log("Pushing %d locals", locals);
     for(int i=0; i<locals; i++) { push(tmp_local); }
-    fprintf(avm_log, "Begin Function Execution\n");
+    console_log("Begin Function Execution");
 }
 
 void execute_FUNCEND(instruction* inst) {
     int locals = (stack_top < stack_maul) ? 0 : (stack_top - stack_maul + 1);
-    fprintf(avm_log, "Popping %d locals\n", locals);
+    console_log("Popping %d locals", locals);
     for(int i=0; i<locals; i++) { pop(); }
-    fprintf(avm_log, "Restore old DARTH MAUL\n");
+    console_log("Restore old DARTH MAUL");
     stack_maul = pop().data.stackval_zoumi;
-    fprintf(avm_log, "Pop return address\n");
+    console_log("Pop return address");
     int retaddr = pop().data.stackval_zoumi;
-    fprintf(avm_log, "Pop total params\n");
+    console_log("Pop total params");
     int params = pop().data.stackval_zoumi;
-    fprintf(avm_log, "Popping %d params\n", params);
+    console_log("Popping %d params", params);
     for(int i=0; i<params; i++) { pop(); }
-    fprintf(avm_log, "Branch to return address %d\n", retaddr+1);
+    console_log("Branch to return address %d", retaddr+1);
     succ_branch = 1;
     branch_label = retaddr;
 }

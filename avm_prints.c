@@ -120,7 +120,6 @@ void printReadTargetToFile(void) {
     fprintf(fp, "\nTotal Program Variables: (%d)\n", totalprogvar);
 
     fclose(fp);
-    fprintf(avm_log, "Read Target code written to 2_readtarget.output\n");
 }
 
 /* end of avm_prints.c */

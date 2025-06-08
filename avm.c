@@ -66,7 +66,6 @@ FILE* avm_log;
 
 void MemoryFail(void) {
     fprintf(stderr, "Fatal Error. Memory Allocation failed\n");
-	fclose(avm_log);
     exit(1);
 }
 
@@ -130,21 +129,21 @@ void read_binary(FILE* fd) {
 /*===============================================================================================*/
 /* Stack */
 
+void console_log(char* input, ...) { fprintf(avm_log, "LOG: %s\n", input); }
+
 void stackError(char* input) {
-	fprintf(avm_log, "Fatal Stack Error. %s.\n", input);
+	console_log("Fatal Stack Error. %s.", input);
 	printf("\nFatal Stack Error. %s.\n", input);
-	fclose(avm_log);
 	exit(-1);
 }
 
 void runtimeError(char* input) {
-	fprintf(avm_log, "Runtime Error in line %d. %s.\n", curr_line, input);
+	console_log("Runtime Error in line %d. %s.", curr_line, input);
 	printf("\nRuntime Error in line %d. %s.\n", curr_line, input);
 	exit(-1);
 }
 
 void initilize_stack(void) {
-	fprintf(avm_log, "Initializing Stack\n");
     for(int i=0; i<AVM_STACKSIZE; i++){
         memset(&stack[i], 0, sizeof(memcell));
         stack[i].type = MEM_UNDEF;
@@ -168,14 +167,14 @@ void clear_memcell(memcell* cell) {
 void push(memcell val) {
 	if(++stack_top >= AVM_STACKSIZE) { stackError("Stack Overflow"); }
     stack[stack_top] = val;
-	fprintf(avm_log, "PUSH - new stack_top is now %d\n", stack_top);
+	console_log("push - stack_top is now %d", stack_top);
 }
 
 memcell pop(void) {
     if(stack_top < 0) { stackError("Stack Underflow"); }
     memcell popped_cell = stack[stack_top];
     clear_memcell(&stack[stack_top--]);
-	fprintf(avm_log, "POP - new stack_top is now %d\n", stack_top);
+	console_log("pop - stack_top is now %d", stack_top);
     return popped_cell;
 }
 
@@ -255,7 +254,7 @@ void execute_cycle(void) {
 	}
 	instruction* instr = &instructions[program_counter];
 	curr_line = instr->srcLine;
-	fprintf(avm_log, "Executing Instr: %d\n", program_counter);
+	console_log("Executing Instr: %d", program_counter);
 	(*executors[instr->opcode])(instr);
 	if(succ_branch) {
 		succ_branch = 0;
@@ -270,7 +269,7 @@ void begin_execution(void) {
 		execute_cycle();
 		if(execution_finished) { break; }
 	}
-	fprintf(avm_log, "Execution Finished\n");
+	console_log("Execution Finished");
 }
 
 void avm_initialize(void) {
@@ -282,11 +281,10 @@ void avm_initialize(void) {
 	cell.type = MEM_UNDEF;
 	
 	/* Push Ret Val */
-	fprintf(avm_log, "Pushing RetVal\n");
 	push(cell);
 	/* Push Locals */
 	for(int i=0; i<totalprogvar; i++) {
-		fprintf(avm_log, "Pushing programvar %d\n", i);
+		console_log("Pushing programvar %d", i);
 		push(cell);
 	}
 	stack_maul = 1;
@@ -297,7 +295,7 @@ void avm_initialize(void) {
     succ_branch = 0;
     
 	/* Execute Instructions */
-	fprintf(avm_log, "Beginning execution\n");
+	console_log("Beginning execution");
 	begin_execution();
 }
 
@@ -317,7 +315,6 @@ int main(int argc, char** argv) {
     read_binary(fin);
     printReadTargetToFile();
     avm_initialize();
-	fclose(avm_log);
     return 0;
 }
 
