@@ -52,6 +52,9 @@ void helper_relational(instruction* inst) {
     }
 }
 
+/*===============================================================================================*/
+/* Executors */
+
 void execute_ASSIGN(instruction* inst) {
     memcell* lv = translate_operand(&inst->result, NULL);
     if(!lv) { runtimeError("Null LVALUE in assign"); }
@@ -230,6 +233,7 @@ void execute_CALL(instruction* inst) {
     if(!func) { runtimeError("Null memcell in call"); }
     /* Push total args */
     memcell totalargs;
+    clear_memcell(&totalargs);
     totalargs.type = MEM_STACKVAL;
     totalargs.data.stackval_zoumi = current_args_pushed;
     current_args_pushed=0;
@@ -242,7 +246,7 @@ void execute_CALL(instruction* inst) {
         case MEM_LIBFUNC:
             fprintf(avm_log, "Calling libfunc %d\n", func->data.libfunc_zoumi);
             (*libFuncs[func->data.libfunc_zoumi])();
-            /* pop arguments */
+            /* Pop arguments */
             int totals = pop().data.stackval_zoumi;
             fprintf(avm_log, "Popping %d params\n", totals);
             for(int i=0; i<totals; i++) { pop(); }
@@ -264,6 +268,7 @@ void execute_PARAM(instruction* inst) {
     if(!res) { MemoryFail(); }
     res = translate_operand(&inst->arg1, res);
     if(!res) { runtimeError("Null memcell in param"); }
+    fprintf(avm_log, "Pushing param\n");
     push(*res);
     current_args_pushed++;
 }
@@ -284,7 +289,7 @@ void execute_FUNCSTART(instruction* inst) {
 }
 
 void execute_FUNCEND(instruction* inst) {
-    int locals = stack[stack_maul-3].data.stackval_zoumi;
+    int locals = (stack_top < stack_maul) ? 0 : (stack_top - stack_maul + 1);
     fprintf(avm_log, "Popping %d locals\n", locals);
     for(int i=0; i<locals; i++) { pop(); }
     fprintf(avm_log, "Restore old DARTH MAUL\n");
@@ -313,11 +318,14 @@ void execute_TABLESETELEM(instruction* inst) {
 }
 
 void execute_NOP(instruction* inst) {
-
+    runtimeError("NOP SHOULD NOT EXIST");
 }
 
 void execute_RETURN(instruction* inst) {
-
+    memcell* res = (memcell*)malloc(sizeof(memcell));
+    if(!res) { MemoryFail(); }
+    res = translate_operand(&inst->result, res);
+    helper_assign(&stack[0], res);
 }
 
 void execute_GETRETVAL(instruction* inst) {
@@ -386,7 +394,7 @@ double sub_arith(double x, double y) { return (double)(x-y); }
 double mul_arith(double x, double y) { return (double)(x*y); }
 double div_arith(double x, double y) { return (double)(x/y); }
 double mod_arith(double x, double y) { return (double)(((unsigned)x)%((unsigned)y)); }
-double uminus_arith(double x, double y) { runtimeError("UMINUS SHOULD NOT EXIST"); return 0; }
+double uminus_arith(double x, double y) { runtimeError("UMINUS SHOULD NOT EXIST"); }
 
 
 /*===============================================================================================*/
