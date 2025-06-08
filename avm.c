@@ -4,39 +4,6 @@
  */
 #include "avm.h"
 
-execute_func_t executors[] = {
-    execute_ASSIGN,
-    execute_ADD, execute_SUB, execute_MUL, execute_DIV, execute_MOD,
-    execute_UMINUS,
-    execute_AND, execute_OR, execute_NOT,    
-    execute_JEQ, execute_JNE, execute_JLE, execute_JGE, execute_JLT, execute_JGT,      
-    execute_CALL, execute_PARAM, execute_RETURN, execute_GETRETVAL, execute_FUNCSTART, execute_FUNCEND,
-    execute_NEWTABLE, execute_TABLEGETELEM, execute_TABLESETELEM,
-    execute_JUMP,
-    execute_NOP
-};
-
-tostring_func_t to_string_funcs[] = {
-    number_tostring, string_tostring, bool_tostring,
-    table_tostring, userfunc_tostring, libfunc_tostring,
-    nil_tostring, stackval_tostring, undef_tostring
-};
-
-tobool_func_t to_bool_funcs[] = {
-    number_tobool, string_tobool, bool_tobool,
-    table_tobool, userfunc_tobool, libfunc_tobool,
-    nil_tobool, stackval_tobool, undef_tobool
-};
-
-arithmetic_func_t arith_funcs[] = {
-    add_arith, sub_arith, mul_arith,
-    div_arith, mod_arith, uminus_arith
-};
-
-relational_func_t relat_funcs[] = {
-	jle_rel, jge_rel, jlt_rel, jgt_rel
-};
-
 /* Consts Globals */
 char** string_const = NULL;
 unsigned int total_str_const;
@@ -55,7 +22,6 @@ unsigned int current_args_pushed;
 unsigned int program_counter;
 unsigned int execution_finished;
 unsigned int curr_line;
-
 memcell stack[AVM_STACKSIZE];
 unsigned int stack_top;  /* Points to top non-empty element */
 unsigned int stack_maul; /* Splits the activations in half */
@@ -127,7 +93,7 @@ void read_binary(FILE* fd) {
 }
 
 /*===============================================================================================*/
-/* Stack */
+/* Prints */
 
 void console_log(char* input, ...) { fprintf(avm_log, "LOG: %s\n", input); }
 
@@ -143,6 +109,9 @@ void runtimeError(char* input) {
 	exit(-1);
 }
 
+/*===============================================================================================*/
+/* Stack */
+
 void initilize_stack(void) {
     for(int i=0; i<AVM_STACKSIZE; i++){
         memset(&stack[i], 0, sizeof(memcell));
@@ -153,11 +122,8 @@ void initilize_stack(void) {
 
 void clear_memcell(memcell* cell) {
     if(!cell) return;
-    if(cell->type == MEM_STRING && cell->data.string_zoumi) {
-        /* Points to const string entry in table */
-        cell->data.string_zoumi = NULL;
-    } else if (cell->type == MEM_TABLE && cell->data.table_zoumi) {
-        /* Decrement reference counter?? */
+    if (cell->type == MEM_TABLE && cell->data.table_zoumi) {
+        /* TODO Decrement reference counter?? */
         cell->data.table_zoumi = NULL; 
     }
     memset(cell, 0, sizeof(memcell));
@@ -181,12 +147,10 @@ memcell pop(void) {
 /*===============================================================================================*/
 /* AVM translate */
 
-/* NEEDS WORK */
 memcell* translate_operand(vmarg* arg, memcell* reg) {
 	if(!arg) { printf("Error. Null vmarg in translate.\n"); return NULL; }
 	unsigned int index;
 	switch(arg->type) {
-		
 		/* Variables */
 		case ARG_GLOBAL:
 			index = 1 + arg->val;
@@ -207,10 +171,9 @@ memcell* translate_operand(vmarg* arg, memcell* reg) {
 				runtimeError("Not enough arguments were supplied for this operation");
 			}
 			index = stack_maul - (4 + arg->val);
-			if(index>stack_top) { stackError("Invalid Formal Index"); }
+			if(index > stack_top) { stackError("Invalid Formal Index"); }
 			return &stack[index];
-		
-			/* Consts */
+		/* Consts */
 		case ARG_NUMBER:
             reg->type = MEM_NUMBER;
 			reg->data.num_zoumi = number_const[arg->val];	
@@ -265,6 +228,7 @@ void execute_cycle(void) {
 
 void begin_execution(void) {
 	program_counter = 0;
+	console_log("Beginning execution");
 	while(1) {
 		execute_cycle();
 		if(execution_finished) { break; }
@@ -273,13 +237,11 @@ void begin_execution(void) {
 }
 
 void avm_initialize(void) {
-    
 	initilize_stack();
-	
+	/* Create an empty cell */
 	memcell cell;
 	memset(&cell, 0, sizeof(memcell));
 	cell.type = MEM_UNDEF;
-	
 	/* Push Ret Val */
 	push(cell);
 	/* Push Locals */
@@ -288,14 +250,11 @@ void avm_initialize(void) {
 		push(cell);
 	}
 	stack_maul = 1;
-	
 	/* Controls */
     current_args_pushed = 0;
 	execution_finished = 0;
     succ_branch = 0;
-    
 	/* Execute Instructions */
-	console_log("Beginning execution");
 	begin_execution();
 }
 

@@ -18,6 +18,7 @@ AVM_LIB = avm_libfuncs
 MATH = lm
 
 CC = gcc
+
 # Compile all
 all: $(TARGET) $(AVMTARGET)
 
@@ -43,6 +44,7 @@ $(SCANNER).c: $(SCANNER).l $(PARSER).h
 clean:
 	rm -f *.o $(TARGET) $(AVMTARGET) $(SCANNER).c $(PARSER).c $(PARSER).h *.output chief.alpha
 
+# testing
 run:
 	make
 	./calc $(path)
