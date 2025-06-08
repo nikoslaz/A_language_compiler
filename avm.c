@@ -66,6 +66,7 @@ FILE* avm_log;
 
 void MemoryFail(void) {
     fprintf(stderr, "Fatal Error. Memory Allocation failed\n");
+	fclose(avm_log);
     exit(1);
 }
 
@@ -132,6 +133,7 @@ void read_binary(FILE* fd) {
 void stackError(char* input) {
 	fprintf(avm_log, "Fatal Stack Error. %s.\n", input);
 	printf("\nFatal Stack Error. %s.\n", input);
+	fclose(avm_log);
 	exit(-1);
 }
 
@@ -166,12 +168,14 @@ void clear_memcell(memcell* cell) {
 void push(memcell val) {
 	if(++stack_top >= AVM_STACKSIZE) { stackError("Stack Overflow"); }
     stack[stack_top] = val;
+	fprintf(avm_log, "PUSH - new stack_top is now %d\n", stack_top);
 }
 
 memcell pop(void) {
     if(stack_top < 0) { stackError("Stack Underflow"); }
     memcell popped_cell = stack[stack_top];
     clear_memcell(&stack[stack_top--]);
+	fprintf(avm_log, "POP - new stack_top is now %d\n", stack_top);
     return popped_cell;
 }
 
@@ -267,7 +271,6 @@ void begin_execution(void) {
 		if(execution_finished) { break; }
 	}
 	fprintf(avm_log, "Execution Finished\n");
-	printf("\nExecution Finished\n");
 }
 
 void avm_initialize(void) {
@@ -309,11 +312,12 @@ int main(int argc, char** argv) {
             return 1;
         }
     } else { printf("Error. File not supplied\n"); return 1; }
-    read_binary(fin);
-    printReadTargetToFile();
 	avm_log = fopen("3_log.output", "w");
 	if(!avm_log) { perror("Error opening 3_log.output for writing\n"); return 1; }
+    read_binary(fin);
+    printReadTargetToFile();
     avm_initialize();
+	fclose(avm_log);
     return 0;
 }
 
