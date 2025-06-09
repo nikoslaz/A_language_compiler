@@ -22,6 +22,7 @@ unsigned int current_args_pushed;
 unsigned int program_counter;
 unsigned int execution_finished;
 unsigned int curr_line;
+unsigned int warning_count = 0;
 memcell stack[AVM_STACKSIZE];
 unsigned int stack_top;  /* Points to top non-empty element */
 unsigned int stack_maul; /* Splits the activations in half */
@@ -95,34 +96,34 @@ void read_binary(FILE* fd) {
 /*===============================================================================================*/
 /* Prints */
 
-void console_log(char* input, ...) { fprintf(avm_log, "LOG: %s\n", input); }
-
 void stackError(char* input) {
-	console_log("Fatal Stack Error. %s.", input);
-	printf("\nFatal Stack Error. %s.\n", input);
+	fprintf(avm_log, "Fatal Stack Error. %s\nExecution Aborted\n", input);
+	printf("\nFatal Stack Error. %s\nExecution Aborted\n", input);
 	exit(-1);
 }
 
-void runtimeError(char* input) {
-	console_log("Runtime Error in line %d. %s.", curr_line, input);
-	printf("\nRuntime Error in line %d. %s.\n", curr_line, input);
+void runtimeError(char* input, ...) {
+	fprintf(avm_log, "Runtime Error in line %d. %s\nExecution Aborted\n", curr_line, input);
+	printf("\nRuntime Error in line %d. %s\nExecution Aborted\n", curr_line, input);
 	exit(-1);
+}
+
+void runtimeWarning(char* input, ...) {
+	fprintf(avm_log, "Runtime Warning in line %d. %s\n", curr_line, input);
+	warning_count++;
 }
 
 /*===============================================================================================*/
 /* Stack */
 
-void initilize_stack(void) {
-    for(int i=0; i<AVM_STACKSIZE; i++){
-        memset(&stack[i], 0, sizeof(memcell));
-        stack[i].type = MEM_UNDEF;
-    }
-    stack_top = -1;
+void branch_to(unsigned int label) {
+	succ_branch = 1;
+	branch_label = label;
 }
 
 void clear_memcell(memcell* cell) {
     if(!cell) return;
-    if (cell->type == MEM_TABLE && cell->data.table_zoumi) {
+    if(cell->type == MEM_TABLE && cell->data.table_zoumi) {
         /* TODO Decrement reference counter?? */
         cell->data.table_zoumi = NULL; 
     }
@@ -133,14 +134,12 @@ void clear_memcell(memcell* cell) {
 void push(memcell val) {
 	if(++stack_top >= AVM_STACKSIZE) { stackError("Stack Overflow"); }
     stack[stack_top] = val;
-	console_log("push - stack_top is now %d", stack_top);
 }
 
 memcell pop(void) {
     if(stack_top < 0) { stackError("Stack Underflow"); }
     memcell popped_cell = stack[stack_top];
     clear_memcell(&stack[stack_top--]);
-	console_log("pop - stack_top is now %d", stack_top);
     return popped_cell;
 }
 
@@ -148,7 +147,7 @@ memcell pop(void) {
 /* AVM translate */
 
 memcell* translate_operand(vmarg* arg, memcell* reg) {
-	if(!arg) { printf("Error. Null vmarg in translate.\n"); return NULL; }
+	if(!arg) { return NULL; }
 	unsigned int index;
 	switch(arg->type) {
 		/* Variables */
@@ -217,9 +216,10 @@ void execute_cycle(void) {
 	}
 	instruction* instr = &instructions[program_counter];
 	curr_line = instr->srcLine;
-	console_log("Executing Instr: %d", program_counter);
+	fprintf(avm_log, "Executing Instr %d\n", program_counter+1);
 	(*executors[instr->opcode])(instr);
 	if(succ_branch) {
+		fprintf(avm_log, "Branching to %u\n", branch_label+1);
 		succ_branch = 0;
 		program_counter = branch_label;
 	} else { program_counter++; }
@@ -228,25 +228,27 @@ void execute_cycle(void) {
 
 void begin_execution(void) {
 	program_counter = 0;
-	console_log("Beginning execution");
+	fprintf(avm_log, "Beginning execution\n");
 	while(1) {
 		execute_cycle();
 		if(execution_finished) { break; }
 	}
-	console_log("Execution Finished");
+	if(warning_count == 0) { fprintf(avm_log, "Execution Finished.\n"); }
+	else { fprintf(avm_log, "Execution Finished with %d warnings.\n", warning_count); }
 }
 
 void avm_initialize(void) {
-	initilize_stack();
+    for(int i=0; i<AVM_STACKSIZE; i++) {
+        clear_memcell(&stack[i]);
+    }
+    stack_top = -1;
 	/* Create an empty cell */
 	memcell cell;
-	memset(&cell, 0, sizeof(memcell));
-	cell.type = MEM_UNDEF;
+	clear_memcell(&cell);
 	/* Push Ret Val */
 	push(cell);
 	/* Push Locals */
 	for(int i=0; i<totalprogvar; i++) {
-		console_log("Pushing programvar %d", i);
 		push(cell);
 	}
 	stack_maul = 1;
@@ -254,8 +256,6 @@ void avm_initialize(void) {
     current_args_pushed = 0;
 	execution_finished = 0;
     succ_branch = 0;
-	/* Execute Instructions */
-	begin_execution();
 }
 
 /*===============================================================================================*/
@@ -274,6 +274,7 @@ int main(int argc, char** argv) {
     read_binary(fin);
     printReadTargetToFile();
     avm_initialize();
+	begin_execution();
     return 0;
 }
 

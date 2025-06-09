@@ -96,14 +96,17 @@ typedef struct memcell {
 /*===============================================================================================*/
 /* AVM functions & globals */
 
+void MemoryFail(void);
+
+void stackError(char* input);
+void runtimeError(char* input, ...);
+void runtimeWarning(char* input, ...);
+
+void branch_to(unsigned int label);
 void clear_memcell(memcell* cell);
 void push(memcell val);
 memcell pop(void);
 memcell* translate_operand(vmarg* arg, memcell* reg);
-void MemoryFail(void);
-void stackError(char* input);
-void runtimeError(char* input);
-void console_log(char* input, ...);
 
 extern unsigned int succ_branch;
 extern unsigned int branch_label;
@@ -111,6 +114,7 @@ extern unsigned int current_args_pushed;
 extern unsigned int program_counter;
 extern unsigned int execution_finished;
 extern unsigned int curr_line;
+extern unsigned int warning_count;
 extern memcell stack[AVM_STACKSIZE];
 extern unsigned int stack_top;
 extern unsigned int stack_maul;

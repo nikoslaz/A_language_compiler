@@ -47,7 +47,7 @@ unsigned int undef_tobool(memcell* mem)    { return 0; }
 void helper_assign(memcell* lv, memcell* rv) {
     if(lv == rv) { return; }
     /* TODO check for tables */
-    if(rv->type == MEM_UNDEF) { console_log("Warning. Assignment of undef in line %d\n", curr_line); }
+    if(rv->type == MEM_UNDEF) { runtimeWarning("Assignment of undef"); }
     clear_memcell(lv);
     memcpy(lv, rv, sizeof(memcell));
     /* TODO again check tables */
@@ -92,10 +92,7 @@ void helper_relational(instruction* inst) {
     if(rv1->type != MEM_NUMBER) { runtimeError("ARG2 is not a NUMBER"); } 
     unsigned int res = 0;
     res = (*relat_funcs[inst->opcode - OP_JLE])(rv1->data.num_zoumi, rv2->data.num_zoumi);
-    if(res) {
-        succ_branch = 1;
-        branch_label = inst->result.val;
-    }
+    if(res) { branch_to(inst->result.val); }
 }
 
 /*===============================================================================================*/
@@ -146,6 +143,10 @@ void execute_RETURN(instruction* inst) {
 }
 
 void execute_GETRETVAL(instruction* inst) {
+    /* Pop total params */
+    int totals = pop().data.stackval_zoumi;
+    /* Pop that many params */
+    for(int i=0; i<totals; i++) { pop(); }
     /* Translate LValue */
     memcell* lv = translate_operand(&inst->result, NULL);
     if(!lv) { runtimeError("Null LVALUE in getretval"); }
@@ -165,10 +166,7 @@ void execute_MOD(instruction* inst) { helper_arith(inst); }
 /*===============================================================================================*/
 /* Jumps */
 
-void execute_JUMP(instruction* inst) {
-    succ_branch = 1;
-    branch_label = inst->result.val;
-}
+void execute_JUMP(instruction* inst) { branch_to(inst->result.val); }
 
 void execute_JEQ(instruction* inst) {
     /* Translate Arg1 */
@@ -219,10 +217,7 @@ void execute_JEQ(instruction* inst) {
 			default: runtimeError("Default in EQ");
 		}
     }
-    if(res) {
-        succ_branch = 1;
-        branch_label = inst->result.val;
-    }
+    if(res) { branch_to(inst->result.val); }
 }
 
 void execute_JNE(instruction* inst) {
@@ -274,10 +269,7 @@ void execute_JNE(instruction* inst) {
 			default: runtimeError("Default in NEQ\n");
 		}
     }
-    if(res) {
-        succ_branch = 1;
-        branch_label = inst->result.val;
-    }
+    if(res) { branch_to(inst->result.val); }
 }
 
 void execute_JLE(instruction* inst) { helper_relational(inst); }
@@ -295,7 +287,6 @@ void execute_PARAM(instruction* inst) {
     res = translate_operand(&inst->arg1, res);
     if(!res) { runtimeError("Null memcell in param"); }
     /* do j*b */
-    console_log("Pushing param");
     push(*res);
     current_args_pushed++;
 }
@@ -311,7 +302,6 @@ void execute_CALL(instruction* inst) {
     clear_memcell(&totalargs);
     totalargs.type = MEM_STACKVAL;
     totalargs.data.stackval_zoumi = current_args_pushed;
-    console_log("Pushing current_args_pushed");
     push(totalargs);
     current_args_pushed=0;
     /* Prepare retval */
@@ -320,22 +310,15 @@ void execute_CALL(instruction* inst) {
     /* do j*b */
     switch(func->type) {
         case MEM_LIBFUNC:
-            console_log("Calling libfunc %d", func->data.libfunc_zoumi);
+            fprintf(avm_log, "Calling libfunc %d\n", func->data.libfunc_zoumi);
             (*libFuncs[func->data.libfunc_zoumi])();
-            /* Pop arguments */
-            int totals = pop().data.stackval_zoumi;
-            console_log("Popping %d params", totals);
-            for(int i=0; i<totals; i++) { pop(); }
             break;
         case MEM_USERFUNC:
             /* Push Return Address */
             totalargs.data.stackval_zoumi = program_counter + 1;
-            console_log("Pushing Return Address %d", program_counter+2);
             push(totalargs);
             /* Branch to Function Address */
-            console_log("Branching to userfunc at %d", func->data.usrfunc_zoumi+1);
-            succ_branch = 1;
-            branch_label = func->data.usrfunc_zoumi;
+            branch_to(func->data.usrfunc_zoumi);
             break;
         default: runtimeError("Argument is not a function");
     }
@@ -346,39 +329,25 @@ void execute_FUNCSTART(instruction* inst) {
     memcell oldmaul;
     oldmaul.type = AVM_STACKSIZE;
     oldmaul.data.stackval_zoumi = stack_maul;
-    console_log("Pushing old DARTH MAUL");
     push(oldmaul);
     /* Create new local environment */
     stack_maul = stack_top+1;
     int locals = inst->arg2.val;
     memcell tmp_local;
     clear_memcell(&tmp_local);
-    console_log("Pushing %d locals", locals);
     for(int i=0; i<locals; i++) { push(tmp_local); }
-    console_log("Begin Function Execution");
 }
 
 void execute_FUNCEND(instruction* inst) {
     /* Pop my locals */
     int locals = (stack_top < stack_maul) ? 0 : (stack_top - stack_maul + 1);
-    console_log("Popping %d locals", locals);
     for(int i=0; i<locals; i++) { pop(); }
     /* Pop and Restore old DARTH MAUL */
-    console_log("Restore old DARTH MAUL");
     stack_maul = pop().data.stackval_zoumi;
-    /* Pop and save return address */
-    console_log("Pop return address");
+    /* Pop return address */
     int retaddr = pop().data.stackval_zoumi;
-    /* Pop total params number */
-    console_log("Pop total params");
-    int params = pop().data.stackval_zoumi;
-    /* Pop that many params */
-    console_log("Popping %d params", params);
-    for(int i=0; i<params; i++) { pop(); }
     /* Branch to return address */
-    console_log("Branch to return address %d", retaddr+1);
-    succ_branch = 1;
-    branch_label = retaddr;
+    branch_to(retaddr);
 }
 
 /*===============================================================================================*/
