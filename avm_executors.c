@@ -327,7 +327,7 @@ unsigned int undef_equality(memcell* v1, memcell* v2)    { return 1; }
 
 table* table_new(void){
     table* t = (table*) malloc(sizeof(table));
-    if (!t) {
+    if(!t) {
         runtimeError("Fatal: Could not allocate memory for new table.");
     }
     clear_memcell(&t);
@@ -345,16 +345,52 @@ void table_destroy(table* t){
 memcell* table_GET(memcell* table, memcell* key) {
     int index = hash(key);
     table_bucket* bucket = table->data.table_zoumi->hashtable[index];
+    table_bucket* node = NULL;
     while(bucket) {
         if(bucket->key.type == key->type) {
-            
-        } else { bucket = bucket->next; }
+            if(equality_check(&bucket->key, key)) {
+                node = bucket;
+                break;
+            }
+        }
+        bucket = bucket->next;
+    }
+    if(node) { return &node->value; }
+    else {
+        /* Return NULL */
+        memcell* tmp = (memcell*)malloc(sizeof(memcell));
+        if(!tmp) { MemoryFail(); }
+        clear_memcell(&tmp);
+        tmp->type = MEM_NIL;
+        return tmp;
     }
 }
 
 void table_SET(memcell* table, memcell* key, memcell* value) {
     int index = hash(key);
     table_bucket* bucket = table->data.table_zoumi->hashtable[index];
+    table_bucket* node = NULL;
+    while(bucket) {
+        if(bucket->key.type == key->type && equality_check(&bucket->key, key)) {
+            node = bucket;
+            break;
+        }
+        bucket = bucket->next;
+    }
+    if(node) {
+        /* Entry exists */
+        if(node->value.type!=MEM_NIL && value->type==MEM_NIL) { table->data.table_zoumi->total--; }
+        node->value = *value;
+    } else {
+        /* New entry, place first onto bucket */
+        table_bucket* tmp = (table_bucket*)malloc(sizeof(table_bucket));
+        if(!tmp) { MemoryFail(); }
+        tmp->key = *key;
+        tmp->value = *value;
+        tmp->next = bucket;
+        table->data.table_zoumi->hashtable[index] = tmp;
+        if(value->type != MEM_NIL) { table->data.table_zoumi->total++; }
+    }
 }
 
 void table_bucketsdestroy(table_bucket** hash){
