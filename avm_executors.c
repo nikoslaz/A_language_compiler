@@ -100,14 +100,12 @@ void helper_equality(instruction* inst, int is_equal) {
     memcell* rv1 = (memcell*)malloc(sizeof(memcell));
     if (!rv1) { MemoryFail(); }
     rv1 = translate_operand(&inst->arg1, rv1);
-    if (!rv1) { runtimeError("Null RV1"); }
-
+    if (!rv1) { runtimeError("Null RV1"); } 
     /* Translate Arg2 */
     memcell* rv2 = (memcell*)malloc(sizeof(memcell));
     if (!rv2) { MemoryFail(); }
     rv2 = translate_operand(&inst->arg2, rv2);
     if (!rv2) { runtimeError("Null RV2"); }
-
     /* Perform equality/inequality check */
     unsigned int res = 0;
     if (rv1->type == MEM_UNDEF || rv2->type == MEM_UNDEF) {
@@ -124,11 +122,9 @@ void helper_equality(instruction* inst, int is_equal) {
         res = equality_check(rv1, rv2);
         if (!is_equal) { res = !res; }
     }
-
     if (rv1->type != rv2->type) {
         res = is_equal ? 0 : 1;
     }
-
     if (res) { branch_to(inst->result.val); }
 }
 
