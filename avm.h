@@ -88,10 +88,36 @@ typedef struct memcell {
 		unsigned char bool_zoumi;
 		unsigned usrfunc_zoumi;
 		unsigned libfunc_zoumi;
-		struct AVM_table* table_zoumi;
+		struct table* table_zoumi;
         unsigned stackval_zoumi;
 	} data;
 } memcell;
+
+/*===============================================================================================*/
+/* Tables Structs */
+
+#define HASHTABLE_SIZE 211
+
+typedef struct table_bucket {
+    memcell key;
+    memcell value;
+    struct table_bucket* next;
+} table_bucket;
+
+typedef struct table {
+    unsigned int ref_count;
+    table_bucket* strIndexed[HASHTABLE_SIZE];
+    table_bucket* numIndexed[HASHTABLE_SIZE];
+    unsigned int total;
+} table;
+
+table* table_new(void);
+void table_destroy(table* t);
+memcell* table_GET(memcell* key);
+void table_SET(memcell* key, memcell* value);
+void table_bucketsdestroy(table_bucket** hash);
+void table_bucketsinit(table_bucket** hash);
+void table_decrementcounter(table* t);
 
 /*===============================================================================================*/
 /* AVM functions & globals */
