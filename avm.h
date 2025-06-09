@@ -13,7 +13,7 @@
 #define MAGIC_NUMBER 0xDEADBEEF
 #define	AVM_STACKSIZE 8192 /* 2^13 */
 
-char error_buffer[256];
+extern char error_buffer[256];
 
 typedef enum vmarg_t {
     ARG_GLOBAL,
@@ -216,6 +216,8 @@ extern void execute_GETRETVAL(instruction*);
 typedef char* (*tostring_func_t)(memcell*);
 extern tostring_func_t to_string_funcs[];
 
+char* tostring(memcell* m);
+
 extern char* number_tostring(memcell*);
 extern char* string_tostring(memcell*);
 extern char* bool_tostring(memcell*);
@@ -269,17 +271,7 @@ extern unsigned int jlt_rel(double, double);
 /*===============================================================================================*/
 /* Library Function */
 
-const char* typeStrings[] = {
-    "number",
-    "string",
-    "bool",
-    "table",
-    "userfunc",
-    "libfunc",
-    "nil",
-    "stackval",
-    "undef"
-};
+extern const char* typeStrings[];
 
 typedef void (*library_func_t)(void);
 extern library_func_t libFuncs[];

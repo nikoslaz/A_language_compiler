@@ -13,6 +13,20 @@
 
 unsigned libfuncs_total = 12;
 
+const char* typeStrings[] = {
+    "number",
+    "string",
+    "bool",
+    "table",
+    "userfunc",
+    "libfunc",
+    "nil",
+    "stackval",
+    "undef"
+};
+
+char error_buffer[256];
+
 library_func_t libFuncs[] = {
 
     libfunc_print,

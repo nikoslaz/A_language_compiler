@@ -112,20 +112,17 @@ void helper_equality(instruction* inst, int is_equal) {
         runtimeError("Undef in equality/inequality");
     } else if (rv1->type == MEM_NIL || rv2->type == MEM_NIL) {
         res = (rv1->type == MEM_NIL && rv2->type == MEM_NIL);
-        if (!is_equal) { res = !res; }
     } else if (rv1->type == MEM_BOOL || rv2->type == MEM_BOOL) {
         unsigned int bool1 = (*to_bool_funcs[rv1->type])(rv1);
         unsigned int bool2 = (*to_bool_funcs[rv2->type])(rv2);
         res = (bool1 == bool2);
-        if (!is_equal) { res = !res; }
+    } else if(rv1->type != rv2->type) {
+        res = 0;
     } else {
         res = equality_check(rv1, rv2);
-        if (!is_equal) { res = !res; }
     }
-    if (rv1->type != rv2->type) {
-        res = is_equal ? 0 : 1;
-    }
-    if (res) { branch_to(inst->result.val); }
+    if(!is_equal) { res = !res; }
+    if(res) { branch_to(inst->result.val); }
 }
 
 /*===============================================================================================*/
@@ -294,9 +291,9 @@ hash_t hashes[] = {
 };
 
 unsigned int number_hash(memcell* key)   { return ((unsigned)key->data.num_zoumi) % HASHTABLE_SIZE; }
-unsigned int string_hash(memcell* key)   { return ((unsigned)key->data.string_zoumi) % HASHTABLE_SIZE; }
+unsigned int string_hash(memcell* key)   { return ((unsigned int)key->data.string_zoumi) % HASHTABLE_SIZE; }
 unsigned int bool_hash(memcell* key)     { return ((unsigned)key->data.bool_zoumi) % HASHTABLE_SIZE; }
-unsigned int table_hash(memcell* key)    { return ((unsigned)key->data.table_zoumi) % HASHTABLE_SIZE; }
+unsigned int table_hash(memcell* key)    { return ((unsigned int)key->data.table_zoumi) % HASHTABLE_SIZE; }
 unsigned int userfunc_hash(memcell* key) { return ((unsigned)key->data.usrfunc_zoumi) % HASHTABLE_SIZE; }
 unsigned int libfunc_hash(memcell* key)  { return ((unsigned)key->data.libfunc_zoumi) % HASHTABLE_SIZE; }
 unsigned int stackval_hash(memcell* key) { return ((unsigned)key->data.stackval_zoumi) % HASHTABLE_SIZE; }
@@ -326,7 +323,6 @@ table* table_new(void){
     if(!t) {
         runtimeError("Fatal: Could not allocate memory for new table.");
     }
-    clear_memcell(&t);
     t->ref_count = 0;
     t->total = 0;
     table_bucketsinit(t->hashtable);
@@ -356,7 +352,7 @@ memcell* table_GET(memcell* table, memcell* key) {
         /* Return NULL */
         memcell* tmp = (memcell*)malloc(sizeof(memcell));
         if(!tmp) { MemoryFail(); }
-        clear_memcell(&tmp);
+        clear_memcell(tmp);
         tmp->type = MEM_NIL;
         return tmp;
     }
@@ -410,7 +406,7 @@ void table_bucketsinit(table_bucket** hash){
 }
 
 void table_decrementcounter(table* t){
-    // assert(t->ref_count > 0);
+    //assert(t->ref_count > 0);
     
     if (!--t->ref_count) {
         table_destroy(t);
@@ -424,9 +420,9 @@ void table_incrementcounter(table* t){
 
 void execute_NEWTABLE(instruction* inst) {
     memcell* lv = translate_operand(&inst->result, (memcell*)0);
-    assert(lv);
-	assert(&stack[AVM_STACKSIZE-1] >= lv);
-	assert(lv > &stack[stack_top] || lv == &stack[0]);
+    //assert(lv);
+	//assert(&stack[AVM_STACKSIZE-1] >= lv);
+	//assert(lv > &stack[stack_top] || lv == &stack[0]);
 
     clear_memcell(lv);
 
@@ -438,16 +434,21 @@ void execute_NEWTABLE(instruction* inst) {
 
 void execute_TABLEGETELEM(instruction* inst) {
     memcell* lv = translate_operand(&inst->result, (memcell*)0);
-    memcell* t = translate_operand(&inst->arg1, (memcell*)0);
-    memcell* i = translate_operand(&inst->arg2, (memcell*)0);
 
-    assert(lv);
-	assert(&stack[AVM_STACKSIZE-1] >= lv);
-	assert(lv > &stack[stack_top] || lv == &stack[0]);
-    assert(t);
-	assert(&stack[AVM_STACKSIZE-1] >= t);
-	assert(t > &stack[stack_top] || t == &stack[0]);
-    assert(i);
+    memcell* t = (memcell*)malloc(sizeof(memcell));
+    if(!t) { MemoryFail(); }
+    t = translate_operand(&inst->arg1, t);
+    memcell* i = (memcell*)malloc(sizeof(memcell));
+    if(!i) { MemoryFail(); }
+    i = translate_operand(&inst->arg2, i);
+
+    //assert(lv);
+	//assert(&stack[AVM_STACKSIZE-1] >= lv);
+	//assert(lv > &stack[stack_top] || lv == &stack[0]);
+    //assert(t);
+	//assert(&stack[AVM_STACKSIZE-1] >= t);
+	//assert(t > &stack[stack_top] || t == &stack[0]);
+    //assert(i);
 
     clear_memcell(lv);
 
@@ -456,12 +457,12 @@ void execute_TABLEGETELEM(instruction* inst) {
 		snprintf(error_buffer, sizeof(error_buffer), "Illegal use of %s as a table!", typeStrings[t->type]);
         runtimeError(error_buffer);
 	} else {
-        memcell* content = table_GET(t->data.table_zoumi, i);
+        memcell* content = table_GET(t, i);
 		if(content){
-			avm_assign(lv,content);
+			helper_assign(lv,content);
 		}else{
-			char * ts = strdup(avm_tostring(t));
-            char * is = strdup(avm_tostring(i));
+			char * ts = strdup(tostring(t));
+            char * is = strdup(tostring(i));
 			snprintf(error_buffer, sizeof(error_buffer), "%s[%s] not found!", ts, is);
             runtimeWarning(error_buffer);
 			free(ts);
@@ -479,16 +480,16 @@ void execute_TABLESETELEM(instruction* inst) {
     if(!bx) { MemoryFail(); }
     memcell* c = translate_operand(&inst->arg2, bx);
 
-    assert(t);
-	assert(&stack[AVM_STACKSIZE-1] >= t);
-	assert(t > &stack[stack_top] || t == &stack[0]);
-	assert(i && c);
+    //assert(t);
+	//assert(&stack[AVM_STACKSIZE-1] >= t);
+	//assert(t > &stack[stack_top] || t == &stack[0]);
+	//assert(i && c);
 
     if(t->type != MEM_TABLE) {
         snprintf(error_buffer, sizeof(error_buffer), "Illegal use of %s as a table", typeStrings[t->type]);
         runtimeError(error_buffer);
     }else {
-        table_SET(t->data.table_zoumi, i, c);
+        table_SET(t, i, c);
     }
 }
 
@@ -500,6 +501,10 @@ tostring_func_t to_string_funcs[] = {
     table_tostring, userfunc_tostring, libfunc_tostring,
     nil_tostring, stackval_tostring, undef_tostring
 };
+
+char* tostring(memcell* m) {
+    return &(*to_string_funcs[m->type](m));
+}
 
 char* number_tostring(memcell* mem) {
     char* str = (char*)malloc(1024);
@@ -514,47 +519,37 @@ char* bool_tostring(memcell* mem) {
     else { return "false"; }
 }
 
-char * table_tostring(memcell* m){
-	
-	table_bucket* tmp = NULL;
-	unsigned i,j;
-	unsigned buck;
-	printf("[");
+char* table_tostring(memcell* m) {
+    char* str = (char*)malloc(2048); // Allocate memory for the string
+    if (!str) {
+        runtimeError("Memory allocation failed for table_tostring");
+    }
+    str[0] = '\0'; // Initialize the string as empty
 
-	for(i = 0; i < HASHTABLE_SIZE; ++i){
+    table_bucket* tmp = NULL;
+    unsigned i;
+    table_bucket** hash = m->data.table_zoumi->hashtable;
 
-		for(tmp = m->data.table_zoumi->num_indexed[i]; tmp != NULL ; tmp = tmp->next){
-			printf("{ %s : %s }, ",avm_tostring( &tmp->key) , avm_tostring( &tmp->value) );
-		}
-		for(tmp = m->data.table_zoumi->str_indexed[i]; tmp != NULL ; tmp = tmp->next){
-			printf("{ \"%s\" : %s }, ",avm_tostring( &tmp->key) , avm_tostring( &tmp->value) );
-		}
-		
-		for( tmp = m->data.table_zoumi->userfunc_indexed[i]; tmp != NULL; tmp = tmp->next){
-			printf("{ \"%s\" : %s }, ",avm_tostring( &tmp->key) , avm_tostring( &tmp->value) );
-		}
+    strcat(str, "[\n"); // Start the table representation
+    for (i = 0; i < HASHTABLE_SIZE; i++) {
+        for (tmp = hash[i]; tmp != NULL; tmp = tmp->next) {
+            char key_str[256];
+            char value_str[256];
 
-		for( tmp = m->data.table_zoumi->table_indexed[i]; tmp != NULL; tmp = tmp->next){
-			printf("{ \"%s\" : %s }, ",avm_tostring( &tmp->key) , avm_tostring( &tmp->value) );
-		}	
-	}
+            // Convert key and value to strings
+            snprintf(key_str, sizeof(key_str), "%s", tostring(&tmp->key));
+            snprintf(value_str, sizeof(value_str), "%s", tostring(&tmp->value));
 
-	for(i = 0; i< 2 ; ++i){
-		for(tmp = m->data.table_zoumi->bool_indexed[i]; tmp != NULL; tmp = tmp->next){
-			printf("{ \"%s\" : %s }, ",avm_tostring( &tmp->key) , avm_tostring( &tmp->value) );
-		}
-	}
+            // Append the key-value pair to the result string
+            char entry[550];
+            snprintf(entry, sizeof(entry), "%s : %s\n", key_str, value_str);
+            strcat(str, entry);
+        }
+    }
+    strcat(str, "]"); // End the table representation
 
-	for(i = 0; i< 22 ; ++i){
-		for(tmp = m->data.table_zoumi->lib_indexed[i]; tmp != NULL; tmp = tmp->next){
-			printf("{ \"%s\" : %s }, ",avm_tostring( &tmp->key) , avm_tostring( &tmp->value) );
-		}
-	}
-
-	printf("]");
-	return "\n";
+    return str;
 }
-
 
 char* userfunc_tostring(memcell* mem){
     char* str = (char*)malloc(32);
