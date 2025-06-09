@@ -106,21 +106,19 @@ typedef struct table_bucket {
 
 typedef struct table {
     unsigned int ref_count;
-    table_bucket* strIndexed[HASHTABLE_SIZE];
-    table_bucket* numIndexed[HASHTABLE_SIZE];
+    table_bucket* hashtable[HASHTABLE_SIZE];
     unsigned int total;
 } table;
 
 table* table_new(void);
 void table_destroy(table* t);
-memcell* table_GET(memcell* key);
-void table_SET(memcell* key, memcell* value);
+memcell* table_GET(memcell* table, memcell* key);
+void table_SET(memcell* table, memcell* key, memcell* value);
 void table_bucketsdestroy(table_bucket** hash);
 void table_bucketsinit(table_bucket** hash);
 void table_decrementcounter(table* t);
 
 unsigned int hash(memcell* t);
-
 typedef unsigned int (*hash_t)(memcell*);
 extern hash_t hashes[];
 
@@ -133,6 +131,20 @@ extern unsigned int libfunc_hash(memcell* key);
 extern unsigned int nil_hash(memcell* key);
 extern unsigned int stackval_hash(memcell* key);
 extern unsigned int undef_hash(memcell* key);
+
+unsigned int equality_check(memcell* v1, memcell* v2);
+typedef unsigned int (*are_equals_t)(memcell*, memcell*);
+extern are_equals_t equalities[];
+
+extern unsigned int number_equality(memcell* v1, memcell* v2);
+extern unsigned int string_equality(memcell* v1, memcell* v2);
+extern unsigned int bool_equality(memcell* v1, memcell* v2);
+extern unsigned int table_equality(memcell* v1, memcell* v2);
+extern unsigned int userfunc_equality(memcell* v1, memcell* v2);
+extern unsigned int libfunc_equality(memcell* v1, memcell* v2);
+extern unsigned int nil_equality(memcell* v1, memcell* v2);
+extern unsigned int stackval_equality(memcell* v1, memcell* v2);
+extern unsigned int undef_equality(memcell* v1, memcell* v2);
 
 /*===============================================================================================*/
 /* AVM functions & globals */

@@ -361,15 +361,33 @@ hash_t hashes[] = {
     nil_hash, stackval_hash, undef_hash
 };
 
-unsigned int number_hash(memcell* key) { return ((unsigned)key->data.num_zoumi) % HASHTABLE_SIZE; }
-unsigned int string_hash(memcell* key) { return ((unsigned)key->data.string_zoumi) % HASHTABLE_SIZE; }
-unsigned int bool_hash(memcell* key) { return ((unsigned)key->data.bool_zoumi) % HASHTABLE_SIZE; }
-unsigned int table_hash(memcell* key) { return ((unsigned)key->data.table_zoumi) % HASHTABLE_SIZE; }
+unsigned int number_hash(memcell* key)   { return ((unsigned)key->data.num_zoumi) % HASHTABLE_SIZE; }
+unsigned int string_hash(memcell* key)   { return ((unsigned)key->data.string_zoumi) % HASHTABLE_SIZE; }
+unsigned int bool_hash(memcell* key)     { return ((unsigned)key->data.bool_zoumi) % HASHTABLE_SIZE; }
+unsigned int table_hash(memcell* key)    { return ((unsigned)key->data.table_zoumi) % HASHTABLE_SIZE; }
 unsigned int userfunc_hash(memcell* key) { return ((unsigned)key->data.usrfunc_zoumi) % HASHTABLE_SIZE; }
-unsigned int libfunc_hash(memcell* key) { return ((unsigned)key->data.libfunc_zoumi) % HASHTABLE_SIZE; }
+unsigned int libfunc_hash(memcell* key)  { return ((unsigned)key->data.libfunc_zoumi) % HASHTABLE_SIZE; }
 unsigned int stackval_hash(memcell* key) { return ((unsigned)key->data.stackval_zoumi) % HASHTABLE_SIZE; }
-unsigned int nil_hash(memcell* key)   { return 0; }
-unsigned int undef_hash(memcell* key) { return 210; }
+unsigned int nil_hash(memcell* key)      { return 0; }
+unsigned int undef_hash(memcell* key)    { return 210; }
+
+unsigned int equality_check(memcell* v1, memcell* v2) { return (*equalities[v1->type])(v1, v2); }
+
+are_equals_t equalities[] = {
+    number_equality, string_equality, bool_equality,
+    table_equality, userfunc_equality, libfunc_equality,
+    nil_equality, stackval_equality, undef_equality
+};
+
+unsigned int number_equality(memcell* v1, memcell* v2)   { return v1->data.num_zoumi == v2->data.num_zoumi; }
+unsigned int string_equality(memcell* v1, memcell* v2)   { return v1->data.string_zoumi == v2->data.string_zoumi; }
+unsigned int bool_equality(memcell* v1, memcell* v2)     { return v1->data.bool_zoumi == v2->data.bool_zoumi; }
+unsigned int table_equality(memcell* v1, memcell* v2)    { return v1->data.table_zoumi == v2->data.table_zoumi; }
+unsigned int userfunc_equality(memcell* v1, memcell* v2) { return v1->data.usrfunc_zoumi == v2->data.usrfunc_zoumi; }
+unsigned int libfunc_equality(memcell* v1, memcell* v2)  { return v1->data.libfunc_zoumi == v2->data.libfunc_zoumi; }
+unsigned int stackval_equality(memcell* v1, memcell* v2) { return v1->data.stackval_zoumi == v2->data.stackval_zoumi; }
+unsigned int nil_equality(memcell* v1, memcell* v2)      { return 1; }
+unsigned int undef_equality(memcell* v1, memcell* v2)    { return 1; }
 
 table* table_new(void){
     table* t = (table*) malloc(sizeof(table));
@@ -379,23 +397,30 @@ table* table_new(void){
     clear_memcell(&t);
     t->ref_count = 0;
     t->total = 0;
-    table_bucketsinit(t->numIndexed);
-    table_bucketsinit(t->strIndexed);
+    table_bucketsinit(t->hashtable);
     return t;
 }
 
 void table_destroy(table* t){
-    table_bucketsdestroy(t->strIndexed);
-    table_bucketsdestroy(t->numIndexed);
+    table_bucketsdestroy(t->hashtable);
     free(t);
 }
 
-memcell* table_GET(memcell* key){
-
+memcell* table_GET(memcell* table, memcell* key) {
+    int index = hash(key);
+    table_bucket* bucket = table->data.table_zoumi->hashtable[index];
+    while(bucket) {
+        if(bucket->key.type == key->type) {
+            
+        } else { bucket = bucket->next; }
+    }
 }
-void table_SET(memcell* key, memcell* value){
 
+void table_SET(memcell* table, memcell* key, memcell* value) {
+    int index = hash(key);
+    table_bucket* bucket = table->data.table_zoumi->hashtable[index];
 }
+
 void table_bucketsdestroy(table_bucket** hash){
     for (unsigned int i = 0; i < HASHTABLE_SIZE; ++i, ++hash) {
         for (table_bucket* b = *hash; b != NULL; ) {
@@ -417,7 +442,7 @@ void table_bucketsinit(table_bucket** hash){
 }
 
 void table_decrementcounter(table* t){
-    assert(t->ref_count > 0);
+    // assert(t->ref_count > 0);
     
     if (!--t->ref_count) {
         table_destroy(t);
