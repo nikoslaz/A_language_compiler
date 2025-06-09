@@ -458,7 +458,7 @@ void execute_TABLEGETELEM(instruction* inst) {
     lv->type = MEM_NIL;
     if(t->type != MEM_TABLE) {
 		snprintf(error_buffer, sizeof(error_buffer), "Illegal use of %s as a table!", typeStrings[t->type]);
-        runtimeError(error_buffer); // den thn exoume ayth 
+        runtimeError(error_buffer);
 	} else {
         memcell* content = table_GET(t->data.table_zoumi, i);
 		if(content){
