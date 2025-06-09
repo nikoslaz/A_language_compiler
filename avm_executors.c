@@ -518,7 +518,47 @@ char* bool_tostring(memcell* mem) {
     else { return "false"; }
 }
 
-char* table_tostring(memcell* mem) { /* j*b */ }
+char * table_tostring(memcell* m){
+	
+	table_bucket* tmp = NULL;
+	unsigned i,j;
+	unsigned buck;
+	printf("[");
+
+	for(i = 0; i < HASHTABLE_SIZE; ++i){
+
+		for(tmp = m->data.table_zoumi->num_indexed[i]; tmp != NULL ; tmp = tmp->next){
+			printf("{ %s : %s }, ",avm_tostring( &tmp->key) , avm_tostring( &tmp->value) );
+		}
+		for(tmp = m->data.table_zoumi->str_indexed[i]; tmp != NULL ; tmp = tmp->next){
+			printf("{ \"%s\" : %s }, ",avm_tostring( &tmp->key) , avm_tostring( &tmp->value) );
+		}
+		
+		for( tmp = m->data.table_zoumi->userfunc_indexed[i]; tmp != NULL; tmp = tmp->next){
+			printf("{ \"%s\" : %s }, ",avm_tostring( &tmp->key) , avm_tostring( &tmp->value) );
+		}
+
+		for( tmp = m->data.table_zoumi->table_indexed[i]; tmp != NULL; tmp = tmp->next){
+			printf("{ \"%s\" : %s }, ",avm_tostring( &tmp->key) , avm_tostring( &tmp->value) );
+		}	
+	}
+
+	for(i = 0; i< 2 ; ++i){
+		for(tmp = m->data.table_zoumi->bool_indexed[i]; tmp != NULL; tmp = tmp->next){
+			printf("{ \"%s\" : %s }, ",avm_tostring( &tmp->key) , avm_tostring( &tmp->value) );
+		}
+	}
+
+	for(i = 0; i< 22 ; ++i){
+		for(tmp = m->data.table_zoumi->lib_indexed[i]; tmp != NULL; tmp = tmp->next){
+			printf("{ \"%s\" : %s }, ",avm_tostring( &tmp->key) , avm_tostring( &tmp->value) );
+		}
+	}
+
+	printf("]");
+	return "\n";
+}
+
 
 char* userfunc_tostring(memcell* mem){
     char* str = (char*)malloc(32);
