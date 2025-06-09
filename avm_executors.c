@@ -352,7 +352,24 @@ void execute_FUNCEND(instruction* inst) {
 
 /*===============================================================================================*/
 /* Tables */
-/* TODO */
+
+unsigned int hash(memcell* t) { return (*hashes[t->type])(t); }
+
+hash_t hashes[] = {
+    number_hash, string_hash, bool_hash,
+    table_hash, userfunc_hash, libfunc_hash,
+    nil_hash, stackval_hash, undef_hash
+};
+
+unsigned int number_hash(memcell* key) { return ((unsigned)key->data.num_zoumi) % HASHTABLE_SIZE; }
+unsigned int string_hash(memcell* key) { return ((unsigned)key->data.string_zoumi) % HASHTABLE_SIZE; }
+unsigned int bool_hash(memcell* key) { return ((unsigned)key->data.bool_zoumi) % HASHTABLE_SIZE; }
+unsigned int table_hash(memcell* key) { return ((unsigned)key->data.table_zoumi) % HASHTABLE_SIZE; }
+unsigned int userfunc_hash(memcell* key) { return ((unsigned)key->data.usrfunc_zoumi) % HASHTABLE_SIZE; }
+unsigned int libfunc_hash(memcell* key) { return ((unsigned)key->data.libfunc_zoumi) % HASHTABLE_SIZE; }
+unsigned int stackval_hash(memcell* key) { return ((unsigned)key->data.stackval_zoumi) % HASHTABLE_SIZE; }
+unsigned int nil_hash(memcell* key)   { return 0; }
+unsigned int undef_hash(memcell* key) { return 210; }
 
 table* table_new(void){
     table* t = (table*) malloc(sizeof(table));

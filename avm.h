@@ -119,6 +119,21 @@ void table_bucketsdestroy(table_bucket** hash);
 void table_bucketsinit(table_bucket** hash);
 void table_decrementcounter(table* t);
 
+unsigned int hash(memcell* t);
+
+typedef unsigned int (*hash_t)(memcell*);
+extern hash_t hashes[];
+
+extern unsigned int number_hash(memcell* key);
+extern unsigned int string_hash(memcell* key);
+extern unsigned int bool_hash(memcell* key);
+extern unsigned int table_hash(memcell* key);
+extern unsigned int userfunc_hash(memcell* key);
+extern unsigned int libfunc_hash(memcell* key);
+extern unsigned int nil_hash(memcell* key);
+extern unsigned int stackval_hash(memcell* key);
+extern unsigned int undef_hash(memcell* key);
+
 /*===============================================================================================*/
 /* AVM functions & globals */
 
