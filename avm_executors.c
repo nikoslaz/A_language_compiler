@@ -186,7 +186,9 @@ void execute_JEQ(instruction* inst) {
     } else if(rv1->type == MEM_NIL || rv2->type == MEM_NIL) {
         res = ((rv1->type == MEM_NIL) && (rv2->type == MEM_NIL));
     } else if(rv1->type == MEM_BOOL || rv2->type == MEM_BOOL) {
-        res = (bool_tobool(rv1) == bool_tobool(rv2));
+        unsigned int bool1 = (*to_bool_funcs[rv1->type])(rv1);
+        unsigned int bool2 = (*to_bool_funcs[rv2->type])(rv2);
+        res = bool1 == bool2;
     } else if(rv1->type != rv2->type) {
         runtimeError("Illegal equality");
     } else {
@@ -238,7 +240,9 @@ void execute_JNE(instruction* inst) {
     } else if(rv1->type == MEM_NIL || rv2->type == MEM_NIL) {
         res = rv1->type == MEM_NIL != rv2->type == MEM_NIL;
     } else if(rv1->type == MEM_BOOL || rv2->type == MEM_BOOL) {
-        res = bool_tobool(rv1) != bool_tobool(rv2);
+        unsigned int bool1 = (*to_bool_funcs[rv1->type])(rv1);
+        unsigned int bool2 = (*to_bool_funcs[rv2->type])(rv2);
+        res = bool1 != bool2;
     } else if(rv1->type != rv2->type) {
         runtimeError("Illegal no equality");
     } else {
