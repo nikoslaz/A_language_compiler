@@ -11,7 +11,6 @@
 #define AVM_NUM_ARGS_OFFSET     -3
 #define AVM_FIRST_ARG_OFFSET    -4
 
-static char error_buffer[256];
 unsigned libfuncs_total = 12;
 
 library_func_t libFuncs[] = {
@@ -30,19 +29,6 @@ library_func_t libFuncs[] = {
     libfunc_sin
 
 };
-
-static const char* typeStrings[] = {
-    "number",
-    "string",
-    "bool",
-    "table",
-    "userfunc",
-    "libfunc",
-    "nil",
-    "stackval",
-    "undef"
-};
-
 
 void libfunc_print() {
     int totals = stack[stack_top].data.stackval_zoumi;

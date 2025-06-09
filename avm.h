@@ -13,6 +13,8 @@
 #define MAGIC_NUMBER 0xDEADBEEF
 #define	AVM_STACKSIZE 8192 /* 2^13 */
 
+char error_buffer[256];
+
 typedef enum vmarg_t {
     ARG_GLOBAL,
     ARG_LOCAL,
@@ -113,11 +115,12 @@ typedef struct table {
 
 table* table_new(void);
 void table_destroy(table* t);
-memcell* table_GET(memcell* key);
-void table_SET(memcell* key, memcell* value);
+memcell* table_GET(memcell* table, memcell* key);
+void table_SET(memcell* table, memcell* key, memcell* value);
 void table_bucketsdestroy(table_bucket** hash);
 void table_bucketsinit(table_bucket** hash);
 void table_decrementcounter(table* t);
+void table_incrementcounter(table* t);
 
 unsigned int hash(memcell* t);
 
@@ -253,6 +256,18 @@ extern unsigned int jlt_rel(double, double);
 
 /*===============================================================================================*/
 /* Library Function */
+
+const char* typeStrings[] = {
+    "number",
+    "string",
+    "bool",
+    "table",
+    "userfunc",
+    "libfunc",
+    "nil",
+    "stackval",
+    "undef"
+};
 
 typedef void (*library_func_t)(void);
 extern library_func_t libFuncs[];

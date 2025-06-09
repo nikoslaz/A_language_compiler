@@ -390,10 +390,10 @@ void table_destroy(table* t){
     free(t);
 }
 
-memcell* table_GET(memcell* key){
+memcell* table_GET(memcell* table, memcell* key){
 
 }
-void table_SET(memcell* key, memcell* value){
+void table_SET(memcell* table, memcell* key, memcell* value){
 
 }
 void table_bucketsdestroy(table_bucket** hash){
@@ -424,17 +424,79 @@ void table_decrementcounter(table* t){
     }
 }
 
+void table_incrementcounter(table* t){
+    ++t->ref_count;
+}
+
 
 void execute_NEWTABLE(instruction* inst) {
-    runtimeError("NEWTABLE NOT IMPLEMENTED YET");
+    memcell* lv = translate_operand(&inst->result, (memcell*)0);
+    assert(lv);
+	assert(&stack[AVM_STACKSIZE-1] >= lv);
+	assert(lv > &stack[stack_top] || lv == &stack[0]);
+
+    clear_memcell(lv);
+
+    lv->type = MEM_TABLE;
+    lv->data.table_zoumi = table_new();
+    table_incrementcounter(lv->data.table_zoumi);
+    
 }
 
 void execute_TABLEGETELEM(instruction* inst) {
-    runtimeError("TABLEGET NOT IMPLEMENTED YET");
+    memcell* lv = translate_operand(&inst->result, (memcell*)0);
+    memcell* t = translate_operand(&inst->arg1, (memcell*)0);
+    memcell* i = translate_operand(&inst->arg2, (memcell*)0);
+
+    assert(lv);
+	assert(&stack[AVM_STACKSIZE-1] >= lv);
+	assert(lv > &stack[stack_top] || lv == &stack[0]);
+    assert(t);
+	assert(&stack[AVM_STACKSIZE-1] >= t);
+	assert(t > &stack[stack_top] || t == &stack[0]);
+    assert(i);
+
+    clear_memcell(lv);
+
+    lv->type = MEM_NIL;
+    if(t->type != MEM_TABLE) {
+		snprintf(error_buffer, sizeof(error_buffer), "Illegal use of %s as a table!", typeStrings[t->type]);
+        runtimeError(error_buffer); // den thn exoume ayth 
+	} else {
+        memcell* content = table_GET(t->data.table_zoumi, i);
+		if(content){
+			avm_assign(lv,content);
+		}else{
+			char * ts = strdup(avm_tostring(t));
+            char * is = strdup(avm_tostring(i));
+			snprintf(error_buffer, sizeof(error_buffer), "%s[%s] not found!", ts, is);
+            runtimeWarning(error_buffer);
+			free(ts);
+            free(is);
+		}
+    }
 }
 
 void execute_TABLESETELEM(instruction* inst) {
-    runtimeError("TABLESET NOT IMPLEMENTED YET");
+    memcell* t  = translate_operand(&inst->result, (memcell*)0);
+    memcell* ax = (memcell*)malloc(sizeof(memcell));
+    if(!ax) { MemoryFail(); }
+    memcell* i  = translate_operand(&inst->arg1, ax);
+    memcell* bx = (memcell*)malloc(sizeof(memcell));
+    if(!bx) { MemoryFail(); }
+    memcell* c = translate_operand(&inst->arg2, bx);
+
+    assert(t);
+	assert(&stack[AVM_STACKSIZE-1] >= t);
+	assert(t > &stack[stack_top] || t == &stack[0]);
+	assert(i && c);
+
+    if(t->type != MEM_TABLE) {
+        snprintf(error_buffer, sizeof(error_buffer), "Illegal use of %s as a table", typeStrings[t->type]);
+        runtimeError(error_buffer);
+    }else {
+        table_SET(t->data.table_zoumi, i, c);
+    }
 }
 
 /*===============================================================================================*/
