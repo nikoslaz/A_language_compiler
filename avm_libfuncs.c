@@ -111,17 +111,14 @@ void libfunc_objectcopy() {
 }
 
 void libfunc_totalarguments(void) {
-    // From your reference: `p_topsp = avm_get_envvalue(topsp + AVM_SAVEDTOPSP_OFFSET)`
-    // This translates to finding the caller's frame pointer ('maul'), which is
-    // stored at an offset of -1 from the current 'maul'.
-    unsigned int caller_maul = stack[stack_maul + AVM_SAVED_MAUL_OFFSET].data.stackval_zoumi;
+
     clear_memcell(&stack[0]);
-    if (caller_maul == 0) {
+    if (stack_maul == 1) {
         runtimeError("'totalarguments' called outside of a function.");
         stack[0].type = MEM_NIL;
         return;
     }
-    memcell* num_args_cell = &stack[caller_maul + AVM_NUM_ARGS_OFFSET];
+    memcell* num_args_cell = &stack[stack_maul + AVM_NUM_ARGS_OFFSET];
     stack[0].type = MEM_NUMBER;
     stack[0].data.num_zoumi = num_args_cell->data.stackval_zoumi;
 }
@@ -132,28 +129,22 @@ void libfunc_argument(void) {
     if (num_args != 1) {
         snprintf(error_buffer, sizeof(error_buffer), "Error: 'argument' expects 1 argument (the index), but received %u.", num_args);
         runtimeError(error_buffer);
-        clear_memcell(&stack[0]);
-        stack[0].type = MEM_NIL;
-        return;
     }
     memcell* index_arg = &stack[stack_top - 1];
     if (index_arg->type != MEM_NUMBER) {
         runtimeError("Error: 'argument' expects a number as its argument.");
-        clear_memcell(&stack[0]);
-        stack[0].type = MEM_NIL;
-        return;
     }
     unsigned int i = (unsigned int)index_arg->data.num_zoumi;
 
     // === Part 2: Find and validate the CALLER's stack frame ===
-    unsigned int caller_maul = stack[stack_maul + AVM_SAVED_MAUL_OFFSET].data.stackval_zoumi;
+    //stackmaul == 1 
     clear_memcell(&stack[0]);
-    if (caller_maul == 0) {
+    if (stack_maul == 1) {
         runtimeError("'argument' called outside of a function.");
         stack[0].type = MEM_NIL;
         return;
     }
-    unsigned int total_caller_args = stack[caller_maul + AVM_NUM_ARGS_OFFSET].data.stackval_zoumi;
+    unsigned int total_caller_args = stack[stack_maul + AVM_NUM_ARGS_OFFSET].data.stackval_zoumi;
 
     // === Part 3: Retrieve the argument and set the return value ===
     if (i >= total_caller_args) {
@@ -162,7 +153,7 @@ void libfunc_argument(void) {
         stack[0].type = MEM_NIL;
         return;
     }
-    memcell* target_arg = &stack[caller_maul + AVM_FIRST_ARG_OFFSET - i];
+    memcell* target_arg = &stack[stack_maul + AVM_FIRST_ARG_OFFSET - i];
     stack[0] = *target_arg;
     if (target_arg->type == MEM_STRING) {
         stack[0].data.string_zoumi = strdup(target_arg->data.string_zoumi);
