@@ -352,8 +352,61 @@ void execute_FUNCEND(instruction* inst) {
 
 /*===============================================================================================*/
 /* Tables */
-
 /* TODO */
+
+table* table_new(void){
+    table* t = (table*) malloc(sizeof(table));
+    if (!t) {
+        runtimeError("Fatal: Could not allocate memory for new table.");
+    }
+    clear_memcell(&t);
+    t->ref_count = 0;
+    t->total = 0;
+    table_bucketsinit(t->numIndexed);
+    table_bucketsinit(t->strIndexed);
+    return t;
+}
+
+void table_destroy(table* t){
+    table_bucketsdestroy(t->strIndexed);
+    table_bucketsdestroy(t->numIndexed);
+    free(t);
+}
+
+memcell* table_GET(memcell* key){
+
+}
+void table_SET(memcell* key, memcell* value){
+
+}
+void table_bucketsdestroy(table_bucket** hash){
+    for (unsigned int i = 0; i < HASHTABLE_SIZE; ++i, ++hash) {
+        for (table_bucket* b = *hash; b != NULL; ) {
+            table_bucket* del = b;
+            b = b->next;
+            clear_memcell(&del->key);
+            clear_memcell(&del->value);
+            
+            free(del);
+        }
+        hash[i] = (table_bucket *)0;
+    }
+}
+
+void table_bucketsinit(table_bucket** hash){
+    for (unsigned int i = 0; i < HASHTABLE_SIZE; ++i) {
+        hash[i] = (table_bucket *)0;    
+    }
+}
+
+void table_decrementcounter(table* t){
+    assert(t->ref_count > 0);
+    
+    if (!--t->ref_count) {
+        table_destroy(t);
+    }
+}
+
 
 void execute_NEWTABLE(instruction* inst) {
     runtimeError("NEWTABLE NOT IMPLEMENTED YET");
