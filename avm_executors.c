@@ -95,6 +95,43 @@ void helper_relational(instruction* inst) {
     if(res) { branch_to(inst->result.val); }
 }
 
+void helper_equality(instruction* inst, int is_equal) {
+    /* Translate Arg1 */
+    memcell* rv1 = (memcell*)malloc(sizeof(memcell));
+    if (!rv1) { MemoryFail(); }
+    rv1 = translate_operand(&inst->arg1, rv1);
+    if (!rv1) { runtimeError("Null RV1"); }
+
+    /* Translate Arg2 */
+    memcell* rv2 = (memcell*)malloc(sizeof(memcell));
+    if (!rv2) { MemoryFail(); }
+    rv2 = translate_operand(&inst->arg2, rv2);
+    if (!rv2) { runtimeError("Null RV2"); }
+
+    /* Perform equality/inequality check */
+    unsigned int res = 0;
+    if (rv1->type == MEM_UNDEF || rv2->type == MEM_UNDEF) {
+        runtimeError("Undef in equality/inequality");
+    } else if (rv1->type == MEM_NIL || rv2->type == MEM_NIL) {
+        res = (rv1->type == MEM_NIL && rv2->type == MEM_NIL);
+        if (!is_equal) { res = !res; }
+    } else if (rv1->type == MEM_BOOL || rv2->type == MEM_BOOL) {
+        unsigned int bool1 = (*to_bool_funcs[rv1->type])(rv1);
+        unsigned int bool2 = (*to_bool_funcs[rv2->type])(rv2);
+        res = (bool1 == bool2);
+        if (!is_equal) { res = !res; }
+    } else {
+        res = equality_check(rv1, rv2);
+        if (!is_equal) { res = !res; }
+    }
+
+    if (rv1->type != rv2->type) {
+        res = is_equal ? 0 : 1;
+    }
+
+    if (res) { branch_to(inst->result.val); }
+}
+
 /*===============================================================================================*/
 /* Executors */
 
@@ -168,113 +205,8 @@ void execute_MOD(instruction* inst) { helper_arith(inst); }
 
 void execute_JUMP(instruction* inst) { branch_to(inst->result.val); }
 
-void execute_JEQ(instruction* inst) {
-    /* Translate Arg1 */
-    memcell* rv1 = (memcell*)malloc(sizeof(memcell));
-    if(!rv1) { MemoryFail(); }
-    rv1 = translate_operand(&inst->arg1, rv1);
-    if (!rv1) { runtimeError("Null RV1"); }
-    /* Translate Arg2 */
-    memcell* rv2 = (memcell*)malloc(sizeof(memcell));
-    if(!rv2) { MemoryFail(); }
-    rv2 = translate_operand(&inst->arg2, rv2);
-    if(!rv2) { runtimeError("Null RV2"); }
-    /* do j*b */
-    unsigned int res = 0;
-    if(rv1->type == MEM_UNDEF || rv2->type == MEM_UNDEF) {
-        runtimeError("Undef in equality");
-    } else if(rv1->type == MEM_NIL || rv2->type == MEM_NIL) {
-        res = ((rv1->type == MEM_NIL) && (rv2->type == MEM_NIL));
-    } else if(rv1->type == MEM_BOOL || rv2->type == MEM_BOOL) {
-        unsigned int bool1 = (*to_bool_funcs[rv1->type])(rv1);
-        unsigned int bool2 = (*to_bool_funcs[rv2->type])(rv2);
-        res = bool1 == bool2;
-    } else if(rv1->type != rv2->type) {
-        runtimeError("Illegal equality");
-    } else {
-        switch(rv1->type) {
-			case MEM_NUMBER:
-				res = rv1->data.num_zoumi==rv2->data.num_zoumi;
-				break;
-			case MEM_STRING:
-				if(!strcmp(rv1->data.string_zoumi,rv2->data.string_zoumi)) {
-					res = 1;
-				}
-				break;
-			case MEM_TABLE:
-				if(rv1->data.table_zoumi==rv2->data.table_zoumi){
-					res=1;
-				}
-				break;
-			case MEM_USERFUNC:
-				if(!strcmp(userfunc_tostring(rv1),userfunc_tostring(rv2))){
-					res = 1;
-				}
-				break;
-			case MEM_LIBFUNC:
-				if(!strcmp(libfunc_tostring(rv1),libfunc_tostring(rv2))){
-					res = 1;
-				}
-				break;
-			default: runtimeError("Default in EQ");
-		}
-    }
-    if(res) { branch_to(inst->result.val); }
-}
-
-void execute_JNE(instruction* inst) {
-    /* Translate Arg1 */
-    memcell* rv1 = (memcell*)malloc(sizeof(memcell));
-    if(!rv1) { MemoryFail(); }
-    rv1 = translate_operand(&inst->arg1, rv1);
-    if (!rv1) { runtimeError("Null RV1"); }
-    /* Translate Arg2 */
-    memcell* rv2 = (memcell*)malloc(sizeof(memcell));
-    if(!rv2) { MemoryFail(); }
-    rv2 = translate_operand(&inst->arg2, rv2);
-    if (!rv2) { runtimeError("Null RV2"); }
-    /* do j*b */
-    unsigned int res = 0;
-    if(rv1->type == MEM_UNDEF || rv2->type == MEM_UNDEF) {
-        runtimeError("Undef in no equality");
-    } else if(rv1->type == MEM_NIL || rv2->type == MEM_NIL) {
-        res = rv1->type == MEM_NIL != rv2->type == MEM_NIL;
-    } else if(rv1->type == MEM_BOOL || rv2->type == MEM_BOOL) {
-        unsigned int bool1 = (*to_bool_funcs[rv1->type])(rv1);
-        unsigned int bool2 = (*to_bool_funcs[rv2->type])(rv2);
-        res = bool1 != bool2;
-    } else if(rv1->type != rv2->type) {
-        runtimeError("Illegal no equality");
-    } else {
-        switch(rv1->type) {
-			case MEM_NUMBER:
-				res = rv1->data.num_zoumi!=rv2->data.num_zoumi;
-				break;
-			case MEM_STRING:
-				if(strcmp(rv1->data.string_zoumi,rv2->data.string_zoumi)){
-					res = 1;
-				}
-				break;
-			case MEM_TABLE:
-				if(rv1->data.table_zoumi!=rv2->data.table_zoumi){
-					res=1;
-				}
-				break;
-			case MEM_USERFUNC:
-				if(strcmp(userfunc_tostring(rv1),userfunc_tostring(rv2))){
-					res = 1;
-				}
-				break;
-			case MEM_LIBFUNC:
-				if(strcmp(libfunc_tostring(rv1),libfunc_tostring(rv2))){
-					res = 1;
-				}
-				break;
-			default: runtimeError("Default in NEQ\n");
-		}
-    }
-    if(res) { branch_to(inst->result.val); }
-}
+void execute_JEQ(instruction* inst) { helper_equality(inst,1); }
+void execute_JNE(instruction* inst) { helper_equality(inst,0); }
 
 void execute_JLE(instruction* inst) { helper_relational(inst); }
 void execute_JGE(instruction* inst) { helper_relational(inst); }
