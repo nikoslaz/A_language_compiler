@@ -328,8 +328,10 @@ memcell* helper_table_GET(memcell* table, memcell* key) {
     table_bucket* node = NULL;
     while(bucket) {
         if(bucket->key.type == key->type && equality_check(&bucket->key, key)) {
-            node = bucket;
-            break;
+            if(bucket->value.type != MEM_NIL) {
+                node = bucket;
+                break;
+            }
         }
         bucket = bucket->next;
     }

@@ -124,7 +124,8 @@ void branch_to(unsigned int label) {
 void clear_memcell(memcell* cell) {
     if(!cell) return;
     if(cell->type == MEM_TABLE && cell->data.table_zoumi) {
-        /* TODO Decrement reference counter?? */
+        table_bucketsdestroy(cell->data.table_zoumi->hashtable);
+        free(cell->data.table_zoumi);
         cell->data.table_zoumi = NULL; 
     }
     memset(cell, 0, sizeof(memcell));
