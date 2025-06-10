@@ -103,13 +103,13 @@ void stackError(char* input) {
 }
 
 void runtimeError(char* input, ...) {
-	fprintf(avm_log, "Runtime Error in line %d. %s\nExecution Aborted\n", curr_line, input);
-	printf("\nRuntime Error in line %d. %s\nExecution Aborted\n", curr_line, input);
+	fprintf(avm_log, "(#%d) Runtime Error in line %d. %s\nExecution Aborted\n", program_counter+1, curr_line, input);
+	printf("\n(#%d) Runtime Error in line %d. %s\nExecution Aborted\n", program_counter+1, curr_line, input);
 	exit(-1);
 }
 
 void runtimeWarning(char* input, ...) {
-	fprintf(avm_log, "Runtime Warning in line %d. %s\n", curr_line, input);
+	fprintf(avm_log, "(#%d) Runtime Warning in line %d. %s\n", program_counter+1, curr_line, input);
 	warning_count++;
 }
 

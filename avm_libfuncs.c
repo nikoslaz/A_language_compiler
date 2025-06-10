@@ -97,17 +97,17 @@ void libfunc_input(void) {
 
 void libfunc_objectmemberkeys() {
     /* To be implemented with tables */
-
+    runtimeError("OBJECTMEMBERKEYS NOT IMPLEMENTED");
 }
 
 void libfunc_objecttotalmembers() {
     /* To be implemented with tables */
-
+    runtimeError("OBJECTTOTALMEMBERS NOT IMPLEMENTED");
 }
 
 void libfunc_objectcopy() {
     /* To be implemented with tables */
-
+    runtimeError("OBJECTCOPY NOT IMPLEMENTED");
 }
 
 void libfunc_totalarguments(void) {

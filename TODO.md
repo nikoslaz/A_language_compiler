@@ -90,58 +90,35 @@ pop to return address
 i must pop my own arguments (function that called be doesnt know when i return)
 kane jump sto return address
 
-EXECUTORS pali me table of functions kai enum
-opws kai to to_bool, to_string, arithmetic_opcodes, relational_opcodes
+<!-- EXECUTORS pali me table of functions kai enum -->
+<!-- opws kai to to_bool, to_string, arithmetic_opcodes, relational_opcodes -->
 
 ---------------------------------------------------------------------------------
 - HARD
 
-SOMEHOW implement libfuncs SOSOSOS: FIX TOTALARGS AND ARGUMENT!!!   
+SOMEHOW implement libfuncs
+<!-- SOSOSOS: FIX TOTALARGS AND ARGUMENT!!!    -->
 TABLES ??????????????????????????????????????
 
 TODO Synarthsh pou na kanei load?? ta libfuncs (slide 37 dialeksh 15-AVMImpl)
 TODO JUMPS EQ, NEQ MUST USE ALL TOBOOL FUNCS, NOT JUST BOOL TOBOOL
 
--> HASHTABLE STRING KEYS
--> HASHTABLE NUMBER KEYS
-
-TABLE BUCKET:
-    memcell key
-    memcell value
-    next*
-
-AVM TABLE :
-    unsinged refcounter
-    hash string
-    hash num
-    unsinged total
-
-FREE BUCKETS kai FREE TABLES
-
-- OTAN REFCOUNTER -> 0 KATASTREFOUME PINAKA !!!
-    RV TABLE: REFCOUNTER ++
-- OTAN ASSIGN SE KATI POU ITAN PINAKAS MEIONOUME TO REFCOUNTER
-    LV TABLE: REFCOUNTER --
-
 ---------------------------------------------------------------------------------
 - TESTS
-01,02,03,06,12,13,14,15,16,17,18,19,20,21,22,23,24,25 : TABLES
+
+NOTES:
+02: runtime line 13 ("print") (if we remove, works)
+06: PAIRNEI LIGH WRA
+15: la8os ari8moi sto telos ???
+18: func einai TABLE OXI FUNC (if we call it,  works)
 
 NEED FIXING: 
-02: runtime line 13 ("print")
-06: line 30 illegal use of nil
-13: error target code line 30 (calc)
-14: runtime line 39
-15: runtime 34
-16: runtime 114 sqrt(-1) NA GINEI WARNING instead of error
-17: runtime 58: use of nil as a table
-18: runtime 54 nil
-19: runtime 10
-20: runtime 170
-22: /r (what do we do with that????) parser error line 74 FIX THE 3 LIBFUNCS FOR TABLES!!!
-23: runtime 71
-24: runtime 79
-25: runtime 152 
+16: libfunc
+17: libfunc
+20: libfunc
+22: libfunc
+23: libfunc
+25: idk ???
 
 ---------------------------------------------------------------------------------
 // PHASE 3

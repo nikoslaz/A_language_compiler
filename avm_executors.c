@@ -46,11 +46,14 @@ unsigned int undef_tobool(memcell* mem)    { return 0; }
 
 void helper_assign(memcell* lv, memcell* rv) {
     if(lv == rv) { return; }
-    /* TODO check for tables */
     if(rv->type == MEM_UNDEF) { runtimeWarning("Assignment of undef"); }
+    /* Decrement if we removed a table */
+    if(lv->type == MEM_TABLE) { table_decrementcounter(lv->data.table_zoumi); }
+    /* Increment if we added a table */
+    if(rv->type == MEM_TABLE) { rv->data.table_zoumi->ref_count++; }
+    /* Perform Assignment */
     clear_memcell(lv);
     memcpy(lv, rv, sizeof(memcell));
-    /* TODO again check tables */
 }
 
 void helper_arith(instruction* inst) {
@@ -92,27 +95,28 @@ void helper_relational(instruction* inst) {
     if(rv1->type != MEM_NUMBER) { runtimeError("ARG2 is not a NUMBER"); } 
     unsigned int res = 0;
     res = (*relat_funcs[inst->opcode - OP_JLE])(rv1->data.num_zoumi, rv2->data.num_zoumi);
+    /* Perform Jump */
     if(res) { branch_to(inst->result.val); }
 }
 
 void helper_equality(instruction* inst, int is_equal) {
     /* Translate Arg1 */
     memcell* rv1 = (memcell*)malloc(sizeof(memcell));
-    if (!rv1) { MemoryFail(); }
+    if(!rv1) { MemoryFail(); }
     rv1 = translate_operand(&inst->arg1, rv1);
-    if (!rv1) { runtimeError("Null RV1"); } 
+    if(!rv1) { runtimeError("Null RV1"); } 
     /* Translate Arg2 */
     memcell* rv2 = (memcell*)malloc(sizeof(memcell));
-    if (!rv2) { MemoryFail(); }
+    if(!rv2) { MemoryFail(); }
     rv2 = translate_operand(&inst->arg2, rv2);
-    if (!rv2) { runtimeError("Null RV2"); }
+    if(!rv2) { runtimeError("Null RV2"); }
     /* Perform equality/inequality check */
     unsigned int res = 0;
-    if (rv1->type == MEM_UNDEF || rv2->type == MEM_UNDEF) {
+    if(rv1->type == MEM_UNDEF || rv2->type == MEM_UNDEF) {
         runtimeError("Undef in equality/inequality");
-    } else if (rv1->type == MEM_NIL || rv2->type == MEM_NIL) {
+    } else if(rv1->type == MEM_NIL || rv2->type == MEM_NIL) {
         res = (rv1->type == MEM_NIL && rv2->type == MEM_NIL);
-    } else if (rv1->type == MEM_BOOL || rv2->type == MEM_BOOL) {
+    } else if(rv1->type == MEM_BOOL || rv2->type == MEM_BOOL) {
         unsigned int bool1 = (*to_bool_funcs[rv1->type])(rv1);
         unsigned int bool2 = (*to_bool_funcs[rv2->type])(rv2);
         res = (bool1 == bool2);
@@ -122,6 +126,7 @@ void helper_equality(instruction* inst, int is_equal) {
         res = equality_check(rv1, rv2);
     }
     if(!is_equal) { res = !res; }
+    /* Perform Jump */
     if(res) { branch_to(inst->result.val); }
 }
 
@@ -282,83 +287,57 @@ void execute_FUNCEND(instruction* inst) {
 /*===============================================================================================*/
 /* Tables */
 
-unsigned int hash(memcell* t) { return (*hashes[t->type])(t); }
-
-hash_t hashes[] = {
-    number_hash, string_hash, bool_hash,
-    table_hash, userfunc_hash, libfunc_hash,
-    nil_hash, stackval_hash, undef_hash
-};
-
-unsigned int number_hash(memcell* key)   { return ((unsigned)key->data.num_zoumi) % HASHTABLE_SIZE; }
-unsigned int string_hash(memcell* key)   { return ((unsigned int)key->data.string_zoumi) % HASHTABLE_SIZE; }
-unsigned int bool_hash(memcell* key)     { return ((unsigned)key->data.bool_zoumi) % HASHTABLE_SIZE; }
-unsigned int table_hash(memcell* key)    { return ((unsigned int)key->data.table_zoumi) % HASHTABLE_SIZE; }
-unsigned int userfunc_hash(memcell* key) { return ((unsigned)key->data.usrfunc_zoumi) % HASHTABLE_SIZE; }
-unsigned int libfunc_hash(memcell* key)  { return ((unsigned)key->data.libfunc_zoumi) % HASHTABLE_SIZE; }
-unsigned int stackval_hash(memcell* key) { return ((unsigned)key->data.stackval_zoumi) % HASHTABLE_SIZE; }
-unsigned int nil_hash(memcell* key)      { return 0; }
-unsigned int undef_hash(memcell* key)    { return 210; }
-
-unsigned int equality_check(memcell* v1, memcell* v2) { return (*equalities[v1->type])(v1, v2); }
-
-are_equals_t equalities[] = {
-    number_equality, string_equality, bool_equality,
-    table_equality, userfunc_equality, libfunc_equality,
-    nil_equality, stackval_equality, undef_equality
-};
-
-unsigned int number_equality(memcell* v1, memcell* v2)   { return v1->data.num_zoumi == v2->data.num_zoumi; }
-unsigned int string_equality(memcell* v1, memcell* v2)   { return v1->data.string_zoumi == v2->data.string_zoumi; }
-unsigned int bool_equality(memcell* v1, memcell* v2)     { return v1->data.bool_zoumi == v2->data.bool_zoumi; }
-unsigned int table_equality(memcell* v1, memcell* v2)    { return v1->data.table_zoumi == v2->data.table_zoumi; }
-unsigned int userfunc_equality(memcell* v1, memcell* v2) { return v1->data.usrfunc_zoumi == v2->data.usrfunc_zoumi; }
-unsigned int libfunc_equality(memcell* v1, memcell* v2)  { return v1->data.libfunc_zoumi == v2->data.libfunc_zoumi; }
-unsigned int stackval_equality(memcell* v1, memcell* v2) { return v1->data.stackval_zoumi == v2->data.stackval_zoumi; }
-unsigned int nil_equality(memcell* v1, memcell* v2)      { return 1; }
-unsigned int undef_equality(memcell* v1, memcell* v2)    { return 1; }
+int unique_table_id = 0;
 
 table* table_new(void){
-    table* t = (table*) malloc(sizeof(table));
-    if(!t) {
-        runtimeError("Fatal: Could not allocate memory for new table.");
-    }
-    t->ref_count = 0;
+    table* t = (table*)malloc(sizeof(table));
+    if(!t) { MemoryFail(); }
+    t->ref_count = 1;
     t->total = 0;
-    table_bucketsinit(t->hashtable);
+    t->unique_id = unique_table_id++;
+    for(unsigned int i=0; i<HASHTABLE_SIZE; i++) {
+        t->hashtable[i] = NULL;    
+    }
     return t;
 }
 
-void table_destroy(table* t){
-    table_bucketsdestroy(t->hashtable);
-    free(t);
+void table_bucketsdestroy(table_bucket** hash){
+    for(unsigned int i=0; i<HASHTABLE_SIZE; i++) {
+        for(table_bucket* b = hash[i]; b != NULL; ) {
+            table_bucket* del = b;
+            b = b->next;
+            clear_memcell(&del->key);
+            clear_memcell(&del->value);
+            free(del);
+        }
+        hash[i] = NULL;
+    }
 }
 
-memcell* table_GET(memcell* table, memcell* key) {
+void table_decrementcounter(table* t){
+    t->ref_count--;
+    if(t->ref_count < 1) { 
+        table_bucketsdestroy(t->hashtable);
+        free(t);
+    }
+}
+
+memcell* helper_table_GET(memcell* table, memcell* key) {
     int index = hash(key);
     table_bucket* bucket = table->data.table_zoumi->hashtable[index];
     table_bucket* node = NULL;
     while(bucket) {
-        if(bucket->key.type == key->type) {
-            if(equality_check(&bucket->key, key)) {
-                node = bucket;
-                break;
-            }
+        if(bucket->key.type == key->type && equality_check(&bucket->key, key)) {
+            node = bucket;
+            break;
         }
         bucket = bucket->next;
     }
     if(node) { return &node->value; }
-    else {
-        /* Return NULL */
-        memcell* tmp = (memcell*)malloc(sizeof(memcell));
-        if(!tmp) { MemoryFail(); }
-        clear_memcell(tmp);
-        tmp->type = MEM_NIL;
-        return tmp;
-    }
+    else { return NULL; }
 }
 
-void table_SET(memcell* table, memcell* key, memcell* value) {
+void helper_table_SET(memcell* table, memcell* key, memcell* value) {
     int index = hash(key);
     table_bucket* bucket = table->data.table_zoumi->hashtable[index];
     table_bucket* node = NULL;
@@ -371,140 +350,89 @@ void table_SET(memcell* table, memcell* key, memcell* value) {
     }
     if(node) {
         /* Entry exists */
+        if(node->value.type==MEM_NIL && value->type!=MEM_NIL) { table->data.table_zoumi->total++; }
         if(node->value.type!=MEM_NIL && value->type==MEM_NIL) { table->data.table_zoumi->total--; }
-        node->value = *value;
+        helper_assign(&node->value, value);
     } else {
         /* New entry, place first onto bucket */
         table_bucket* tmp = (table_bucket*)malloc(sizeof(table_bucket));
         if(!tmp) { MemoryFail(); }
-        tmp->key = *key;
-        tmp->value = *value;
-        tmp->next = bucket;
+        helper_assign(&tmp->key, key);
+        helper_assign(&tmp->value, value);
+        tmp->next = table->data.table_zoumi->hashtable[index];
         table->data.table_zoumi->hashtable[index] = tmp;
         if(value->type != MEM_NIL) { table->data.table_zoumi->total++; }
     }
 }
 
-void table_bucketsdestroy(table_bucket** hash){
-    for (unsigned int i = 0; i < HASHTABLE_SIZE; ++i, ++hash) {
-        for (table_bucket* b = *hash; b != NULL; ) {
-            table_bucket* del = b;
-            b = b->next;
-            clear_memcell(&del->key);
-            clear_memcell(&del->value);
-            
-            free(del);
-        }
-        hash[i] = (table_bucket *)0;
-    }
-}
-
-void table_bucketsinit(table_bucket** hash){
-    for (unsigned int i = 0; i < HASHTABLE_SIZE; ++i) {
-        hash[i] = (table_bucket *)0;    
-    }
-}
-
-void table_decrementcounter(table* t){
-    //assert(t->ref_count > 0);
-    
-    if (!--t->ref_count) {
-        table_destroy(t);
-    }
-}
-
-void table_incrementcounter(table* t){
-    ++t->ref_count;
-}
-
-
 void execute_NEWTABLE(instruction* inst) {
-    memcell* lv = translate_operand(&inst->result, (memcell*)0);
-    //assert(lv);
-	//assert(&stack[AVM_STACKSIZE-1] >= lv);
-	//assert(lv > &stack[stack_top] || lv == &stack[0]);
-
+    memcell* lv = translate_operand(&inst->result, NULL);
+    if(!lv) { runtimeError("Null memcell in newtable"); }
     clear_memcell(lv);
-
     lv->type = MEM_TABLE;
     lv->data.table_zoumi = table_new();
-    table_incrementcounter(lv->data.table_zoumi);
-    
 }
 
 void execute_TABLEGETELEM(instruction* inst) {
-    memcell* lv = translate_operand(&inst->result, (memcell*)0);
-
+    /* Translate LVALUE */
+    memcell* lv = translate_operand(&inst->result, NULL);
+    if(!lv) { runtimeError("Null LVALUE in tablegetelem"); }
+    /* Translate Table */
     memcell* t = (memcell*)malloc(sizeof(memcell));
     if(!t) { MemoryFail(); }
     t = translate_operand(&inst->arg1, t);
+    if(!t) { runtimeError("Null ARG1 in tablegetelem"); }
+    /* Translate Index */
     memcell* i = (memcell*)malloc(sizeof(memcell));
     if(!i) { MemoryFail(); }
     i = translate_operand(&inst->arg2, i);
-
-    //assert(lv);
-	//assert(&stack[AVM_STACKSIZE-1] >= lv);
-	//assert(lv > &stack[stack_top] || lv == &stack[0]);
-    //assert(t);
-	//assert(&stack[AVM_STACKSIZE-1] >= t);
-	//assert(t > &stack[stack_top] || t == &stack[0]);
-    //assert(i);
-
-    clear_memcell(lv);
-
-    lv->type = MEM_NIL;
+    if(!i) { runtimeError("Null ARG2 in tablegetelem"); }
+    
     if(t->type != MEM_TABLE) {
-		snprintf(error_buffer, sizeof(error_buffer), "Illegal use of %s as a table!", typeStrings[t->type]);
-        runtimeError(error_buffer);
+        runtimeError("Arg1 is not a table");
 	} else {
-        memcell* content = table_GET(t, i);
-		if(content){
+        memcell* content = helper_table_GET(t, i);
+		if(content) {
 			helper_assign(lv,content);
-		}else{
-			char * ts = strdup(tostring(t));
-            char * is = strdup(tostring(i));
-			snprintf(error_buffer, sizeof(error_buffer), "%s[%s] not found!", ts, is);
-            runtimeWarning(error_buffer);
-			free(ts);
-            free(is);
+		} else {
+            runtimeWarning("No such entry was found");
 		}
     }
 }
 
 void execute_TABLESETELEM(instruction* inst) {
-    memcell* t  = translate_operand(&inst->result, (memcell*)0);
-    memcell* ax = (memcell*)malloc(sizeof(memcell));
-    if(!ax) { MemoryFail(); }
-    memcell* i  = translate_operand(&inst->arg1, ax);
-    memcell* bx = (memcell*)malloc(sizeof(memcell));
-    if(!bx) { MemoryFail(); }
-    memcell* c = translate_operand(&inst->arg2, bx);
-
-    //assert(t);
-	//assert(&stack[AVM_STACKSIZE-1] >= t);
-	//assert(t > &stack[stack_top] || t == &stack[0]);
-	//assert(i && c);
-
+    /* Translate Table */
+    memcell* t = translate_operand(&inst->result, NULL);
+    if(!t) { runtimeError("Null Table in tablesetelem"); }
+    /* Translate index */
+    memcell* i = (memcell*)malloc(sizeof(memcell));
+    if(!i) { MemoryFail(); }
+    i  = translate_operand(&inst->arg1, i);
+    if(!i) { runtimeError("Null Index in tablesetelem"); }
+    /* Translate Rvalue */
+    memcell* rv = (memcell*)malloc(sizeof(memcell));
+    if(!rv) { MemoryFail(); }
+    rv = translate_operand(&inst->arg2, rv);
+    if(!rv) { runtimeError("Null RVALUE in tablesetelem"); }
     if(t->type != MEM_TABLE) {
-        snprintf(error_buffer, sizeof(error_buffer), "Illegal use of %s as a table", typeStrings[t->type]);
-        runtimeError(error_buffer);
-    }else {
-        table_SET(t, i, c);
+        runtimeError("Result is not a table");
+    } else {
+        helper_table_SET(t, i, rv);
     }
 }
 
 /*===============================================================================================*/
 /* ToString */
 
+char* tostring(memcell* m) {
+    return &(*to_string_funcs[m->type](m));
+}
+
 tostring_func_t to_string_funcs[] = {
     number_tostring, string_tostring, bool_tostring,
     table_tostring, userfunc_tostring, libfunc_tostring,
     nil_tostring, stackval_tostring, undef_tostring
 };
-
-char* tostring(memcell* m) {
-    return &(*to_string_funcs[m->type](m));
-}
 
 char* number_tostring(memcell* mem) {
     char* str = (char*)malloc(1024);
@@ -521,7 +449,7 @@ char* bool_tostring(memcell* mem) {
 
 char* table_tostring(memcell* m) {
     char* str = (char*)malloc(2048); // Allocate memory for the string
-    if (!str) {
+    if(!str) {
         runtimeError("Memory allocation failed for table_tostring");
     }
     str[0] = '\0'; // Initialize the string as empty
@@ -531,8 +459,8 @@ char* table_tostring(memcell* m) {
     table_bucket** hash = m->data.table_zoumi->hashtable;
 
     strcat(str, "[\n"); // Start the table representation
-    for (i = 0; i < HASHTABLE_SIZE; i++) {
-        for (tmp = hash[i]; tmp != NULL; tmp = tmp->next) {
+    for(i = 0; i < HASHTABLE_SIZE; i++) {
+        for(tmp = hash[i]; tmp != NULL; tmp = tmp->next) {
             char key_str[256];
             char value_str[256];
 
@@ -547,19 +475,18 @@ char* table_tostring(memcell* m) {
         }
     }
     strcat(str, "]"); // End the table representation
-
     return str;
 }
 
 char* userfunc_tostring(memcell* mem){
     char* str = (char*)malloc(32);
-    sprintf(str, "%u", mem->data.usrfunc_zoumi);
+    sprintf(str, "USR[%u]", mem->data.usrfunc_zoumi+1);
     return str;
 }
 
 char* libfunc_tostring(memcell* mem) {
     char* str = (char*)malloc(1024);
-    sprintf(str, "%u", mem->data.libfunc_zoumi);
+    sprintf(str, "LIB[%u]", mem->data.libfunc_zoumi);
     return str;
 }
 
@@ -572,5 +499,55 @@ char* stackval_tostring(memcell* mem){
 }
 
 char* undef_tostring(memcell* mem){ return "undef"; }
+
+/*===============================================================================================*/
+/* Hashing */
+
+unsigned int hash(memcell* t) { return (*hashes[t->type])(t); }
+
+hash_t hashes[] = {
+    number_hash, string_hash, bool_hash,
+    table_hash, userfunc_hash, libfunc_hash,
+    nil_hash, stackval_hash, undef_hash
+};
+
+unsigned int number_hash(memcell* key)   { return ((unsigned)key->data.num_zoumi) % HASHTABLE_SIZE; }
+unsigned int bool_hash(memcell* key)     { return ((unsigned)key->data.bool_zoumi) % HASHTABLE_SIZE; }
+unsigned int table_hash(memcell* key)    { return ((unsigned int)key->data.table_zoumi->unique_id) % HASHTABLE_SIZE; }
+unsigned int userfunc_hash(memcell* key) { return ((unsigned)key->data.usrfunc_zoumi) % HASHTABLE_SIZE; }
+unsigned int libfunc_hash(memcell* key)  { return ((unsigned)key->data.libfunc_zoumi) % HASHTABLE_SIZE; }
+unsigned int stackval_hash(memcell* key) { return ((unsigned)key->data.stackval_zoumi) % HASHTABLE_SIZE; }
+unsigned int nil_hash(memcell* key)      { return 0; }
+unsigned int undef_hash(memcell* key)    { return 210; }
+unsigned int string_hash(memcell* key)   {
+    unsigned int hash = 0;
+    char* str = key->data.string_zoumi;
+    while(*str) {
+        hash = (hash * 31 + *str) % HASHTABLE_SIZE;
+        str++;
+    }
+    return hash;
+}
+
+/*===============================================================================================*/
+/* Equality Check */
+
+unsigned int equality_check(memcell* v1, memcell* v2) { return (*equalities[v1->type])(v1, v2); }
+
+are_equals_t equalities[] = {
+    number_equality, string_equality, bool_equality,
+    table_equality, userfunc_equality, libfunc_equality,
+    nil_equality, stackval_equality, undef_equality
+};
+
+unsigned int number_equality(memcell* v1, memcell* v2)   { return v1->data.num_zoumi == v2->data.num_zoumi; }
+unsigned int string_equality(memcell* v1, memcell* v2)   { return v1->data.string_zoumi == v2->data.string_zoumi; }
+unsigned int bool_equality(memcell* v1, memcell* v2)     { return v1->data.bool_zoumi == v2->data.bool_zoumi; }
+unsigned int table_equality(memcell* v1, memcell* v2)    { return v1->data.table_zoumi->unique_id == v2->data.table_zoumi->unique_id; }
+unsigned int userfunc_equality(memcell* v1, memcell* v2) { return v1->data.usrfunc_zoumi == v2->data.usrfunc_zoumi; }
+unsigned int libfunc_equality(memcell* v1, memcell* v2)  { return v1->data.libfunc_zoumi == v2->data.libfunc_zoumi; }
+unsigned int stackval_equality(memcell* v1, memcell* v2) { return v1->data.stackval_zoumi == v2->data.stackval_zoumi; }
+unsigned int nil_equality(memcell* v1, memcell* v2)      { return 1; }
+unsigned int undef_equality(memcell* v1, memcell* v2)    { return 1; }
 
 /* end of avm_executors.c */

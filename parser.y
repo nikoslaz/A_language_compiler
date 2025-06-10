@@ -539,7 +539,7 @@ term:
             $$ = NULL;
         } else {
             expr* prevlval = $2;
-            if($2) { $2 = emit_if_table_item_get($2, NULL); }
+            $2 = emit_if_table_item_get($2);
             emit(OP_ADD, $2, $2, create_constnum_expr(1), 0);
             expr* expr_sym;
             if($2 && $2->boolConst == 1) {
@@ -563,7 +563,7 @@ term:
         } else {
             expr* prevlval = $1;
             expr* expr_sym = create_var_expr(get_temp_symbol());
-            if($1) { $1 = emit_if_table_item_get($1, NULL); }
+            $1 = emit_if_table_item_get($1);
             emit(OP_ASSIGN, expr_sym, $1, NULL, 0);
             emit(OP_ADD, $1, $1, create_constnum_expr(1), 0);
             /* boolConst is 1 if previous emit_if_table was true */
@@ -582,11 +582,11 @@ term:
             $$ = NULL;
         } else {
             expr* prevlval = $2;
-            if($2) { $2 = emit_if_table_item_get($2, NULL); }
+            $2 = emit_if_table_item_get($2);
             emit(OP_SUB, $2, $2, create_constnum_expr(1), 0);
             expr* expr_sym;
-            /* boolConst is 1 if previous emit_if_table was true */
             if($2 && $2->boolConst == 1) {
+                /* boolConst is 1 if previous emit_if_table was true */
                 emit_if_table_item_set(prevlval, $2);
                 $2->boolConst = 0;
                 expr_sym = $2;
@@ -606,7 +606,7 @@ term:
         } else {
             expr* prevlval = $1;
             expr* expr_sym = create_var_expr(get_temp_symbol());
-            if($1) { $1 = emit_if_table_item_get($1, NULL); }
+            $1 = emit_if_table_item_get($1);
             emit(OP_ASSIGN, expr_sym, $1, NULL, 0);
             emit(OP_SUB, $1, $1, create_constnum_expr(1), 0);
             /* boolConst is 1 if previous emit_if_table was true */
@@ -643,18 +643,19 @@ assignexpr:
                 rvalue = mysym;
             } else { rvalue = $3; }
             emit_if_table_item_set($1, rvalue);
-            expr* expr_result = create_var_expr(get_temp_symbol());
             /* boolConst is 1 if previous emit_if_table was true */
             if($1->boolConst == 1) {
-                $1 = emit_if_table_item_get($1, expr_result);
+                $1 = emit_if_table_item_get($1);
                 $1->boolConst = 0;
+                $$ = $1;
             } else {
+                expr* expr_result = create_var_expr(get_temp_symbol());
                 // First assign
                 emit(OP_ASSIGN, $1, rvalue, NULL, 0);
                 // Second assign
                 emit(OP_ASSIGN, expr_result, $1, NULL, 0);
+                $$ = expr_result;
             }
-            $$ = expr_result;
         } else {
             yyerror("Invalid assignment operation");
             $$ = NULL;
@@ -851,7 +852,7 @@ forstmt:
     ;
 
 primary:
-    lvalue { $$ = emit_if_table_item_get($1, NULL); }
+    lvalue { $$ = emit_if_table_item_get($1); }
     | call { $$ = $1; }
     | objectdef { $$ = $1; }
     | LEFT_PARENTHESIS funcdef RIGHT_PARENTHESIS { $$ = $2; }
@@ -878,7 +879,7 @@ call:
     | lvalue callsuffix {
         expr* result = NULL;
         if($1) {
-            $1 = emit_if_table_item_get($1, NULL);
+            $1 = emit_if_table_item_get($1);
             /* Only Functions or Dynamic Symbols allowed */
             if($1->type == EXP_PROGRAMFUNC ||  $1->type == EXP_LIBRARYFUNC || $1->type == EXP_VARIABLE || $1->type == EXP_TABLEITEM) {
                 expr* table;
@@ -886,10 +887,10 @@ call:
                     $2->boolConst = 0;
                     /* boolConst indigates from method (table function) */
                     table = create_var_expr(get_temp_symbol());
-                    char msg[1024];
-                    /* Add "" to name of function, placed inside stringConst */
-                    snprintf(msg, sizeof(msg), "\"%s\"", $2->stringConst);
-                    $2->stringConst = msg;
+                    // char msg[1024];
+                    // /* Add "" to name of function, placed inside stringConst */
+                    // snprintf(msg, sizeof(msg), "\"%s\"", $2->stringConst);
+                    // $2->stringConst = msg;
                     emit(OP_TABLEGETELEM, table, $1, $2, 0);
                     /* Arguments from right to left */
                     handle_arguments($2->next);
@@ -902,6 +903,8 @@ call:
                 yyerror("Error. Symbol is NOT a function");
                 result = NULL;
             }
+        } else {
+            yyerror("Error. NULL lvalue in lvalue callsuffix");
         }
         $$ = result;
     }
@@ -1194,21 +1197,21 @@ methodcall:
 
 member: 
     lvalue PERIOD ID { 
-        $1 = emit_if_table_item_get($1, NULL);
+        $1 = emit_if_table_item_get($1);
         if($1) {
             $1->index = create_conststring_expr($3);
             $1->type = EXP_TABLEITEM;
-            char* msg = (char*)malloc(128);
-            /* Add "" to index and store it in stringConst temporarily */
-            sprintf(msg, "\"%s\"", $1->index->stringConst);
-            $1->index->stringConst = msg;  
+            // char* msg = (char*)malloc(128);
+            // /* Add "" to index and store it in stringConst temporarily */
+            // sprintf(msg, "\"%s\"", $1->index->stringConst);
+            // $1->index->stringConst = msg;  
         } else {
             yyerror("Error. NULL lvalue in MEMBER");
         }
         $$ = $1;
     }
     | lvalue LEFT_BRACKET expr RIGHT_BRACKET { 
-        $1 = emit_if_table_item_get($1, NULL);
+        $1 = emit_if_table_item_get($1);
         if($3 && $3->type == EXP_BOOL) {
             /* Create new temp bool expr */
             expr* mysym = create_bool_expr(get_temp_symbol());
@@ -1231,21 +1234,21 @@ member:
         $$ = $1;
     }
     | call PERIOD ID {
-        $1 = emit_if_table_item_get($1, NULL);
+        $1 = emit_if_table_item_get($1);
         if($1) {
-            $1->index = create_conststring_expr($3);
             $1->type = EXP_TABLEITEM;
-            char* msg = (char*)malloc(128);
-            /* Add "" to index and store it in stringConst temporarily */
-            sprintf(msg, "\"%s\"", $1->index->stringConst);
-            $1->index->stringConst = msg;  
+            $1->index = create_conststring_expr($3);
+            // char* msg = (char*)malloc(128);
+            // /* Add "" to index and store it in stringConst temporarily */
+            // sprintf(msg, "\"%s\"", $1->index->stringConst);
+            // $1->index->stringConst = msg;  
         } else {
             yyerror("Error. NULL lvalue in MEMBER");
         }
         $$ = $1;
     }
     | call LEFT_BRACKET expr RIGHT_BRACKET {
-        $1 = emit_if_table_item_get($1, NULL);
+        $1 = emit_if_table_item_get($1);
         if($3 && $3->type == EXP_BOOL) {
             /* Create new temp bool expr */
             expr* mysym = create_bool_expr(get_temp_symbol());
@@ -1259,13 +1262,14 @@ member:
             emit(OP_ASSIGN, mysym, create_constbool_expr(0), NULL, 0);
             $3 = mysym;
         }
-        if($1 && $3 && $3->symbol) {
-            $1->index = create_conststring_expr($3->symbol->name);
+        if($1 && $3) {
+            // $1->index = create_conststring_expr($3->symbol->name);
             $1->type = EXP_TABLEITEM;
-            char* msg = (char*)malloc(128);
-            /* Add "" to index and store it in stringConst temporarily */
-            sprintf(msg, "\"%s\"", $1->index->stringConst);
-            $1->index->stringConst = msg;  
+            $1->index = $3;
+            // char* msg = (char*)malloc(128);
+            // /* Add "" to index and store it in stringConst temporarily */
+            // sprintf(msg, "\"%s\"", $1->index->stringConst);
+            // $1->index->stringConst = msg;  
         } else {
             yyerror("Error. NULL lvalue in MEMBER");
         }

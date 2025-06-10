@@ -96,6 +96,8 @@ void trim_escape(char** destination, char* source) {
                     break;
                 case 't': tmp[index++]='\t';
                     break;
+                case 'r': tmp[index++]='\r';
+                    break;
                 case '\"': tmp[index++]='\"';
                     break;
                 default: printf("Error! Illegal Escaped character \\%c in line %d.\n", *source, yylineno);

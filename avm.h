@@ -13,8 +13,6 @@
 #define MAGIC_NUMBER 0xDEADBEEF
 #define	AVM_STACKSIZE 8192 /* 2^13 */
 
-extern char error_buffer[256];
-
 typedef enum vmarg_t {
     ARG_GLOBAL,
     ARG_LOCAL,
@@ -107,19 +105,17 @@ typedef struct table_bucket {
 } table_bucket;
 
 typedef struct table {
-    unsigned int ref_count;
+    int unique_id;
+    int ref_count;
     table_bucket* hashtable[HASHTABLE_SIZE];
     unsigned int total;
 } table;
 
 table* table_new(void);
-void table_destroy(table* t);
-memcell* table_GET(memcell* table, memcell* key);
-void table_SET(memcell* table, memcell* key, memcell* value);
 void table_bucketsdestroy(table_bucket** hash);
-void table_bucketsinit(table_bucket** hash);
 void table_decrementcounter(table* t);
-void table_incrementcounter(table* t);
+memcell* helper_table_GET(memcell* table, memcell* key);
+void helper_table_SET(memcell* table, memcell* key, memcell* value);
 
 unsigned int hash(memcell* t);
 typedef unsigned int (*hash_t)(memcell*);
@@ -213,10 +209,10 @@ extern void execute_GETRETVAL(instruction*);
 /*===============================================================================================*/
 /* ToStringFunc */
 
+char* tostring(memcell* m);
+
 typedef char* (*tostring_func_t)(memcell*);
 extern tostring_func_t to_string_funcs[];
-
-char* tostring(memcell* m);
 
 extern char* number_tostring(memcell*);
 extern char* string_tostring(memcell*);
@@ -270,8 +266,6 @@ extern unsigned int jlt_rel(double, double);
 
 /*===============================================================================================*/
 /* Library Function */
-
-extern const char* typeStrings[];
 
 typedef void (*library_func_t)(void);
 extern library_func_t libFuncs[];

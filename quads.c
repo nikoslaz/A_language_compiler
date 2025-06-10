@@ -29,17 +29,17 @@ quad* emit(opcode op, expr* result, expr* arg1, expr* arg2, unsigned int label) 
     return new;
 }
 
-expr* emit_if_table_item_get(expr* e, expr* result) {
+expr* emit_if_table_item_get(expr* e) {
     if(e && e->type != EXP_TABLEITEM) {
         e->boolConst = 0;
         return e;
     } else {
-        if(!result) { result = create_var_expr(get_temp_symbol()); }
-        result->type = EXP_TABLEITEM;
-        if(e) { emit(OP_TABLEGETELEM, result, e, e->index, 0); }
-        else { printf("Error in emit if GET. NULL e given\n"); }
+        expr* result = create_var_expr(get_temp_symbol());
+        if(e && e->index) {
+            emit(OP_TABLEGETELEM, result, e, e->index, 0);
+        } else { printf("Error in emit if GET. NULL e or index given\n"); }
         result->boolConst = 1;
-        return result; 
+        return result;
     }
 }
 
