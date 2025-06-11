@@ -1,33 +1,49 @@
-# Alpha Language Compiler - Phase 3
+# Alpha Language Compiler & Virtual Machine - Phases 4 & 5
 
-This program is a lexical analyzer, syntax analyzer, and **intermediate code generator** for a custom programming language named Alpha. It now produces quadruples as an intermediate representation.
+This project is a complete toolchain for the Alpha programming language, consisting of a compiler that produces binary bytecode and a virtual machine (AVM) that executes it.
 
 ## Components:
 
+### Compiler (generates 'out.abc')
 *   `scanner.l` (Lexer)
 *   `parser.y` (Parser & Intermediate Code Generator)
 *   `table.h`, `table.c` (Symbol Table Management)
 *   `quads.h`, `quads.c` (Quadruple Generation & Management)
-*   `list.h`, `list.c` (Utility Lists)
+*   `list.h`, `list.c` (Utility Lists for control flow)
+
+### Virtual Machine (executes 'out.abc')
+*   `avm.h`, `avm.c` (Core AVM definitions, stack, and execution cycle)
+*   `avm_executors.c` (Implementations for each VM instruction executor)
+*   `avm_libfuncs.c` (Implementations for the standard library functions)
+*   `avm_prints.h`, `avm_prints.c` (String conversion and printing helpers)
 
 ## Core Functionality:
 
+### Compiler
 *   Tokenization of Alpha source code.
 *   Parsing according to Alpha's defined grammar.
 *   Symbol table management for scopes and identifiers.
-*   **Generation of intermediate code (quadruples)** for:
-    *   Expressions (arithmetic, relational, logical with short-circuiting).
-    *   Control flow statements (`if`, `while`, `for`, `break`, `continue`).
-    *   Function definitions and calls.
-    *   Table (object) operations.
-    *   Assignments.
+*   **Generation of a binary file** containing intermediate code (quadruples) for all language features, including expressions, control flow, functions, and tables.
 
-Usage: After compiling using the supplied Makefile, run the following command:
+### Alpha Virtual Machine (AVM)
+*   Loading and validation of the binary instruction file.
+*   A stack-based execution model with a frame pointer for function environments.
+*   Execution of all opcodes produced by the compiler.
+*   A complete standard library with support for I/O, math, type introspection, and argument handling.
+*   Automatic memory management for tables via reference counting.
 
+## Usage:
+
+The project is run as a two-step process: compile the source code, then execute the resulting binary file. After compiling the project with the supplied Makefile, run the following commands:
+
+#### 1. Compile the Alpha source file:
 ./calc input_file
 
-Where input_file is the path to the source code file. If no file is provided,
-the analyzer will read from standard input.
+This creates a binary file named `chief.alpha` in your directory.
+
+#### 2. Execute the binary file with the AVM:
+./alpha_avm chief.alpha
+
 
 NOTE: This program was run and tested inside Debian PC "Kasos" 
 
