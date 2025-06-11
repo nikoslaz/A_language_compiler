@@ -392,7 +392,12 @@ void execute_TABLEGETELEM(instruction* inst) {
 		if(content) {
 			helper_assign(lv,content);
 		} else {
-            runtimeWarning("No such entry was found");
+            /* return nil */
+            memcell* tmpnil = (memcell*)malloc(sizeof(memcell));
+            if(!tmpnil) { MemoryFail(); }
+            clear_memcell(tmpnil);
+            tmpnil->type = MEM_NIL;
+            helper_assign(lv, tmpnil);
 		}
     }
 }
@@ -406,6 +411,8 @@ void execute_TABLESETELEM(instruction* inst) {
     if(!i) { MemoryFail(); }
     i  = translate_operand(&inst->arg1, i);
     if(!i) { runtimeError("Null Index in tablesetelem"); }
+    if(i->type == MEM_NIL) { runtimeError("Nil Index in tablesetelem"); }
+    if(i->type == MEM_UNDEF) { runtimeError("Undefined Index in tablesetelem"); }
     /* Translate Rvalue */
     memcell* rv = (memcell*)malloc(sizeof(memcell));
     if(!rv) { MemoryFail(); }
