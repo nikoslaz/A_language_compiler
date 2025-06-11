@@ -45,7 +45,7 @@ This creates a binary file named `chief.alpha` in your directory.
 ./alpha_avm chief.alpha
 
 
-NOTE: This program was run and tested inside Debian PC "Kasos" 
+NOTE: This program was run and tested inside Debian PC "Ananke" 
 
 Authors:
 csd4844 - Nikoletta Arvaniti

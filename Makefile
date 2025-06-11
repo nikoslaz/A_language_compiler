@@ -44,10 +44,4 @@ $(SCANNER).c: $(SCANNER).l $(PARSER).h
 clean:
 	rm -f *.o $(TARGET) $(AVMTARGET) $(SCANNER).c $(PARSER).c $(PARSER).h *.output chief.alpha
 
-# testing
-run:
-	make
-	./calc $(path)
-	./alpha_avm chief.alpha
-
 # End of Makefile
