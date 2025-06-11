@@ -45,7 +45,6 @@ unsigned int undef_tobool(memcell* mem)    { return 0; }
 /* Helpers */
 
 void helper_assign(memcell* lv, memcell* rv) {
-    if(lv == rv) { return; }
     if(rv->type == MEM_UNDEF) { runtimeWarning("Assignment of undef"); }
     /* Increment if we added a table */
     if(rv->type == MEM_TABLE) { rv->data.table_zoumi->ref_count++; }
@@ -120,11 +119,8 @@ void helper_equality(instruction* inst, int is_equal) {
         unsigned int bool1 = (*to_bool_funcs[rv1->type])(rv1);
         unsigned int bool2 = (*to_bool_funcs[rv2->type])(rv2);
         res = (bool1 == bool2);
-    } else if(rv1->type != rv2->type) {
-        res = 0;
-    } else {
-        res = equality_check(rv1, rv2);
-    }
+    } else if(rv1->type != rv2->type) { res = 0; }
+    else { res = equality_check(rv1, rv2); }
     if(!is_equal) { res = !res; }
     /* Perform Jump */
     if(res) { branch_to(inst->result.val); }
@@ -389,10 +385,9 @@ void execute_TABLEGETELEM(instruction* inst) {
     if(!i) { MemoryFail(); }
     i = translate_operand(&inst->arg2, i);
     if(!i) { runtimeError("Null ARG2 in tablegetelem"); }
-    
-    if(t->type != MEM_TABLE) {
-        runtimeError("Arg1 is not a table");
-	} else {
+    /* do j*b */
+    if(t->type != MEM_TABLE) { runtimeError("Arg1 is not a table"); }
+    else {
         memcell* content = helper_table_GET(t, i);
 		if(content) {
 			helper_assign(lv,content);
@@ -416,19 +411,15 @@ void execute_TABLESETELEM(instruction* inst) {
     if(!rv) { MemoryFail(); }
     rv = translate_operand(&inst->arg2, rv);
     if(!rv) { runtimeError("Null RVALUE in tablesetelem"); }
-    if(t->type != MEM_TABLE) {
-        runtimeError("Result is not a table");
-    } else {
-        helper_table_SET(t, i, rv);
-    }
+    /* do j*b */
+    if(t->type != MEM_TABLE) { runtimeError("Result is not a table"); }
+    else { helper_table_SET(t, i, rv); }
 }
 
 /*===============================================================================================*/
 /* ToString */
 
-char* tostring(memcell* m) {
-    return &(*to_string_funcs[m->type](m));
-}
+char* tostring(memcell* m) { return &(*to_string_funcs[m->type](m)); }
 
 tostring_func_t to_string_funcs[] = {
     number_tostring, string_tostring, bool_tostring,
@@ -455,11 +446,9 @@ char* table_tostring(memcell* m) {
         runtimeError("Memory allocation failed for table_tostring");
     }
     str[0] = '\0'; // Initialize the string as empty
-
     table_bucket* tmp = NULL;
     unsigned i;
     table_bucket** hash = m->data.table_zoumi->hashtable;
-
     strcat(str, "[\n"); // Start the table representation
     for(i = 0; i < HASHTABLE_SIZE; i++) {
         for(tmp = hash[i]; tmp != NULL; tmp = tmp->next) {
@@ -480,7 +469,7 @@ char* table_tostring(memcell* m) {
     return str;
 }
 
-char* userfunc_tostring(memcell* mem){
+char* userfunc_tostring(memcell* mem) {
     char* str = (char*)malloc(32);
     sprintf(str, "USR[%u]", mem->data.usrfunc_zoumi+1);
     return str;
@@ -492,15 +481,15 @@ char* libfunc_tostring(memcell* mem) {
     return str;
 }
 
-char* nil_tostring(memcell* mem){ return "nil"; }
+char* nil_tostring(memcell* mem) { return "nil"; }
 
-char* stackval_tostring(memcell* mem){
+char* stackval_tostring(memcell* mem) {
     char* str = (char*)malloc(1024);
     sprintf(str, "%u", mem->data.stackval_zoumi);
     return str;
 }
 
-char* undef_tostring(memcell* mem){ return "undef"; }
+char* undef_tostring(memcell* mem) { return "undef"; }
 
 /*===============================================================================================*/
 /* Hashing */

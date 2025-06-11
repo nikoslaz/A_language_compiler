@@ -146,7 +146,7 @@ memcell pop(void) {
 /* AVM translate */
 
 memcell* translate_operand(vmarg* arg, memcell* reg) {
-	if(!arg) { return NULL; }
+	if(!arg) { stackError("Null Argument in translate"); }
 	unsigned int index;
 	switch(arg->type) {
 		/* Variables */
@@ -216,8 +216,7 @@ memcell* translate_operand(vmarg* arg, memcell* reg) {
 /* Execution */
 
 void execute_cycle(void) {
-	if(execution_finished) { return; }
-	if(program_counter == total_instructions) {
+	if(program_counter >= total_instructions) {
 		execution_finished = 1;
 		return;
 	}
