@@ -159,6 +159,7 @@ void clear_memcell(memcell* cell);
 void push(memcell val);
 memcell pop(void);
 memcell* translate_operand(vmarg* arg, memcell* reg);
+void helper_assign(memcell* lv, memcell* rv);
 
 extern unsigned int succ_branch;
 extern unsigned int branch_label;

@@ -61,9 +61,6 @@ void libfunc_input(void) {
     if (num_args != 0) {
         snprintf(error_buffer, sizeof(error_buffer), "Error: 'input' expects 0 arguments, but received %u.", num_args);
         runtimeError(error_buffer);
-        clear_memcell(&stack[0]);
-        stack[0].type = MEM_NIL;
-        return;
     }
     char input_buffer[1024]; 
     if (!fgets(input_buffer, sizeof(input_buffer), stdin)) {
@@ -101,16 +98,11 @@ void libfunc_objectmemberkeys() {
     if (num_args != 1) {
         snprintf(error_buffer, sizeof(error_buffer), "Error: 'objectmemberkeys' expects 1 argument, but received %u.", num_args);
         runtimeError(error_buffer);
-        clear_memcell(&stack[0]);
-        stack[0].type = MEM_NIL;
-        return;
     }
     memcell* arg = &stack[stack_top - 1];
     clear_memcell(&stack[0]);
     if (arg->type != MEM_TABLE) {
         runtimeError("Error: 'objectmemberkeys' argument must be a table.");
-        stack[0].type = MEM_NIL;
-        return;
     }
 
     memcell result_table_cell;
@@ -127,7 +119,7 @@ void libfunc_objectmemberkeys() {
             helper_table_SET(&result_table_cell, &new_key, &p->key);
         }
     }
-    avm_assign(&stack[0], &result_table_cell);
+    helper_assign(&stack[0], &result_table_cell);
 }
 
 
@@ -141,8 +133,6 @@ void libfunc_objecttotalmembers() {
     clear_memcell(&stack[0]);
     if (arg->type != MEM_TABLE) {
         runtimeError("Error: 'objecttotalmembers' argument must be a table.");
-        stack[0].type = MEM_NIL;
-        return;
     }
     stack[0].type = MEM_NUMBER;
     stack[0].data.num_zoumi = arg->data.table_zoumi->total;
@@ -154,9 +144,6 @@ void libfunc_objectcopy() {
     if (num_args != 1) {
         snprintf(error_buffer, sizeof(error_buffer), "Error: 'objectcopy' expects 1 argument, but received %u.", num_args);
         runtimeError(error_buffer);
-        clear_memcell(&stack[0]);
-        stack[0].type = MEM_NIL;
-        return;
     }
     memcell* arg = &stack[stack_top - 1];
     clear_memcell(&stack[0]);
@@ -175,7 +162,7 @@ void libfunc_objectcopy() {
             helper_table_SET(&new_table_cell, &p->key, &p->value);
         }
     }
-    avm_assign(&stack[0], &new_table_cell);
+    helper_assign(&stack[0], &new_table_cell);
 }
 
 void libfunc_totalarguments(void) {
@@ -183,8 +170,6 @@ void libfunc_totalarguments(void) {
     clear_memcell(&stack[0]);
     if (stack_maul == 1) {
         runtimeError("'totalarguments' called outside of a function.");
-        stack[0].type = MEM_NIL;
-        return;
     }
     memcell* num_args_cell = &stack[stack_maul + AVM_NUM_ARGS_OFFSET];
     stack[0].type = MEM_NUMBER;
@@ -209,8 +194,6 @@ void libfunc_argument(void) {
     clear_memcell(&stack[0]);
     if (stack_maul == 1) {
         runtimeError("'argument' called outside of a function.");
-        stack[0].type = MEM_NIL;
-        return;
     }
     unsigned int total_caller_args = stack[stack_maul + AVM_NUM_ARGS_OFFSET].data.stackval_zoumi;
 
@@ -218,14 +201,13 @@ void libfunc_argument(void) {
     if (i >= total_caller_args) {
         snprintf(error_buffer, sizeof(error_buffer), "Error: index %u out of bounds for 'argument'. Caller has %u arguments.", i, total_caller_args);
         runtimeError(error_buffer);
-        stack[0].type = MEM_NIL;
-        return;
     }
     memcell* target_arg = &stack[stack_maul + AVM_FIRST_ARG_OFFSET - i];
     stack[0] = *target_arg;
     if (target_arg->type == MEM_STRING) {
         stack[0].data.string_zoumi = strdup(target_arg->data.string_zoumi);
     } else if (target_arg->type == MEM_TABLE) {
+        /* TODO ???? */
     }
 }
 
@@ -234,9 +216,6 @@ void libfunc_typeof(void) {
     if (num_args != 1) {
         snprintf(error_buffer, sizeof(error_buffer), "Error: 'typeof' expects 1 argument, but received %u.", num_args);
         runtimeError(error_buffer);
-        clear_memcell(&stack[0]);
-        stack[0].type = MEM_NIL;
-        return;
     }
     memcell* arg = &stack[stack_top - 1];
     clear_memcell(&stack[0]);
@@ -244,7 +223,6 @@ void libfunc_typeof(void) {
     stack[0].data.string_zoumi = strdup(typeStrings[arg->type]);
     if (!stack[0].data.string_zoumi) {
         runtimeError("Internal error: memory allocation failed in typeof.");
-        stack[0].type = MEM_NIL;
     }
 }
 
@@ -253,9 +231,6 @@ void libfunc_strtonum(void) {
     if (num_args != 1) {
         snprintf(error_buffer, sizeof(error_buffer), "Error: 'strtonum' expects 1 argument, but received %u.", num_args);
         runtimeError(error_buffer);
-        clear_memcell(&stack[0]);
-        stack[0].type = MEM_NIL;
-        return;
     }
     memcell* arg = &stack[stack_top - 1];
     clear_memcell(&stack[0]);
@@ -283,9 +258,6 @@ void libfunc_sqrt(void) {
     if (num_args != 1) {
         snprintf(error_buffer, sizeof(error_buffer), "Error: 'sqrt' expects 1 argument, but received %u.", num_args);
         runtimeError(error_buffer);
-        clear_memcell(&stack[0]);
-        stack[0].type = MEM_NIL;
-        return;
     }
     memcell* arg = &stack[stack_top - 1];
     clear_memcell(&stack[0]);
@@ -298,12 +270,10 @@ void libfunc_sqrt(void) {
         } else {
             snprintf(error_buffer, sizeof(error_buffer), "Warning: 'sqrt' received negative number %f, returning nil.", value);
             runtimeError(error_buffer);
-            stack[0].type = MEM_NIL;
         }
     } else {
         snprintf(error_buffer, sizeof(error_buffer), "Error: 'sqrt' argument must be a number, not a %s.", typeStrings[arg->type]);
         runtimeError(error_buffer);
-        stack[0].type = MEM_NIL;
     }
 }
 
@@ -312,9 +282,6 @@ void libfunc_cos(void) {
     if (num_args != 1) {
         snprintf(error_buffer, sizeof(error_buffer), "Error: 'cos' expects 1 argument, but received %u.", num_args);
         runtimeError(error_buffer);
-        clear_memcell(&stack[0]);
-        stack[0].type = MEM_NIL;
-        return;
     }
     memcell* arg = &stack[stack_top - 1];
     clear_memcell(&stack[0]);
@@ -326,7 +293,6 @@ void libfunc_cos(void) {
     } else {
         snprintf(error_buffer, sizeof(error_buffer), "Error: 'cos' argument must be a number, not a %s.", typeStrings[arg->type]);
         runtimeError(error_buffer);
-        stack[0].type = MEM_NIL;
     }
 }
 
@@ -336,9 +302,6 @@ void libfunc_sin(void) {
     if (num_args != 1) {
         snprintf(error_buffer, sizeof(error_buffer), "Error: 'sin' expects 1 argument, but received %u.", num_args);
         runtimeError(error_buffer);
-        clear_memcell(&stack[0]);
-        stack[0].type = MEM_NIL;
-        return;
     }
     memcell* arg = &stack[stack_top - 1];
     clear_memcell(&stack[0]);
@@ -350,7 +313,6 @@ void libfunc_sin(void) {
     } else {
         snprintf(error_buffer, sizeof(error_buffer), "Error: 'sin' argument must be a number, not a %s.", typeStrings[arg->type]);
         runtimeError(error_buffer);
-        stack[0].type = MEM_NIL;
     }
 }
 
