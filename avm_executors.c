@@ -47,10 +47,10 @@ unsigned int undef_tobool(memcell* mem)    { return 0; }
 void helper_assign(memcell* lv, memcell* rv) {
     if(lv == rv) { return; }
     if(rv->type == MEM_UNDEF) { runtimeWarning("Assignment of undef"); }
-    /* Decrement if we removed a table */
-    if(lv->type == MEM_TABLE) { table_decrementcounter(lv->data.table_zoumi); }
     /* Increment if we added a table */
     if(rv->type == MEM_TABLE) { rv->data.table_zoumi->ref_count++; }
+    /* Decrement if we removed a table */
+    if(lv->type == MEM_TABLE) { table_decrementcounter(lv->data.table_zoumi); }
     /* Perform Assignment */
     clear_memcell(lv);
     memcpy(lv, rv, sizeof(memcell));
@@ -289,7 +289,7 @@ void execute_FUNCEND(instruction* inst) {
 
 int unique_table_id = 0;
 
-table* table_new(void){
+table* table_new(void) {
     table* t = (table*)malloc(sizeof(table));
     if(!t) { MemoryFail(); }
     t->ref_count = 1;
@@ -301,7 +301,7 @@ table* table_new(void){
     return t;
 }
 
-void table_bucketsdestroy(table_bucket** hash){
+void table_bucketsdestroy(table_bucket** hash) {
     for(unsigned int i=0; i<HASHTABLE_SIZE; i++) {
         for(table_bucket* b = hash[i]; b != NULL; ) {
             table_bucket* del = b;
@@ -314,7 +314,7 @@ void table_bucketsdestroy(table_bucket** hash){
     }
 }
 
-void table_decrementcounter(table* t){
+void table_decrementcounter(table* t) {
     t->ref_count--;
     if(t->ref_count < 1) { 
         table_bucketsdestroy(t->hashtable);

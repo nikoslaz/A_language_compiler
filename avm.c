@@ -124,9 +124,7 @@ void branch_to(unsigned int label) {
 void clear_memcell(memcell* cell) {
     if(!cell) return;
     if(cell->type == MEM_TABLE && cell->data.table_zoumi) {
-        table_bucketsdestroy(cell->data.table_zoumi->hashtable);
-        free(cell->data.table_zoumi);
-        cell->data.table_zoumi = NULL; 
+        /* NOTE: DON'T decrement here, helper_assign is in charge of ref_count */
     }
     memset(cell, 0, sizeof(memcell));
     cell->type = MEM_UNDEF;
@@ -175,32 +173,40 @@ memcell* translate_operand(vmarg* arg, memcell* reg) {
 			return &stack[index];
 		/* Consts */
 		case ARG_NUMBER:
+			if(!reg) { stackError("Tried to translate NULL reg"); }
             reg->type = MEM_NUMBER;
 			reg->data.num_zoumi = number_const[arg->val];	
 			return reg;
 		case ARG_STRING:
+			if(!reg) { stackError("Tried to translate NULL reg"); }
 			reg->type = MEM_STRING;
 			reg->data.string_zoumi = string_const[arg->val];	
 			return reg;
 		case ARG_BOOL: 
+			if(!reg) { stackError("Tried to translate NULL reg"); }
 			reg->type = MEM_BOOL;
 			reg->data.bool_zoumi = arg->val;	
 			return reg;	
 		case ARG_NIL: 
+			if(!reg) { stackError("Tried to translate NULL reg"); }
 			reg->type = MEM_NIL; 
 			return reg;
 		case ARG_USERFUNC:
+			if(!reg) { stackError("Tried to translate NULL reg"); }
 			reg->type = MEM_USERFUNC;
 			reg->data.usrfunc_zoumi = arg->val;
 			return reg;
 		case ARG_LIBFUNC:
+			if(!reg) { stackError("Tried to translate NULL reg"); }
 			reg->type = MEM_LIBFUNC;
 			reg->data.libfunc_zoumi = arg->val;
 			return reg;
 		case ARG_UNDEFINED:
+			if(!reg) { stackError("Tried to translate NULL reg"); }
 			reg->type = MEM_UNDEF;
 			return reg;
 		default:
+			if(!reg) { stackError("Tried to translate NULL reg"); }
 			reg->type = MEM_UNDEF;
 			return reg;
 	}
