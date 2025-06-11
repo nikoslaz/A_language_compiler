@@ -155,16 +155,19 @@ void libfunc_objectcopy() {
 }
 
 void libfunc_totalarguments(void) {
-    if(stack_maul == 1) {
-        runtimeError("'totalarguments' called outside of a function.");
-    }
-    memcell* num_args_cell = &stack[stack_maul - 3];
     clear_memcell(&stack[0]);
-    stack[0].type = MEM_NUMBER;
-    stack[0].data.num_zoumi = num_args_cell->data.stackval_zoumi;
+    if(stack_maul == 1) {
+        stack[0].type = MEM_NIL;
+        return;
+    } else {
+        memcell* num_args_cell = &stack[stack_maul - 3];
+        stack[0].type = MEM_NUMBER;
+        stack[0].data.num_zoumi = num_args_cell->data.stackval_zoumi;   
+    }
 }
 
 void libfunc_argument(void) {
+    clear_memcell(&stack[0]);
     unsigned int num_args = stack[stack_top].data.stackval_zoumi;
     if(num_args != 1) {
         snprintf(error_buffer, sizeof(error_buffer), "Error: 'argument' expects 1 argument (the index), but received %u.", num_args);
@@ -177,7 +180,8 @@ void libfunc_argument(void) {
     unsigned int i = (unsigned int)index_arg->data.num_zoumi;
 
     if(stack_maul == 1) {
-        runtimeError("'argument' called outside of a function.");
+        stack[0].type = MEM_NIL;
+        return;
     }
     unsigned int total_caller_args = stack[stack_maul -3].data.stackval_zoumi;
     
@@ -186,7 +190,6 @@ void libfunc_argument(void) {
         runtimeError(error_buffer);
     }
     memcell* target_arg = &stack[stack_maul -4 - i];
-    clear_memcell(&stack[0]);
     helper_assign(&stack[0], target_arg);
 }
 
