@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <float.h>
+#include <math.h>
 #include "avm_prints.h"
 
 #define MAGIC_NUMBER 0xDEADBEEF

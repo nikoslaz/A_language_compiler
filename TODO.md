@@ -113,8 +113,6 @@ NOTES:
 18: func einai TABLE OXI FUNC (if we call it,  works)
 
 NEED FIXING: 
-16: libfunc
-17: libfunc
 20: libfunc
 22: libfunc
 23: libfunc

@@ -530,6 +530,12 @@ unsigned int string_hash(memcell* key)   {
 /*===============================================================================================*/
 /* Equality Check */
 
+unsigned int almost_eq(double a, double b) {
+    double eeee = 0.000001;
+    if( fabs(a-b) < eeee ) return 1;
+    else return 0;
+}
+
 unsigned int equality_check(memcell* v1, memcell* v2) { return (*equalities[v1->type])(v1, v2); }
 
 are_equals_t equalities[] = {
@@ -538,8 +544,8 @@ are_equals_t equalities[] = {
     nil_equality, stackval_equality, undef_equality
 };
 
-unsigned int number_equality(memcell* v1, memcell* v2)   { return v1->data.num_zoumi == v2->data.num_zoumi; }
-unsigned int string_equality(memcell* v1, memcell* v2)   { return v1->data.string_zoumi == v2->data.string_zoumi; }
+unsigned int number_equality(memcell* v1, memcell* v2)   { return almost_eq(v1->data.num_zoumi, v2->data.num_zoumi); }
+unsigned int string_equality(memcell* v1, memcell* v2)   { return !strcmp(v1->data.string_zoumi, v2->data.string_zoumi); }
 unsigned int bool_equality(memcell* v1, memcell* v2)     { return v1->data.bool_zoumi == v2->data.bool_zoumi; }
 unsigned int table_equality(memcell* v1, memcell* v2)    { return v1->data.table_zoumi->unique_id == v2->data.table_zoumi->unique_id; }
 unsigned int userfunc_equality(memcell* v1, memcell* v2) { return v1->data.usrfunc_zoumi == v2->data.usrfunc_zoumi; }
