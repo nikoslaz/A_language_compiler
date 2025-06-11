@@ -95,19 +95,87 @@ void libfunc_input(void) {
     }
 }
 
+
 void libfunc_objectmemberkeys() {
-    /* To be implemented with tables */
-    runtimeError("OBJECTMEMBERKEYS NOT IMPLEMENTED");
+    unsigned int num_args = stack[stack_top].data.stackval_zoumi;
+    if (num_args != 1) {
+        snprintf(error_buffer, sizeof(error_buffer), "Error: 'objectmemberkeys' expects 1 argument, but received %u.", num_args);
+        runtimeError(error_buffer);
+        clear_memcell(&stack[0]);
+        stack[0].type = MEM_NIL;
+        return;
+    }
+    memcell* arg = &stack[stack_top - 1];
+    clear_memcell(&stack[0]);
+    if (arg->type != MEM_TABLE) {
+        runtimeError("Error: 'objectmemberkeys' argument must be a table.");
+        stack[0].type = MEM_NIL;
+        return;
+    }
+
+    memcell result_table_cell;
+    result_table_cell.type = MEM_TABLE;
+    result_table_cell.data.table_zoumi = table_new();
+    double array_index = 0.0;
+
+    memcell new_key;
+    table* input_table = arg->data.table_zoumi;
+    for (unsigned int i = 0; i < HASHTABLE_SIZE; ++i) {
+        for (table_bucket* p = input_table->hashtable[i]; p; p = p->next) {
+            new_key.type = MEM_NUMBER;
+            new_key.data.num_zoumi = array_index++;
+            helper_table_SET(&result_table_cell, &new_key, &p->key);
+        }
+    }
+    avm_assign(&stack[0], &result_table_cell);
 }
+
 
 void libfunc_objecttotalmembers() {
-    /* To be implemented with tables */
-    runtimeError("OBJECTTOTALMEMBERS NOT IMPLEMENTED");
+    unsigned int num_args = stack[stack_top].data.stackval_zoumi;
+    if (num_args != 1) {
+        snprintf(error_buffer, sizeof(error_buffer), "Error: 'objecttotalmembers' expects 1 argument, but received %u.", num_args);
+        runtimeError(error_buffer);
+    }
+    memcell* arg = &stack[stack_top - 1];
+    clear_memcell(&stack[0]);
+    if (arg->type != MEM_TABLE) {
+        runtimeError("Error: 'objecttotalmembers' argument must be a table.");
+        stack[0].type = MEM_NIL;
+        return;
+    }
+    stack[0].type = MEM_NUMBER;
+    stack[0].data.num_zoumi = arg->data.table_zoumi->total;
 }
 
+
 void libfunc_objectcopy() {
-    /* To be implemented with tables */
-    runtimeError("OBJECTCOPY NOT IMPLEMENTED");
+    unsigned int num_args = stack[stack_top].data.stackval_zoumi;
+    if (num_args != 1) {
+        snprintf(error_buffer, sizeof(error_buffer), "Error: 'objectcopy' expects 1 argument, but received %u.", num_args);
+        runtimeError(error_buffer);
+        clear_memcell(&stack[0]);
+        stack[0].type = MEM_NIL;
+        return;
+    }
+    memcell* arg = &stack[stack_top - 1];
+    clear_memcell(&stack[0]);
+    if (arg->type != MEM_TABLE) {
+        runtimeError("Error: 'objectcopy' argument must be a table.");
+        stack[0].type = MEM_NIL;
+        return;
+    }
+    memcell new_table_cell;
+    new_table_cell.type = MEM_TABLE;
+    new_table_cell.data.table_zoumi = table_new();
+
+    table* input_table = arg->data.table_zoumi;
+    for (unsigned int i = 0; i < HASHTABLE_SIZE; ++i) {
+        for (table_bucket* p = input_table->hashtable[i]; p; p = p->next) {
+            helper_table_SET(&new_table_cell, &p->key, &p->value);
+        }
+    }
+    avm_assign(&stack[0], &new_table_cell);
 }
 
 void libfunc_totalarguments(void) {
