@@ -6,12 +6,9 @@
 #include <math.h>
 
 #define PI 3.14159265
-#define AVM_SAVED_MAUL_OFFSET   -1
-#define AVM_RET_ADDR_OFFSET     -2
-#define AVM_NUM_ARGS_OFFSET     -3
-#define AVM_FIRST_ARG_OFFSET    -4
 
 unsigned libfuncs_total = 12;
+char error_buffer[256];
 
 const char* typeStrings[] = {
     "number",
@@ -25,10 +22,7 @@ const char* typeStrings[] = {
     "undef"
 };
 
-char error_buffer[256];
-
 library_func_t libFuncs[] = {
-
     libfunc_print,
     libfunc_input,
     libfunc_objectmemberkeys,
@@ -41,10 +35,9 @@ library_func_t libFuncs[] = {
     libfunc_sqrt,
     libfunc_cos,
     libfunc_sin
-
 };
 
-void libfunc_print() {
+void libfunc_print(void) {
     int totals = stack[stack_top].data.stackval_zoumi;
 	for(int i = 0; i < totals; ++i) {
         memcell* tmp = &stack[stack_top - 1 - i];
@@ -58,7 +51,7 @@ void libfunc_print() {
 
 void libfunc_input(void) {
     unsigned int num_args = stack[stack_top].data.stackval_zoumi;
-    if (num_args != 0) {
+    if(num_args != 0) {
         snprintf(error_buffer, sizeof(error_buffer), "Error: 'input' expects 0 arguments, but received %u.", num_args);
         runtimeError(error_buffer);
     }
@@ -69,20 +62,20 @@ void libfunc_input(void) {
         return;
     }
     input_buffer[strcspn(input_buffer, "\n")] = '\0';
+    
     clear_memcell(&stack[0]);
-
-    if (strcmp(input_buffer, "nil") == 0) {
+    if(strcmp(input_buffer, "nil") == 0) {
         stack[0].type = MEM_NIL;
-    } else if (strcmp(input_buffer, "true") == 0) {
+    } else if(strcmp(input_buffer, "true") == 0) {
         stack[0].type = MEM_BOOL;
         stack[0].data.bool_zoumi = 1;
-    } else if (strcmp(input_buffer, "false") == 0) {
+    } else if(strcmp(input_buffer, "false") == 0) {
         stack[0].type = MEM_BOOL;
         stack[0].data.bool_zoumi = 0;
     } else {
         char* end = NULL;
         double num = strtod(input_buffer, &end);
-        if (end != input_buffer && *end == '\0') {
+        if(end != input_buffer && *end == '\0') {
             stack[0].type = MEM_NUMBER;
             stack[0].data.num_zoumi = num;
         } else {
@@ -92,119 +85,114 @@ void libfunc_input(void) {
     }
 }
 
-
-void libfunc_objectmemberkeys() {
+void libfunc_objectmemberkeys(void) {
     unsigned int num_args = stack[stack_top].data.stackval_zoumi;
-    if (num_args != 1) {
+    if(num_args != 1) {
         snprintf(error_buffer, sizeof(error_buffer), "Error: 'objectmemberkeys' expects 1 argument, but received %u.", num_args);
         runtimeError(error_buffer);
     }
     memcell* arg = &stack[stack_top - 1];
-    clear_memcell(&stack[0]);
-    if (arg->type != MEM_TABLE) {
+    if(arg->type != MEM_TABLE) {
         runtimeError("Error: 'objectmemberkeys' argument must be a table.");
     }
-
+    
     memcell result_table_cell;
     result_table_cell.type = MEM_TABLE;
     result_table_cell.data.table_zoumi = table_new();
     double array_index = 0.0;
-
+    
     memcell new_key;
     table* input_table = arg->data.table_zoumi;
-    for (unsigned int i = 0; i < HASHTABLE_SIZE; ++i) {
-        for (table_bucket* p = input_table->hashtable[i]; p; p = p->next) {
+    for(unsigned int i = 0; i < HASHTABLE_SIZE; ++i) {
+        for(table_bucket* p = input_table->hashtable[i]; p; p = p->next) {
             new_key.type = MEM_NUMBER;
             new_key.data.num_zoumi = array_index++;
             helper_table_SET(&result_table_cell, &new_key, &p->key);
         }
     }
+    clear_memcell(&stack[0]);
     helper_assign(&stack[0], &result_table_cell);
 }
 
 
 void libfunc_objecttotalmembers() {
     unsigned int num_args = stack[stack_top].data.stackval_zoumi;
-    if (num_args != 1) {
+    if(num_args != 1) {
         snprintf(error_buffer, sizeof(error_buffer), "Error: 'objecttotalmembers' expects 1 argument, but received %u.", num_args);
         runtimeError(error_buffer);
     }
     memcell* arg = &stack[stack_top - 1];
-    clear_memcell(&stack[0]);
-    if (arg->type != MEM_TABLE) {
+    if(arg->type != MEM_TABLE) {
         runtimeError("Error: 'objecttotalmembers' argument must be a table.");
     }
+    clear_memcell(&stack[0]);
     stack[0].type = MEM_NUMBER;
     stack[0].data.num_zoumi = arg->data.table_zoumi->total;
 }
 
-
 void libfunc_objectcopy() {
     unsigned int num_args = stack[stack_top].data.stackval_zoumi;
-    if (num_args != 1) {
+    if(num_args != 1) {
         snprintf(error_buffer, sizeof(error_buffer), "Error: 'objectcopy' expects 1 argument, but received %u.", num_args);
         runtimeError(error_buffer);
     }
     memcell* arg = &stack[stack_top - 1];
-    clear_memcell(&stack[0]);
     if (arg->type != MEM_TABLE) {
         runtimeError("Error: 'objectcopy' argument must be a table.");
-        stack[0].type = MEM_NIL;
-        return;
     }
     memcell new_table_cell;
     new_table_cell.type = MEM_TABLE;
     new_table_cell.data.table_zoumi = table_new();
-
+    
     table* input_table = arg->data.table_zoumi;
     for (unsigned int i = 0; i < HASHTABLE_SIZE; ++i) {
         for (table_bucket* p = input_table->hashtable[i]; p; p = p->next) {
             helper_table_SET(&new_table_cell, &p->key, &p->value);
         }
     }
+    clear_memcell(&stack[0]);
     helper_assign(&stack[0], &new_table_cell);
 }
 
 void libfunc_totalarguments(void) {
-
-    clear_memcell(&stack[0]);
-    if (stack_maul == 1) {
+    if(stack_maul == 1) {
         runtimeError("'totalarguments' called outside of a function.");
     }
-    memcell* num_args_cell = &stack[stack_maul + AVM_NUM_ARGS_OFFSET];
+    memcell* num_args_cell = &stack[stack_maul - 3];
+    clear_memcell(&stack[0]);
     stack[0].type = MEM_NUMBER;
     stack[0].data.num_zoumi = num_args_cell->data.stackval_zoumi;
 }
 
 void libfunc_argument(void) {
     unsigned int num_args = stack[stack_top].data.stackval_zoumi;
-    if (num_args != 1) {
+    if(num_args != 1) {
         snprintf(error_buffer, sizeof(error_buffer), "Error: 'argument' expects 1 argument (the index), but received %u.", num_args);
         runtimeError(error_buffer);
     }
     memcell* index_arg = &stack[stack_top - 1];
-    if (index_arg->type != MEM_NUMBER) {
+    if(index_arg->type != MEM_NUMBER) {
         runtimeError("Error: 'argument' expects a number as its argument.");
     }
     unsigned int i = (unsigned int)index_arg->data.num_zoumi;
 
-    clear_memcell(&stack[0]);
-    if (stack_maul == 1) {
+    if(stack_maul == 1) {
         runtimeError("'argument' called outside of a function.");
     }
-    unsigned int total_caller_args = stack[stack_maul + AVM_NUM_ARGS_OFFSET].data.stackval_zoumi;
-
-    if (i >= total_caller_args) {
+    unsigned int total_caller_args = stack[stack_maul -3].data.stackval_zoumi;
+    
+    if(i >= total_caller_args) {
         snprintf(error_buffer, sizeof(error_buffer), "Error: index %u out of bounds for 'argument'. Caller has %u arguments.", i, total_caller_args);
         runtimeError(error_buffer);
     }
-    memcell* target_arg = &stack[stack_maul + AVM_FIRST_ARG_OFFSET - i];
+    memcell* target_arg = &stack[stack_maul -4 - i];
+    clear_memcell(&stack[0]);
     helper_assign(&stack[0], target_arg);
 }
 
 void libfunc_typeof(void) {
     unsigned int num_args = stack[stack_top].data.stackval_zoumi;
-    if (num_args != 1) {
+    if(num_args != 1) {
         snprintf(error_buffer, sizeof(error_buffer), "Error: 'typeof' expects 1 argument, but received %u.", num_args);
         runtimeError(error_buffer);
     }
@@ -212,25 +200,24 @@ void libfunc_typeof(void) {
     clear_memcell(&stack[0]);
     stack[0].type = MEM_STRING;
     stack[0].data.string_zoumi = strdup(typeStrings[arg->type]);
-    if (!stack[0].data.string_zoumi) {
+    if(!stack[0].data.string_zoumi) {
         runtimeError("Internal error: memory allocation failed in typeof.");
     }
 }
 
 void libfunc_strtonum(void) {
     unsigned int num_args = stack[stack_top].data.stackval_zoumi;
-    if (num_args != 1) {
+    if(num_args != 1) {
         snprintf(error_buffer, sizeof(error_buffer), "Error: 'strtonum' expects 1 argument, but received %u.", num_args);
         runtimeError(error_buffer);
     }
     memcell* arg = &stack[stack_top - 1];
     clear_memcell(&stack[0]);
-    if (arg->type == MEM_STRING) {
+    if(arg->type == MEM_STRING) {
         const char* input_string = arg->data.string_zoumi;
         char* end = NULL;
-
         double num = strtod(input_string, &end);
-        if (end != input_string && *end == '\0') {
+        if(end != input_string && *end == '\0') {
             // Success! The whole string was a valid number.
             stack[0].type = MEM_NUMBER;
             stack[0].data.num_zoumi = num;
@@ -242,25 +229,24 @@ void libfunc_strtonum(void) {
     }
 }
 
-
 void libfunc_sqrt(void) {
     unsigned int num_args = stack[stack_top].data.stackval_zoumi;
-    if (num_args != 1) {
+    if(num_args != 1) {
         snprintf(error_buffer, sizeof(error_buffer), "Error: 'sqrt' expects 1 argument, but received %u.", num_args);
         runtimeError(error_buffer);
     }
     memcell* arg = &stack[stack_top - 1];
     clear_memcell(&stack[0]);
-
-    if (arg->type == MEM_NUMBER) {
+    if(arg->type == MEM_NUMBER) {
         double value = arg->data.num_zoumi;
-        if (value >= 0) {
+        if(value < 0) {
+            snprintf(error_buffer, sizeof(error_buffer), "sqrt received negative number %f. Returning NULL", value);
+            runtimeWarning(error_buffer);
+            stack[0].type = MEM_NIL;
+        } else {
             stack[0].type = MEM_NUMBER;
             stack[0].data.num_zoumi = sqrt(value);
-        } else {
-            snprintf(error_buffer, sizeof(error_buffer), "Warning: 'sqrt' received negative number %f, returning nil.", value);
-            runtimeError(error_buffer);
-        }
+        }   
     } else {
         snprintf(error_buffer, sizeof(error_buffer), "Error: 'sqrt' argument must be a number, not a %s.", typeStrings[arg->type]);
         runtimeError(error_buffer);
@@ -269,13 +255,13 @@ void libfunc_sqrt(void) {
 
 void libfunc_cos(void) {
     unsigned int num_args = stack[stack_top].data.stackval_zoumi;
-    if (num_args != 1) {
+    if(num_args != 1) {
         snprintf(error_buffer, sizeof(error_buffer), "Error: 'cos' expects 1 argument, but received %u.", num_args);
         runtimeError(error_buffer);
     }
     memcell* arg = &stack[stack_top - 1];
     clear_memcell(&stack[0]);
-    if (arg->type == MEM_NUMBER) {
+    if(arg->type == MEM_NUMBER) {
         double degrees = arg->data.num_zoumi;
         double radians = degrees * (PI / 180.0);
         stack[0].type = MEM_NUMBER;
@@ -286,16 +272,15 @@ void libfunc_cos(void) {
     }
 }
 
-
 void libfunc_sin(void) {
     unsigned int num_args = stack[stack_top].data.stackval_zoumi;
-    if (num_args != 1) {
+    if(num_args != 1) {
         snprintf(error_buffer, sizeof(error_buffer), "Error: 'sin' expects 1 argument, but received %u.", num_args);
         runtimeError(error_buffer);
     }
     memcell* arg = &stack[stack_top - 1];
     clear_memcell(&stack[0]);
-    if (arg->type == MEM_NUMBER) {
+    if(arg->type == MEM_NUMBER) {
         double degrees = arg->data.num_zoumi;
         double radians = degrees * (PI / 180.0);
         stack[0].type = MEM_NUMBER;
@@ -306,7 +291,8 @@ void libfunc_sin(void) {
     }
 }
 
-
+/*===============================================================================================*/
+/* Calling the LIBS */
 
 char * libfunc_names[] = {
     "print",
@@ -323,19 +309,13 @@ char * libfunc_names[] = {
     "sin"
 };
 
-
 library_func_t avm_get_libfunc(char * id){
-
 	for(int i = 0; i < libfuncs_total; i++){
-
 		if(!strcmp(libfunc_names[i],id)){
-			
 			return libFuncs[i];
 		}
 	}
 	return NULL;
 }
-
-
 
 /* end of avm_libfuncs.c */
