@@ -177,7 +177,6 @@ void libfunc_totalarguments(void) {
 }
 
 void libfunc_argument(void) {
-    // === Part 1: Validate this library function's own arguments ===
     unsigned int num_args = stack[stack_top].data.stackval_zoumi;
     if (num_args != 1) {
         snprintf(error_buffer, sizeof(error_buffer), "Error: 'argument' expects 1 argument (the index), but received %u.", num_args);
@@ -189,26 +188,18 @@ void libfunc_argument(void) {
     }
     unsigned int i = (unsigned int)index_arg->data.num_zoumi;
 
-    // === Part 2: Find and validate the CALLER's stack frame ===
-    //stackmaul == 1 
     clear_memcell(&stack[0]);
     if (stack_maul == 1) {
         runtimeError("'argument' called outside of a function.");
     }
     unsigned int total_caller_args = stack[stack_maul + AVM_NUM_ARGS_OFFSET].data.stackval_zoumi;
 
-    // === Part 3: Retrieve the argument and set the return value ===
     if (i >= total_caller_args) {
         snprintf(error_buffer, sizeof(error_buffer), "Error: index %u out of bounds for 'argument'. Caller has %u arguments.", i, total_caller_args);
         runtimeError(error_buffer);
     }
     memcell* target_arg = &stack[stack_maul + AVM_FIRST_ARG_OFFSET - i];
-    stack[0] = *target_arg;
-    if (target_arg->type == MEM_STRING) {
-        stack[0].data.string_zoumi = strdup(target_arg->data.string_zoumi);
-    } else if (target_arg->type == MEM_TABLE) {
-        /* TODO ???? */
-    }
+    helper_assign(&stack[0], target_arg);
 }
 
 void libfunc_typeof(void) {
@@ -253,7 +244,6 @@ void libfunc_strtonum(void) {
 
 
 void libfunc_sqrt(void) {
-
     unsigned int num_args = stack[stack_top].data.stackval_zoumi;
     if (num_args != 1) {
         snprintf(error_buffer, sizeof(error_buffer), "Error: 'sqrt' expects 1 argument, but received %u.", num_args);
