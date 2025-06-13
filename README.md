@@ -7,15 +7,15 @@ This project is a complete toolchain for the Alpha programming language, consist
 ### Compiler (generates 'out.abc')
 *   `scanner.l` (Lexer)
 *   `parser.y` (Parser & Intermediate Code Generator)
+*   `list.h`, `list.c` (Token Management)
 *   `table.h`, `table.c` (Symbol Table Management)
 *   `quads.h`, `quads.c` (Quadruple Generation & Management)
-*   `list.h`, `list.c` (Utility Lists for control flow)
+*   `target.h`, `target.c` (Target Code File Generation)
 
 ### Virtual Machine (executes 'out.abc')
 *   `avm.h`, `avm.c` (Core AVM definitions, stack, and execution cycle)
 *   `avm_executors.c` (Implementations for each VM instruction executor)
 *   `avm_libfuncs.c` (Implementations for the standard library functions)
-*   `avm_prints.h`, `avm_prints.c` (String conversion and printing helpers)
 
 ## Core Functionality:
 
@@ -44,8 +44,7 @@ This creates a binary file named `chief.alpha` in your directory.
 #### 2. Execute the binary file with the AVM:
 ./alpha_avm chief.alpha
 
-
-NOTE: This program was run and tested inside Debian PC "Ananke" 
+NOTE: This program was run and tested inside Debian PC "Kasos" 
 
 Authors:
 csd4844 - Nikoletta Arvaniti
