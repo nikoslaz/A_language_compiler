@@ -40,9 +40,12 @@ void libfunc_print(void) {
     int totals = stack[stack_top].data.stackval_zoumi;
 	for(int i = 0; i < totals; ++i) {
         memcell* tmp = &stack[stack_top - 1 - i];
-		char * s = strdup((*to_string_funcs[tmp->type])(tmp));
-		printf("%s",s );
-		free(s);
+		char * s = (*to_string_funcs[tmp->type])(tmp);
+        if(!s) { runtimeError("Print returned null due to memory"); }
+		printf("%s",s);
+        if(tmp->type == MEM_TABLE || tmp->type == MEM_NUMBER
+        || tmp->type == MEM_USERFUNC || tmp->type == MEM_LIBFUNC
+        || tmp->type == MEM_STACKVAL) { /* free */ }
 	}
     clear_memcell(&stack[0]);
 	stack[0].type = MEM_NIL;
@@ -317,7 +320,7 @@ library_func_t avm_get_libfunc(char * id){
 			return libFuncs[i];
 		}
 	}
-	return NULL;
+    runtimeError("Unsupported LibFunc");
 }
 
 /* end of avm_libfuncs.c */

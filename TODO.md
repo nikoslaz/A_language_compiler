@@ -106,18 +106,20 @@ TODO JUMPS EQ, NEQ MUST USE ALL TOBOOL FUNCS, NOT JUST BOOL TOBOOL
 ---------------------------------------------------------------------------------
 - TESTS
 
-NOTES:
+LA8OS TEST:
 02: runtime line 13 ("print") (if we remove, works)
+07: to not proteraiothta, meta to c einai boolean
+25: adding "L" lmao
+
+NOTES:
 06: PAIRNEI LIGH WRA
 15: la8os ari8moi sto telos ???
-18: func einai TABLE OXI FUNC (if we call it,  works)
+17: variables 8 anti 4
 
-NEED FIXING: 
-20: libfunc
-22: libfunc
-23: libfunc
-
-25: idk ???
+IDK
+20: ????????????????
+22: ????????????????
+23: ????????????????
 
 ---------------------------------------------------------------------------------
 // PHASE 3

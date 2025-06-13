@@ -45,6 +45,7 @@ unsigned int undef_tobool(memcell* mem)    { return 0; }
 /* Helpers */
 
 void helper_assign(memcell* lv, memcell* rv) {
+    if(lv == rv) { return; }
     if(rv->type == MEM_UNDEF) { runtimeWarning("Assignment of undef"); }
     /* Increment if we added a table */
     if(rv->type == MEM_TABLE) { rv->data.table_zoumi->ref_count++; }
@@ -60,19 +61,16 @@ void helper_arith(instruction* inst) {
     memcell* lv = translate_operand(&inst->result, NULL);
     if(!lv) { runtimeError("Null LVALUE"); }
     /* Translate Arg1 */
-    memcell* arg1 = (memcell*)malloc(sizeof(memcell));
-    if(!arg1) { MemoryFail(); }
-    arg1 = translate_operand(&inst->arg1, arg1);
+    memcell* arg1 = translate_operand(&inst->arg1, ax);
     if(!arg1) { runtimeError("Null ARG1"); }
     /* Translate Arg2 */
-    memcell* arg2 = (memcell*)malloc(sizeof(memcell));
-    if(!arg2) { MemoryFail(); }
-    arg2 = translate_operand(&inst->arg2, arg2);
+    memcell* arg2 = translate_operand(&inst->arg2, bx);
     if(!arg2) { runtimeError("Null ARG2"); }
     /* Do j*b */
     if(arg1->type != MEM_NUMBER) { runtimeError("ARG1 is not a NUMBER"); }
     if(arg2->type != MEM_NUMBER) { runtimeError("ARG2 is not a NUMBER"); }
     memcell res;
+    clear_memcell(&res);
     res.type = MEM_NUMBER;
     res.data.num_zoumi = (*arith_funcs[inst->opcode-OP_ADD])(arg1->data.num_zoumi, arg2->data.num_zoumi);
     helper_assign(lv, &res);
@@ -80,14 +78,10 @@ void helper_arith(instruction* inst) {
 
 void helper_relational(instruction* inst) {
     /* Translate Arg1 */
-    memcell* rv1 = (memcell*)malloc(sizeof(memcell));
-    if(!rv1) { MemoryFail(); }
-    rv1 = translate_operand(&inst->arg1, rv1);
+    memcell* rv1 = translate_operand(&inst->arg1, ax);
     if(!rv1) { runtimeError("Null RV1"); }
     /* Translate Arg2 */
-    memcell* rv2 = (memcell*)malloc(sizeof(memcell));
-    if(!rv2) { MemoryFail(); }
-    rv2 = translate_operand(&inst->arg2, rv2);
+    memcell* rv2 = translate_operand(&inst->arg2, bx);
     if(!rv2) { runtimeError("Null RV2"); }
     /* Do j*b */
     if(rv1->type != MEM_NUMBER) { runtimeError("ARG1 is not a NUMBER"); }
@@ -100,14 +94,10 @@ void helper_relational(instruction* inst) {
 
 void helper_equality(instruction* inst, int is_equal) {
     /* Translate Arg1 */
-    memcell* rv1 = (memcell*)malloc(sizeof(memcell));
-    if(!rv1) { MemoryFail(); }
-    rv1 = translate_operand(&inst->arg1, rv1);
+    memcell* rv1 = translate_operand(&inst->arg1, ax);
     if(!rv1) { runtimeError("Null RV1"); } 
     /* Translate Arg2 */
-    memcell* rv2 = (memcell*)malloc(sizeof(memcell));
-    if(!rv2) { MemoryFail(); }
-    rv2 = translate_operand(&inst->arg2, rv2);
+    memcell* rv2 = translate_operand(&inst->arg2, bx);
     if(!rv2) { runtimeError("Null RV2"); }
     /* Perform equality/inequality check */
     unsigned int res = 0;
@@ -155,9 +145,7 @@ void execute_ASSIGN(instruction* inst) {
     memcell* lv = translate_operand(&inst->result, NULL);
     if(!lv) { runtimeError("Null LVALUE in assign"); }
     /* Translate RValue */
-    memcell* rv = (memcell*)malloc(sizeof(memcell));
-    if(!rv) { MemoryFail(); }
-    rv = translate_operand(&inst->arg1, rv);
+    memcell* rv = translate_operand(&inst->arg1, ax);
     if(!rv) { runtimeError("Null RVALUE in assign"); }
     /* do j*b */
     helper_assign(lv, rv);
@@ -165,9 +153,7 @@ void execute_ASSIGN(instruction* inst) {
 
 void execute_RETURN(instruction* inst) {
     /* Translate Result */
-    memcell* res = (memcell*)malloc(sizeof(memcell));
-    if(!res) { MemoryFail(); }
-    res = translate_operand(&inst->result, res);
+    memcell* res = translate_operand(&inst->result, ax);
     if(!res) { runtimeError("Null RVALUE in return"); }
     /* do j*b */
     helper_assign(&stack[0], res);
@@ -210,23 +196,7 @@ void execute_JGT(instruction* inst) { helper_relational(inst); }
 /*===============================================================================================*/
 /* Functions */
 
-void execute_PARAM(instruction* inst) {
-    /* Translate Result */
-    memcell* res = (memcell*)malloc(sizeof(memcell));
-    if(!res) { MemoryFail(); }
-    res = translate_operand(&inst->arg1, res);
-    if(!res) { runtimeError("Null memcell in param"); }
-    /* do j*b */
-    push(*res);
-    current_args_pushed++;
-}
-
-void execute_CALL(instruction* inst) {
-    /* Translate Function Address */
-    memcell* func = (memcell*)malloc(sizeof(memcell));
-    if(!func) { MemoryFail(); }
-    func = translate_operand(&inst->arg1, func);
-    if(!func) { runtimeError("Null memcell in call"); }
+void helper_create_environment(void) {
     /* Push total args */
     memcell totalargs;
     clear_memcell(&totalargs);
@@ -237,18 +207,42 @@ void execute_CALL(instruction* inst) {
     /* Prepare retval */
     clear_memcell(&stack[0]);
     stack[0].type = MEM_NIL;
+}
+
+void execute_PARAM(instruction* inst) {
+    /* Translate Result */
+    memcell* res = translate_operand(&inst->arg1, ax);
+    if(!res) { runtimeError("Null memcell in param"); }
+    /* do j*b */
+    push(*res);
+    current_args_pushed++;
+}
+
+void execute_CALL(instruction* inst) {
+    /* Translate Function Address */
+    memcell* func = translate_operand(&inst->arg1, ax);
+    if(!func) { runtimeError("Null memcell in call"); }
     /* do j*b */
     switch(func->type) {
         case MEM_LIBFUNC:
+            helper_create_environment();
             fprintf(avm_log, "Calling libfunc %d\n", func->data.libfunc_zoumi);
-            (*libFuncs[func->data.libfunc_zoumi])();
+            avm_get_libfunc(libfunc_const[func->data.libfunc_zoumi])();
+            // (*libFuncs[func->data.libfunc_zoumi])();
             break;
         case MEM_USERFUNC:
+            helper_create_environment();
             /* Push Return Address */
-            totalargs.data.stackval_zoumi = program_counter + 1;
-            push(totalargs);
+            memcell retaddr;
+            clear_memcell(&retaddr);
+            retaddr.type = MEM_STACKVAL;
+            retaddr.data.stackval_zoumi = program_counter + 1;
+            push(retaddr);
             /* Branch to Function Address */
             branch_to(func->data.usrfunc_zoumi);
+            break;
+        case MEM_TABLE:
+            helper_call_functor(func);
             break;
         default: runtimeError("Argument is not a function");
     }
@@ -257,6 +251,7 @@ void execute_CALL(instruction* inst) {
 void execute_FUNCSTART(instruction* inst) {
     /* Push Old DARTH MAUL */
     memcell oldmaul;
+    clear_memcell(&oldmaul);
     oldmaul.type = AVM_STACKSIZE;
     oldmaul.data.stackval_zoumi = stack_maul;
     push(oldmaul);
@@ -311,6 +306,7 @@ void table_bucketsdestroy(table_bucket** hash) {
 }
 
 void table_decrementcounter(table* t) {
+    if(!t) { stackError("NULL TABLE IN DECREMENT"); }
     t->ref_count--;
     if(t->ref_count < 1) { 
         table_bucketsdestroy(t->hashtable);
@@ -363,12 +359,38 @@ void helper_table_SET(memcell* table, memcell* key, memcell* value) {
     }
 }
 
+void helper_call_functor(memcell* t) {
+    memcell parenth;
+    clear_memcell(&parenth);
+    parenth.type = MEM_STRING;
+    parenth.data.string_zoumi = "()";
+    memcell* functor = helper_table_GET(t, &parenth);
+    if(!functor) { runtimeError("No \"()\" entry exists"); }
+    if(functor->type == MEM_TABLE) { helper_call_functor(functor); }
+    if(functor->type != MEM_USERFUNC) { runtimeError("Element \"()\" is not a function"); }
+    /* Simulate PARAM */
+    current_args_pushed++;
+    push(*t);
+    /* Simulate CALL */
+    helper_create_environment();
+    /* Push Return Address */
+    memcell retaddr;
+    clear_memcell(&retaddr);
+    retaddr.type = MEM_STACKVAL;
+    retaddr.data.stackval_zoumi = program_counter + 1;
+    push(retaddr);
+    /* Branch to Function Address */
+    branch_to(functor->data.usrfunc_zoumi);
+}
+
 void execute_NEWTABLE(instruction* inst) {
     memcell* lv = translate_operand(&inst->result, NULL);
     if(!lv) { runtimeError("Null memcell in newtable"); }
-    clear_memcell(lv);
-    lv->type = MEM_TABLE;
-    lv->data.table_zoumi = table_new();
+    memcell newtab;
+    clear_memcell(&newtab);
+    newtab.type = MEM_TABLE;
+    newtab.data.table_zoumi = table_new();
+    helper_assign(lv, &newtab);
 }
 
 void execute_TABLEGETELEM(instruction* inst) {
@@ -376,14 +398,10 @@ void execute_TABLEGETELEM(instruction* inst) {
     memcell* lv = translate_operand(&inst->result, NULL);
     if(!lv) { runtimeError("Null LVALUE in tablegetelem"); }
     /* Translate Table */
-    memcell* t = (memcell*)malloc(sizeof(memcell));
-    if(!t) { MemoryFail(); }
-    t = translate_operand(&inst->arg1, t);
+    memcell* t = translate_operand(&inst->arg1, ax);
     if(!t) { runtimeError("Null ARG1 in tablegetelem"); }
     /* Translate Index */
-    memcell* i = (memcell*)malloc(sizeof(memcell));
-    if(!i) { MemoryFail(); }
-    i = translate_operand(&inst->arg2, i);
+    memcell* i = translate_operand(&inst->arg2, bx);
     if(!i) { runtimeError("Null ARG2 in tablegetelem"); }
     /* do j*b */
     if(t->type != MEM_TABLE) { runtimeError("Arg1 is not a table"); }
@@ -393,11 +411,10 @@ void execute_TABLEGETELEM(instruction* inst) {
 			helper_assign(lv,content);
 		} else {
             /* return nil */
-            memcell* tmpnil = (memcell*)malloc(sizeof(memcell));
-            if(!tmpnil) { MemoryFail(); }
-            clear_memcell(tmpnil);
-            tmpnil->type = MEM_NIL;
-            helper_assign(lv, tmpnil);
+            memcell tmpnil;
+            clear_memcell(&tmpnil);
+            tmpnil.type = MEM_NIL;
+            helper_assign(lv, &tmpnil);
 		}
     }
 }
@@ -407,16 +424,12 @@ void execute_TABLESETELEM(instruction* inst) {
     memcell* t = translate_operand(&inst->result, NULL);
     if(!t) { runtimeError("Null Table in tablesetelem"); }
     /* Translate index */
-    memcell* i = (memcell*)malloc(sizeof(memcell));
-    if(!i) { MemoryFail(); }
-    i  = translate_operand(&inst->arg1, i);
+    memcell* i = translate_operand(&inst->arg1, ax);
     if(!i) { runtimeError("Null Index in tablesetelem"); }
     if(i->type == MEM_NIL) { runtimeError("Nil Index in tablesetelem"); }
     if(i->type == MEM_UNDEF) { runtimeError("Undefined Index in tablesetelem"); }
     /* Translate Rvalue */
-    memcell* rv = (memcell*)malloc(sizeof(memcell));
-    if(!rv) { MemoryFail(); }
-    rv = translate_operand(&inst->arg2, rv);
+    memcell* rv = translate_operand(&inst->arg2, bx);
     if(!rv) { runtimeError("Null RVALUE in tablesetelem"); }
     /* do j*b */
     if(t->type != MEM_TABLE) { runtimeError("Result is not a table"); }
@@ -426,8 +439,6 @@ void execute_TABLESETELEM(instruction* inst) {
 /*===============================================================================================*/
 /* ToString */
 
-char* tostring(memcell* m) { return &(*to_string_funcs[m->type](m)); }
-
 tostring_func_t to_string_funcs[] = {
     number_tostring, string_tostring, bool_tostring,
     table_tostring, userfunc_tostring, libfunc_tostring,
@@ -436,6 +447,7 @@ tostring_func_t to_string_funcs[] = {
 
 char* number_tostring(memcell* mem) {
     char* str = (char*)malloc(1024);
+    if(!str) { MemoryFail(); }
     sprintf(str, "%.3f", mem->data.num_zoumi);
     return str;
 }
@@ -449,9 +461,7 @@ char* bool_tostring(memcell* mem) {
 
 char* table_tostring(memcell* m) {
     char* str = (char*)malloc(2048); // Allocate memory for the string
-    if(!str) {
-        runtimeError("Memory allocation failed for table_tostring");
-    }
+    if(!str) { MemoryFail(); }
     str[0] = '\0'; // Initialize the string as empty
     table_bucket* tmp = NULL;
     unsigned i;
@@ -459,31 +469,42 @@ char* table_tostring(memcell* m) {
     strcat(str, "[\n"); // Start the table representation
     for(i = 0; i < HASHTABLE_SIZE; i++) {
         for(tmp = hash[i]; tmp != NULL; tmp = tmp->next) {
-            char key_str[256];
-            char value_str[256];
-
             // Convert key and value to strings
-            snprintf(key_str, sizeof(key_str), "%s", tostring(&tmp->key));
-            snprintf(value_str, sizeof(value_str), "%s", tostring(&tmp->value));
+            
+            char key_str[256];
+            char* tmpkeystr = (*to_string_funcs[tmp->key.type])(&tmp->key);
+            snprintf(key_str, sizeof(key_str), "%s", tmpkeystr);
+            if(tmp->key.type == MEM_TABLE || tmp->key.type == MEM_NUMBER
+            || tmp->key.type == MEM_USERFUNC || tmp->key.type == MEM_LIBFUNC
+            || tmp->key.type == MEM_STACKVAL) { /* free */ }
+                
+            char value_str[256];
+            char* tmpvalstr = (*to_string_funcs[tmp->value.type])(&tmp->value);
+            snprintf(value_str, sizeof(value_str), "%s", tmpvalstr);
+            if(tmp->value.type == MEM_TABLE || tmp->value.type == MEM_NUMBER
+            || tmp->value.type == MEM_USERFUNC || tmp->value.type == MEM_LIBFUNC
+            || tmp->value.type == MEM_STACKVAL) { /* free */ }
 
             // Append the key-value pair to the result string
             char entry[550];
-            snprintf(entry, sizeof(entry), "%s : %s\n", key_str, value_str);
+            snprintf(entry, sizeof(entry), "{ %s : %s }\n", key_str, value_str);
             strcat(str, entry);
         }
     }
-    strcat(str, "]"); // End the table representation
+    strcat(str, "]\0"); // End the table representation
     return str;
 }
 
 char* userfunc_tostring(memcell* mem) {
     char* str = (char*)malloc(32);
+    if(!str) { MemoryFail(); }
     sprintf(str, "USR[%u]", mem->data.usrfunc_zoumi+1);
     return str;
 }
 
 char* libfunc_tostring(memcell* mem) {
     char* str = (char*)malloc(1024);
+    if(!str) { MemoryFail(); }
     sprintf(str, "LIB[%u]", mem->data.libfunc_zoumi);
     return str;
 }
@@ -492,7 +513,8 @@ char* nil_tostring(memcell* mem) { return "nil"; }
 
 char* stackval_tostring(memcell* mem) {
     char* str = (char*)malloc(1024);
-    sprintf(str, "%u", mem->data.stackval_zoumi);
+    if(!str) { MemoryFail(); }
+    sprintf(str, "STACK[%u]", mem->data.stackval_zoumi);
     return str;
 }
 

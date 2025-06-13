@@ -28,6 +28,9 @@ unsigned int stack_top;  /* Points to top non-empty element */
 unsigned int stack_maul; /* Splits the activations in half */
 FILE* avm_log;
 
+/* Registers */
+memcell *ax, *bx, *cx;
+
 /*===============================================================================================*/
 /* Read Binary */
 
@@ -102,13 +105,13 @@ void stackError(char* input) {
 	exit(-1);
 }
 
-void runtimeError(char* input, ...) {
+void runtimeError(char* input) {
 	fprintf(avm_log, "(#%d) Runtime Error in line %d. %s\nExecution Aborted\n", program_counter+1, curr_line, input);
 	printf("\n(#%d) Runtime Error in line %d. %s\nExecution Aborted\n", program_counter+1, curr_line, input);
 	exit(-1);
 }
 
-void runtimeWarning(char* input, ...) {
+void runtimeWarning(char* input) {
 	fprintf(avm_log, "(#%d) Runtime Warning in line %d. %s\n", program_counter+1, curr_line, input);
 	warning_count++;
 }
@@ -248,6 +251,16 @@ void avm_initialize(void) {
         clear_memcell(&stack[i]);
     }
     stack_top = -1;
+	/* Clear Registers */
+	ax = (memcell*)malloc(sizeof(memcell));
+	if(!ax) { MemoryFail(); }
+	bx = (memcell*)malloc(sizeof(memcell));
+	if(!bx) { MemoryFail(); }
+	cx = (memcell*)malloc(sizeof(memcell));
+	if(!cx) { MemoryFail(); }
+	clear_memcell(ax);
+	clear_memcell(bx);
+	clear_memcell(cx);
 	/* Create an empty cell */
 	memcell cell;
 	clear_memcell(&cell);
@@ -275,10 +288,9 @@ int main(int argc, char** argv) {
             return 1;
         }
     } else { printf("Error. File not supplied\n"); return 1; }
-	avm_log = fopen("3_log.output", "w");
-	if(!avm_log) { perror("Error opening 3_log.output for writing\n"); return 1; }
+	avm_log = fopen("2_log.output", "w");
+	if(!avm_log) { perror("Error opening 2_log.output for writing\n"); return 1; }
     read_binary(fin);
-    printReadTargetToFile();
     avm_initialize();
 	begin_execution();
     return 0;

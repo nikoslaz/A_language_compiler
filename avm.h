@@ -10,7 +10,6 @@
 #include <string.h>
 #include <float.h>
 #include <math.h>
-#include "avm_prints.h"
 
 #define MAGIC_NUMBER 0xDEADBEEF
 #define	AVM_STACKSIZE 8192 /* 2^13 */
@@ -153,8 +152,8 @@ extern unsigned int undef_equality(memcell* v1, memcell* v2);
 void MemoryFail(void);
 
 void stackError(char* input);
-void runtimeError(char* input, ...);
-void runtimeWarning(char* input, ...);
+void runtimeError(char* input);
+void runtimeWarning(char* input);
 
 void branch_to(unsigned int label);
 void clear_memcell(memcell* cell);
@@ -162,6 +161,8 @@ void push(memcell val);
 memcell pop(void);
 memcell* translate_operand(vmarg* arg, memcell* reg);
 void helper_assign(memcell* lv, memcell* rv);
+void helper_call_functor(memcell* t);
+void helper_create_environment(void);
 
 extern unsigned int succ_branch;
 extern unsigned int branch_label;
@@ -174,6 +175,8 @@ extern memcell stack[AVM_STACKSIZE];
 extern unsigned int stack_top;
 extern unsigned int stack_maul;
 extern FILE* avm_log;
+
+extern memcell *ax, *bx, *cx;
 
 /*===============================================================================================*/
 /* Executors */
@@ -211,8 +214,6 @@ extern void execute_GETRETVAL(instruction*);
 
 /*===============================================================================================*/
 /* ToStringFunc */
-
-char* tostring(memcell* m);
 
 typedef char* (*tostring_func_t)(memcell*);
 extern tostring_func_t to_string_funcs[];
@@ -272,6 +273,7 @@ extern unsigned int jlt_rel(double, double);
 
 typedef void (*library_func_t)(void);
 extern library_func_t libFuncs[];
+library_func_t avm_get_libfunc(char * id);
 
 extern void libfunc_print();
 extern void libfunc_input();
