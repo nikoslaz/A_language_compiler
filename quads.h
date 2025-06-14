@@ -14,7 +14,7 @@
 #define EXPAND_SIZE 1024
 #define CURR_SIZE (totalquads*sizeof(quad))
 #define NEW_SIZE (CURR_SIZE+EXPAND_SIZE*sizeof(quad))
-#define MAX_TEMPS 100
+#define MAX_TEMPS 1000
 
 typedef enum iopcode_e {
     OP_ASSIGN,

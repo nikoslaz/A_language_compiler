@@ -388,7 +388,7 @@ Symbol* insert_Global_Temp_Symbol(void) {
         printf("Error. Maximum number of temporary variables reached. Sorry:(\n");
         exit(-1);
     }
-    char temp_name[5];
+    char temp_name[6];
     snprintf(temp_name, sizeof(temp_name), "_t%d", temp_counter++);
     /* Fields */
     ScopeList* scope_list = int_to_Scope(0);
