@@ -366,7 +366,7 @@ void helper_call_functor(memcell* t) {
     parenth.data.string_zoumi = "()";
     memcell* functor = helper_table_GET(t, &parenth);
     if(!functor) { runtimeError("No \"()\" entry exists"); }
-    if(functor->type == MEM_TABLE) { helper_call_functor(functor); }
+    // if(functor->type == MEM_TABLE) { helper_call_functor(functor); }
     if(functor->type != MEM_USERFUNC) { runtimeError("Element \"()\" is not a function"); }
     /* Simulate PARAM */
     current_args_pushed++;
